@@ -11,14 +11,19 @@ export const usersService = {
     async list(filters?: UserFilters, page = 1, pageSize = 20): Promise<UsersListResponse> {
         const params = new URLSearchParams();
         if (filters?.role) params.append('role', filters.role);
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.storeId) params.append('store_id', filters.storeId.toString());
+        if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
+        if (filters?.store_id) params.append('store_id', filters.store_id.toString());
         if (filters?.search) params.append('search', filters.search);
-        params.append('page', page.toString());
-        params.append('page_size', pageSize.toString());
+        params.append('skip', ((page - 1) * pageSize).toString());
+        params.append('limit', pageSize.toString());
 
-        const response = await apiClient.get<UsersListResponse>(`/users?${params.toString()}`);
-        return response.data;
+        const response = await apiClient.get<{ items: User[]; total: number }>(`/users?${params.toString()}`);
+        return {
+            users: response.data.items,
+            total: response.data.total,
+            page,
+            pageSize,
+        };
     },
 
     async getById(id: number): Promise<User> {
@@ -45,34 +50,25 @@ export const usersService = {
         return response.data;
     },
 
-    async deactivate(id: number): Promise<User> {
-        const response = await apiClient.post<User>(`/users/${id}/deactivate`);
+    async deactivate(id: number): Promise<void> {
+        // Backend does soft delete on DELETE /users/{id}
+        await apiClient.delete(`/users/${id}`);
+    },
+
+    async resetPassword(id: number): Promise<{ temporary_password: string }> {
+        const response = await apiClient.post<{ temporary_password: string }>(`/users/${id}/reset-password`);
         return response.data;
     },
 
-    async resetPassword(id: number): Promise<{ temporaryPassword: string }> {
-        const response = await apiClient.post<{ temporaryPassword: string }>(`/users/${id}/reset-password`);
-        return response.data;
-    },
-
-    async bulkActivate(ids: number[]): Promise<void> {
-        await apiClient.post('/users/bulk-activate', { ids });
-    },
-
-    async bulkDeactivate(ids: number[]): Promise<void> {
-        await apiClient.post('/users/bulk-deactivate', { ids });
-    },
-
-    async export(filters?: UserFilters): Promise<Blob> {
+    async getWorkers(storeId?: number, department?: string): Promise<User[]> {
         const params = new URLSearchParams();
-        if (filters?.role) params.append('role', filters.role);
-        if (filters?.status) params.append('status', filters.status);
-        if (filters?.storeId) params.append('store_id', filters.storeId.toString());
-        if (filters?.search) params.append('search', filters.search);
+        if (storeId) params.append('store_id', storeId.toString());
+        if (department) params.append('department', department);
 
-        const response = await apiClient.get(`/users/export?${params.toString()}`, {
-            responseType: 'blob',
-        });
-        return response.data as Blob;
+        const queryString = params.toString();
+        const url = queryString ? `/users/workers?${queryString}` : '/users/workers';
+
+        const response = await apiClient.get<User[]>(url);
+        return response.data;
     },
 };

@@ -4,17 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em] transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-aems-primary-400 text-aems-neutral-900 hover:bg-aems-primary-600",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-transparent bg-aems-neutral-100 text-aems-neutral-600 hover:bg-aems-neutral-200",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+          "border-transparent bg-aems-error text-white hover:bg-aems-error/80",
         outline: "text-foreground",
+        active: "border-transparent bg-[rgba(18,183,106,0.1)] text-[#12B76A]",
+        attention: "border-transparent bg-[rgba(247,144,9,0.1)] text-[#F79009]",
+        critical: "border-transparent bg-[rgba(240,68,56,0.1)] text-[#F04438]",
+        exhausted: "border-transparent bg-[rgba(102,112,133,0.1)] text-[#667085]",
       },
     },
     defaultVariants: {
@@ -25,7 +29,7 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  VariantProps<typeof badgeVariants> { }
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (

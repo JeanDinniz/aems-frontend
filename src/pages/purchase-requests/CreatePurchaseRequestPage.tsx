@@ -38,7 +38,7 @@ const itemSchema = z.object({
 });
 
 const formSchema = z.object({
-    category: z.enum(['film', 'aesthetic', 'equipment', 'uniforms', 'other']),
+    category: z.enum(['film', 'vn', 'vu', 'workshop', 'equipment', 'uniforms', 'other']),
     urgency: z.enum(['normal', 'urgent', 'critical']),
     items: z.array(itemSchema).min(1, 'Adicione pelo menos 1 item'),
     justification: z.string().min(20, 'Justificativa deve ter pelo menos 20 caracteres')

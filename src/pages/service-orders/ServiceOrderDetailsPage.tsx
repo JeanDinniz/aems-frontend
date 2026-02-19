@@ -22,8 +22,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 const DEPARTMENTS: Record<string, string> = {
     film: 'Película',
+    vn: 'VN',
+    vu: 'VU',
     bodywork: 'Funilaria',
-    aesthetic: 'Estética'
+    workshop: 'Oficina'
 };
 
 export default function ServiceOrderDetailsPage() {
@@ -203,26 +205,28 @@ export default function ServiceOrderDetailsPage() {
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold tracking-tight">OS #{os.order_number}</h1>
-                        <Badge variant="outline">
-                            {STATUS_LABELS[os.status] || os.status}
-                        </Badge>
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold tracking-tight">OS #{os.order_number}</h1>
+                            <Badge variant="outline">
+                                {STATUS_LABELS[os.status] || os.status}
+                            </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <TrafficLightStatus
+                                entryTime={os.entry_time || os.created_at}
+                                department={os.department}
+                                status={os.status}
+                            />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant="outline" onClick={() => navigate(`/service-orders/${id}/edit`)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                            </Button>
+                            {renderActionButtons()}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                        <TrafficLightStatus
-                            entryTime={os.entry_time || os.created_at}
-                            department={os.department}
-                            status={os.status}
-                        />
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => navigate(`/service-orders/${id}/edit`)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                    </Button>
-                    {renderActionButtons()}
                 </div>
             </div>
 
@@ -234,10 +238,10 @@ export default function ServiceOrderDetailsPage() {
                             <CardTitle>Detalhes do Serviço</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-6">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><Car className="h-3 w-3" /> Veículo / Placa</span>
-                                    <p className="text-lg font-medium">{os.client_vehicle}</p>
+                                    <p className="text-lg font-medium">{os.vehicle_model}{os.vehicle_color ? ` - ${os.vehicle_color}` : ''}</p>
                                     <div className="inline-block bg-gray-100 px-2 py-0.5 rounded text-sm font-mono border border-gray-300">
                                         {os.plate}
                                     </div>
@@ -288,7 +292,7 @@ export default function ServiceOrderDetailsPage() {
                             {!os.photos || os.photos.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">Nenhuma foto registrada.</p>
                             ) : (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                     {os.photos.map((url, index) => (
                                         <div key={index} className="relative aspect-video bg-gray-100 rounded-md overflow-hidden border">
                                             <img src={url} alt={`Foto ${index}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
@@ -365,30 +369,51 @@ export default function ServiceOrderDetailsPage() {
                             <CardTitle className="text-base">Cliente / Origem</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <User className="h-5 w-5 text-primary" />
+                            {os.client_name && (
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <User className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">{os.client_name}</p>
+                                        <p className="text-sm text-muted-foreground">{os.client_phone}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium">{os.client_name}</p>
-                                    <p className="text-sm text-muted-foreground">{os.client_phone}</p>
-                                </div>
-                            </div>
-                            <div className="pt-2 border-t">
-                                <div className="flex justify-between text-sm py-1">
-                                    <span className="text-muted-foreground">Concessionária</span>
-                                    <span className="font-medium">{os.dealership_name || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm py-1">
-                                    <span className="text-muted-foreground">Consultor</span>
-                                    <span className="font-medium">{os.consultant_name || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm py-1">
-                                    <span className="text-muted-foreground">Local</span>
-                                    <span className="font-medium flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" /> {os.location_name || 'Loja 1'}
-                                    </span>
-                                </div>
+                            )}
+                            <div className={os.client_name ? "pt-2 border-t" : ""}>
+                                {os.destination_store_id ? (
+                                    <>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="text-muted-foreground">Feito no</span>
+                                            <Badge variant="outline" className="font-normal">
+                                                Galpão
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="text-muted-foreground">Cobrado em</span>
+                                            <span className="font-medium flex items-center gap-1">
+                                                <MapPin className="h-3 w-3" /> {os.destination_store_name || 'N/A'}
+                                            </span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="text-muted-foreground">Concessionária</span>
+                                            <span className="font-medium">{os.dealership_name || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="text-muted-foreground">Consultor</span>
+                                            <span className="font-medium">{os.consultant_name || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm py-1">
+                                            <span className="text-muted-foreground">Local</span>
+                                            <span className="font-medium flex items-center gap-1">
+                                                <MapPin className="h-3 w-3" /> {os.location_name || 'N/A'}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

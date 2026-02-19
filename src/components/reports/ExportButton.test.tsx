@@ -16,8 +16,8 @@ describe('ExportButton', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Mock window.URL
-        global.URL.createObjectURL = vi.fn(() => 'mock-url');
-        global.URL.revokeObjectURL = vi.fn();
+        (globalThis as any).URL.createObjectURL = vi.fn(() => 'mock-url');
+        (globalThis as any).URL.revokeObjectURL = vi.fn();
     });
 
     it('should render export button with dropdown', async () => {
@@ -65,8 +65,8 @@ describe('ExportButton', () => {
             });
         });
 
-        expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
-        expect(global.URL.revokeObjectURL).toHaveBeenCalled();
+        expect((globalThis as any).URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
+        expect((globalThis as any).URL.revokeObjectURL).toHaveBeenCalled();
     });
 
     it('should show loading state during export', async () => {

@@ -9,7 +9,9 @@ export type PurchaseRequestStatus =
 
 export type PurchaseCategory =
     | 'film'        // Película
-    | 'aesthetic'   // Estética
+    | 'vn'          // VN
+    | 'vu'          // VU
+    | 'workshop'    // Oficina/Funilaria/Estética
     | 'equipment'   // Máquinas
     | 'uniforms'    // Uniformes
     | 'other';      // Outros
@@ -134,7 +136,9 @@ export interface PendingApprovalFilters {
 
 export const CATEGORY_LABELS = {
     film: 'Película',
-    aesthetic: 'Estética',
+    vn: 'VN',
+    vu: 'VU',
+    workshop: 'Oficina / Workshop',
     equipment: 'Máquinas e Equipamentos',
     uniforms: 'Uniformes e EPIs',
     other: 'Outros'

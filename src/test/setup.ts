@@ -1,12 +1,23 @@
-import { expect, afterEach } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { afterEach, beforeAll, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import { enableMocking, resetMocking, disableMocking } from '@/__mocks__/server';
 
-expect.extend(matchers);
+// Enable MSW before all tests
+beforeAll(() => {
+    enableMocking();
+});
 
+// Reset handlers and cleanup after each test
 afterEach(() => {
+    resetMocking();
     cleanup();
     window.localStorage.clear();
+});
+
+// Disable MSW after all tests
+afterAll(() => {
+    disableMocking();
 });
 
 // Mock LocalStorage
@@ -31,3 +42,28 @@ const localStorageMock = (function () {
 Object.defineProperty(window, 'localStorage', {
     value: localStorageMock,
 });
+
+// Mock ResizeObserver (required for Radix UI components)
+// @ts-ignore
+globalThis.ResizeObserver = class ResizeObserver {
+    observe() {
+        // do nothing
+    }
+    unobserve() {
+        // do nothing
+    }
+    disconnect() {
+        // do nothing
+    }
+};
+
+// Mock hasPointerCapture/setPointerCapture/releasePointerCapture (required for Radix UI Select)
+if (!Element.prototype.hasPointerCapture) {
+    Element.prototype.hasPointerCapture = () => false;
+}
+if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = () => { };
+}
+if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = () => { };
+}

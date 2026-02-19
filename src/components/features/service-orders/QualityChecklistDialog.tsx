@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import type { Department, QualityChecklistItem } from '@/types/service-order.types';
 
 interface QualityChecklistDialogProps {
@@ -41,20 +41,33 @@ const CHECKLISTS: Record<Department, string[]> = {
         "Polimento final realizado",
         "Alinhamento dos painéis correto"
     ],
-    aesthetic: [
-        "Limpeza interna completa",
-        "Limpeza externa completa",
-        "Polimento sem marcas circulares",
-        "Pneus e rodas limpos",
-        "Vidros sem manchas",
-        "Higienização do ar-condicionado (se aplicável)"
+    vn: [
+        "Lavagem técnica completa",
+        "Remoção de proteções de transporte",
+        "Verificação de pintura",
+        "Calibragem de pneus",
+        "Limpeza interna básica"
+    ],
+    vu: [
+        "Lavagem detalhada",
+        "Higienização interna",
+        "Polimento comercial",
+        "Limpeza de motor",
+        "Pretinho nos pneus"
+    ],
+    workshop: [
+        "Peças substituídas corretamente",
+        "Torque dos parafusos conferido",
+        "Fluídos no nível correto",
+        "Ausência de vazamentos",
+        "Teste de rodagem realizado"
     ]
 };
 
 export function QualityChecklistDialog({
     open,
     onOpenChange,
-    orderId,
+    orderId: _orderId,
     department,
     onApprove,
     onReject,
@@ -93,7 +106,7 @@ export function QualityChecklistDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Checklist de Qualidade - {department === 'film' ? 'Película' : department === 'bodywork' ? 'Funilaria' : 'Estética'}</DialogTitle>
+                    <DialogTitle>Checklist de Qualidade - {department.toUpperCase()}</DialogTitle>
                     <DialogDescription>
                         Verifique os itens abaixo para aprovar o serviço.
                     </DialogDescription>

@@ -2,7 +2,7 @@ import { LoginForm } from '@/features/auth/LoginForm';
 
 export default function LoginPage() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="h-screen flex items-center justify-center bg-[#f5f5f5] overflow-hidden">
             <div className="w-full max-w-sm">
                 {/* Optional: Add Logo here */}
                 <div className="mb-6 text-center">

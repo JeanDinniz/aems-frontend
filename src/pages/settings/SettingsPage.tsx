@@ -1,11 +1,60 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
+const STORAGE_KEY_EMAIL = 'aems-notify-email';
+const STORAGE_KEY_PUSH = 'aems-notify-push';
+const STORAGE_KEY_DARK = 'aems-dark-mode';
+
+function readBoolFromStorage(key: string, defaultValue: boolean): boolean {
+    const stored = localStorage.getItem(key);
+    if (stored === null) return defaultValue;
+    return stored === 'true';
+}
+
+function applyDarkMode(enabled: boolean): void {
+    document.documentElement.classList.toggle('dark', enabled);
+}
+
 export default function SettingsPage() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const [notifyEmail, setNotifyEmail] = useState<boolean>(() =>
+        readBoolFromStorage(STORAGE_KEY_EMAIL, true)
+    );
+    const [notifyPush, setNotifyPush] = useState<boolean>(() =>
+        readBoolFromStorage(STORAGE_KEY_PUSH, false)
+    );
+    const [darkMode, setDarkMode] = useState<boolean>(() =>
+        readBoolFromStorage(STORAGE_KEY_DARK, false)
+    );
+
+    // Apply dark mode class on mount based on persisted value
+    useEffect(() => {
+        applyDarkMode(darkMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleNotifyEmailChange = (checked: boolean) => {
+        setNotifyEmail(checked);
+        localStorage.setItem(STORAGE_KEY_EMAIL, String(checked));
+    };
+
+    const handleNotifyPushChange = (checked: boolean) => {
+        setNotifyPush(checked);
+        localStorage.setItem(STORAGE_KEY_PUSH, String(checked));
+    };
+
+    const handleDarkModeChange = (checked: boolean) => {
+        setDarkMode(checked);
+        localStorage.setItem(STORAGE_KEY_DARK, String(checked));
+        applyDarkMode(checked);
+    };
 
     return (
         <div className="container mx-auto p-6 space-y-6">
@@ -22,26 +71,28 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label className="text-sm text-gray-500">Nome</Label>
-                            <p className="font-medium">{user?.name || 'Não informado'}</p>
+                            <p className="text-sm text-gray-500">Nome</p>
+                            <p className="font-medium">{user?.full_name || 'Não informado'}</p>
                         </div>
                         <div>
-                            <Label className="text-sm text-gray-500">Email</Label>
+                            <p className="text-sm text-gray-500">Email</p>
                             <p className="font-medium">{user?.email || 'Não informado'}</p>
                         </div>
                         <div>
-                            <Label className="text-sm text-gray-500">Cargo</Label>
+                            <p className="text-sm text-gray-500">Cargo</p>
                             <p className="font-medium capitalize">{user?.role || 'Não informado'}</p>
                         </div>
                         <div>
-                            <Label className="text-sm text-gray-500">Loja</Label>
+                            <p className="text-sm text-gray-500">Loja</p>
                             <p className="font-medium">
-                                {user?.role === 'owner' ? 'Todas as lojas' : `Loja ${user?.store_id || '-'}`}
+                                {user?.role === 'owner'
+                                    ? 'Todas as lojas'
+                                    : `Loja ${user?.store_id || '-'}`}
                             </p>
                         </div>
                     </div>
-                    <Button variant="outline" disabled>
-                        Editar Perfil (em breve)
+                    <Button variant="outline" onClick={() => navigate('/profile')}>
+                        Editar Perfil
                     </Button>
                 </CardContent>
             </Card>
@@ -59,7 +110,11 @@ export default function SettingsPage() {
                                 Receber alertas de ocorrências e aprovações
                             </p>
                         </div>
-                        <Switch id="email-notifications" disabled />
+                        <Switch
+                            id="email-notifications"
+                            checked={notifyEmail}
+                            onCheckedChange={handleNotifyEmailChange}
+                        />
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
@@ -68,8 +123,13 @@ export default function SettingsPage() {
                                 Alertas em tempo real no navegador
                             </p>
                         </div>
-                        <Switch id="push-notifications" disabled />
+                        <Switch
+                            id="push-notifications"
+                            checked={notifyPush}
+                            onCheckedChange={handleNotifyPushChange}
+                        />
                     </div>
+                    <p className="text-sm text-gray-400">Preferências salvas automaticamente</p>
                 </CardContent>
             </Card>
 
@@ -82,28 +142,35 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label htmlFor="dark-mode">Modo Escuro</Label>
-                            <p className="text-sm text-gray-500">
-                                Alterar para tema escuro
-                            </p>
+                            <p className="text-sm text-gray-500">Alterar para tema escuro</p>
                         </div>
-                        <Switch id="dark-mode" disabled />
+                        <Switch
+                            id="dark-mode"
+                            checked={darkMode}
+                            onCheckedChange={handleDarkModeChange}
+                        />
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Sessão */}
+            {/* Sessão e Segurança */}
             <Card>
                 <CardHeader>
                     <CardTitle>Sessão e Segurança</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div>
-                        <Label className="text-sm text-gray-500">Tempo de sessão</Label>
+                        <p className="text-sm text-gray-500">Tempo de sessão</p>
                         <p className="text-sm">8 horas de inatividade</p>
                     </div>
-                    <Button variant="outline" disabled>
-                        Alterar Senha (em breve)
-                    </Button>
+                    <div className="flex flex-wrap gap-3">
+                        <Button variant="outline" onClick={() => navigate('/change-password')}>
+                            Alterar Senha
+                        </Button>
+                        <Button variant="destructive" onClick={logout}>
+                            Encerrar Sessão
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         </div>

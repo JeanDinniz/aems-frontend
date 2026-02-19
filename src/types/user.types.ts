@@ -1,56 +1,45 @@
 export type UserRole = 'owner' | 'supervisor' | 'operator';
 
-export type UserStatus = 'active' | 'inactive';
-
 export interface User {
     id: number;
-    name: string;
+    full_name: string;
     email: string;
     role: UserRole;
-    status: UserStatus;
-    phone?: string;
-    avatar?: string;
+    is_active: boolean;
+    must_change_password: boolean;
 
     // Lojas
-    storeId?: number;              // Loja principal (operator)
-    storeName?: string;
-    supervisedStoreIds?: number[]; // Lojas supervisionadas (supervisor)
-    supervisedStoreNames?: string[];
+    store_id?: number | null;
+    store_name?: string | null;
+    supervised_store_ids?: number[];
 
     // Metadados
-    createdAt: string;
-    updatedAt: string;
-    lastLoginAt?: string;
-    createdBy?: string;            // Nome do owner que criou
-
-    // Flags
-    active: boolean;
-    mustChangePassword: boolean;   // Primeira senha temporária
+    created_at: string;
+    updated_at: string;
+    last_login?: string | null;
+    phone?: string | null;
 }
 
 export interface CreateUserPayload {
-    name: string;
+    full_name: string;
     email: string;
-    phone?: string;
     role: UserRole;
-    storeId?: number;              // Para operator
-    supervisedStoreIds?: number[]; // Para supervisor
-    sendWelcomeEmail?: boolean;
+    store_id?: number;              // Para operator
+    supervised_store_ids?: number[]; // Para supervisor
 }
 
 export interface UpdateUserPayload {
-    name?: string;
-    phone?: string;
+    full_name?: string;
+    email?: string;
     role?: UserRole;
-    status?: UserStatus;
-    storeId?: number;
-    supervisedStoreIds?: number[];
+    store_id?: number | null;
+    supervised_store_ids?: number[];
 }
 
 export interface UserFilters {
     role?: UserRole;
-    status?: UserStatus;
-    storeId?: number;
+    is_active?: boolean;
+    store_id?: number;
     search?: string;               // Nome ou email
 }
 

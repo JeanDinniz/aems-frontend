@@ -18,13 +18,11 @@ import { storesService } from '@/services/api/stores.service';
 import type { UserRole } from '@/types/user.types';
 
 const createUserSchema = z.object({
-    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    full_name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
     email: z.string().email('E-mail inválido'),
-    phone: z.string().optional(),
     role: z.enum(['owner', 'supervisor', 'operator']),
-    storeId: z.number().optional(),
-    supervisedStoreIds: z.array(z.number()).optional(),
-    sendWelcomeEmail: z.boolean().default(true),
+    store_id: z.number().optional(),
+    supervised_store_ids: z.array(z.number()).optional(),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -51,8 +49,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     } = useForm<CreateUserForm>({
         resolver: zodResolver(createUserSchema),
         defaultValues: {
-            sendWelcomeEmail: true,
-            supervisedStoreIds: [],
+            supervised_store_ids: [],
         }
     });
 
@@ -79,11 +76,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Nome Completo</label>
                             <Input
-                                {...register('name')}
+                                {...register('full_name')}
                                 placeholder="Ex: João da Silva"
                             />
-                            {errors.name && (
-                                <p className="text-sm text-red-500">{errors.name.message}</p>
+                            {errors.full_name && (
+                                <p className="text-sm text-red-500">{errors.full_name.message}</p>
                             )}
                         </div>
 
@@ -100,34 +97,21 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Telefone (opcional)</label>
-                            <Input
-                                {...register('phone')}
-                                placeholder="(00) 00000-0000"
-                            />
-                            {errors.phone && (
-                                <p className="text-sm text-red-500">{errors.phone.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Cargo</label>
-                            <Select onValueChange={(value) => setValue('role', value as UserRole)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o cargo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="operator">Operador</SelectItem>
-                                    <SelectItem value="supervisor">Supervisor</SelectItem>
-                                    <SelectItem value="owner">Proprietário</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.role && (
-                                <p className="text-sm text-red-500">{errors.role.message}</p>
-                            )}
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Cargo</label>
+                        <Select onValueChange={(value) => setValue('role', value as UserRole)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o cargo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="operator">Operador</SelectItem>
+                                <SelectItem value="supervisor">Supervisor</SelectItem>
+                                <SelectItem value="owner">Proprietário</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {errors.role && (
+                            <p className="text-sm text-red-500">{errors.role.message}</p>
+                        )}
                     </div>
 
                     {selectedRole === 'operator' && (
@@ -136,7 +120,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                 Loja <span className="text-red-500">*</span>
                             </label>
                             <Select
-                                onValueChange={(value) => setValue('storeId', parseInt(value))}
+                                onValueChange={(value) => setValue('store_id', parseInt(value))}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione a loja" />
@@ -149,7 +133,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.storeId && (
+                            {errors.store_id && (
                                 <p className="text-sm text-red-500">Loja obrigatória para operadores</p>
                             )}
                         </div>
@@ -165,12 +149,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                     <label key={store.id} className="flex items-center gap-2 cursor-pointer">
                                         <Checkbox
                                             onCheckedChange={(checked) => {
-                                                const current = watch('supervisedStoreIds') || [];
+                                                const current = watch('supervised_store_ids') || [];
                                                 if (checked) {
-                                                    setValue('supervisedStoreIds', [...current, store.id]);
+                                                    setValue('supervised_store_ids', [...current, store.id]);
                                                 } else {
                                                     setValue(
-                                                        'supervisedStoreIds',
+                                                        'supervised_store_ids',
                                                         current.filter((id) => id !== store.id)
                                                     );
                                                 }
@@ -180,7 +164,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                     </label>
                                 ))}
                             </div>
-                            {errors.supervisedStoreIds && (
+                            {errors.supervised_store_ids && (
                                 <p className="text-sm text-red-500">
                                     Selecione pelo menos uma loja
                                 </p>
@@ -191,23 +175,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                     {selectedRole === 'owner' && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <p className="text-sm text-blue-800">
-                                ℹ️ Proprietários têm acesso a todas as lojas do sistema.
+                                Proprietários têm acesso a todas as lojas do sistema.
                             </p>
                         </div>
                     )}
-
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="welcome-email"
-                            checked={watch('sendWelcomeEmail')}
-                            onCheckedChange={(checked) =>
-                                setValue('sendWelcomeEmail', checked as boolean)
-                            }
-                        />
-                        <label htmlFor="welcome-email" className="text-sm cursor-pointer">
-                            Enviar e-mail de boas-vindas com senha temporária
-                        </label>
-                    </div>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

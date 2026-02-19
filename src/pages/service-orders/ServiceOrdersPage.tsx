@@ -59,8 +59,10 @@ export default function ServiceOrdersPage() {
 
     const DEPARTMENTS: Record<string, string> = {
         film: 'Película',
+        vn: 'VN',
+        vu: 'VU',
         bodywork: 'Funilaria',
-        aesthetic: 'Estética'
+        workshop: 'Oficina'
     };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +98,7 @@ export default function ServiceOrdersPage() {
                     </div>
 
                     <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as any)}>
-                        <SelectTrigger className="w-[150px]">
+                        <SelectTrigger className="w-full sm:w-[150px]">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -110,14 +112,16 @@ export default function ServiceOrdersPage() {
                     </Select>
 
                     <Select value={departmentFilter} onValueChange={(val) => setDepartmentFilter(val as any)}>
-                        <SelectTrigger className="w-[150px]">
+                        <SelectTrigger className="w-full sm:w-[150px]">
                             <SelectValue placeholder="Departamento" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Todos Depts</SelectItem>
                             <SelectItem value="film">Película</SelectItem>
+                            <SelectItem value="vn">VN</SelectItem>
+                            <SelectItem value="vu">VU</SelectItem>
                             <SelectItem value="bodywork">Funilaria</SelectItem>
-                            <SelectItem value="aesthetic">Estética</SelectItem>
+                            <SelectItem value="workshop">Oficina</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -132,6 +136,7 @@ export default function ServiceOrdersPage() {
                             <TableHead>Cliente</TableHead>
                             <TableHead>Veículo</TableHead>
                             <TableHead>Departamento</TableHead>
+                            <TableHead>Local</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Semáforo</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
@@ -140,19 +145,19 @@ export default function ServiceOrdersPage() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center h-24">
+                                <TableCell colSpan={9} className="text-center h-24">
                                     Carregando...
                                 </TableCell>
                             </TableRow>
                         ) : isError ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center h-24 text-red-500">
+                                <TableCell colSpan={9} className="text-center h-24 text-red-500">
                                     Erro ao carregar ordens de serviço.
                                 </TableCell>
                             </TableRow>
                         ) : data?.items.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
                                     Nenhuma ordem de serviço encontrada.
                                 </TableCell>
                             </TableRow>
@@ -162,11 +167,27 @@ export default function ServiceOrdersPage() {
                                     <TableCell className="font-medium">{os.order_number}</TableCell>
                                     <TableCell className="font-mono text-xs">{os.plate}</TableCell>
                                     <TableCell>{os.client_name}</TableCell>
-                                    <TableCell>{os.client_vehicle}</TableCell>
+                                    <TableCell>{os.vehicle_model}{os.vehicle_color ? ` - ${os.vehicle_color}` : ''}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className="font-normal">
                                             {DEPARTMENTS[os.department] || os.department}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {os.destination_store_id ? (
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="outline" className="text-xs font-normal">
+                                                    Galpão
+                                                </Badge>
+                                                {os.destination_store_name && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        → {os.destination_store_name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-sm">{os.location_name}</span>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANTS[os.status] || 'default'}>

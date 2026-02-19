@@ -11,14 +11,18 @@ interface ServiceOrderCardProps {
 
 const departmentBadges: Record<Department, string> = {
     film: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-    esthetics: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+    vn: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200',
+    vu: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200',
     bodywork: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+    workshop: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
 };
 
 const departmentLabels: Record<Department, string> = {
     film: 'Película',
-    esthetics: 'Estética',
+    vn: 'VN',
+    vu: 'VU',
     bodywork: 'Funilaria',
+    workshop: 'Oficina',
 };
 
 export function ServiceOrderCard({ order }: ServiceOrderCardProps) {

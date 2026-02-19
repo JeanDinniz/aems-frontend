@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,12 +19,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
     const { login } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const from = location.state?.from?.pathname || '/dashboard';
 
     const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),

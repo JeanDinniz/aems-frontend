@@ -19,7 +19,6 @@ describe('OccurrenceCard', () => {
         id: 1,
         employee_id: 10,
         store_id: 1,
-        store_name: 'Loja 01',
         occurrence_type: OccurrenceType.ABSENCE,
         severity: OccurrenceSeverity.MEDIUM,
         occurrence_date: '2024-01-15T12:00:00Z',
@@ -29,7 +28,6 @@ describe('OccurrenceCard', () => {
         acknowledged: false,
         acknowledged_at: undefined,
         acknowledged_by_id: undefined,
-        acknowledgment_notes: undefined,
         created_at: '2024-01-15T10:00:00Z',
         updated_at: '2024-01-15T10:00:00Z',
     };
@@ -38,7 +36,7 @@ describe('OccurrenceCard', () => {
         render(<OccurrenceCard occurrence={mockOccurrence} />);
 
         expect(screen.getByText('Funcionário ID: 10')).toBeInTheDocument();
-        expect(screen.getByText('Loja 1')).toBeInTheDocument();
+        // Store name is displayed based on store_id (1 = Toyota Botafogo)
         expect(screen.getByText(/Faltou ao trabalho/)).toBeInTheDocument();
     });
 

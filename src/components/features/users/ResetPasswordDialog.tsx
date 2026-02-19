@@ -31,7 +31,7 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: ResetPasswordD
                 <DialogHeader>
                     <DialogTitle>Resetar Senha</DialogTitle>
                     <DialogDescription>
-                        Deseja gerar uma nova senha temporária para <strong>{user.name}</strong>?
+                        Deseja gerar uma nova senha temporária para <strong>{user.full_name}</strong>?
                         <br />
                         A nova senha será exibida na tela e <strong>não poderá ser recuperada depois</strong> se não for salva.
                     </DialogDescription>

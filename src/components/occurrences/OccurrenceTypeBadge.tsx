@@ -23,7 +23,7 @@ export function OccurrenceTypeBadge({
     className = ''
 }: Props) {
     const label = OccurrenceTypeLabels[type];
-    const colorClass = OCCURRENCE_TYPE_COLORS[label] || 'bg-gray-100 text-gray-800 border-gray-300';
+    const colorClass = OCCURRENCE_TYPE_COLORS[label as keyof typeof OCCURRENCE_TYPE_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300';
     const Icon = TYPE_ICONS[type];
 
     return (

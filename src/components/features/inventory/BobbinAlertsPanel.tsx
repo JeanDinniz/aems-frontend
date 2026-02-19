@@ -33,7 +33,7 @@ export function BobbinAlertsPanel() {
     // Since I am mocking data or defining contract, let's assume array for now or check backend.
     // I'll assume it's an array based on my typings.
     const alertList = Array.isArray(alerts) ? alerts : (alerts as any)?.alerts || [];
-    const criticalCount = alertList.filter(a => a.alert_level === 'critical').length;
+    const criticalCount = alertList.filter((a: any) => a.alert_level === 'critical').length;
 
     return (
         <Card className="flex flex-col h-full">

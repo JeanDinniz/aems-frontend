@@ -4,48 +4,125 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Cor Primária — Amarelo Dourado */
+    --aems-primary-50: #FFF8E1;
+    --aems-primary-100: #FFECB3;
+    --aems-primary-200: #FFE082;
+    --aems-primary-300: #FFD54F;
+    --aems-primary-400: #FCAF16;  /* COR PRINCIPAL */
+    --aems-primary-500: #F5A000;
+    --aems-primary-600: #E89200;  /* HOVER */
+    --aems-primary-700: #D47F00;
+    --aems-primary-800: #B86D00;
+    --aems-primary-900: #8C5200;
+
+    /* Neutros */
+    --aems-white: #FFFFFF;
+    --aems-neutral-50: #F8F9FB;   /* FUNDO CONTEÚDO */
+    --aems-neutral-100: #F0F2F5;  /* BORDERS */
+    --aems-neutral-150: #E4E7EC;
+    --aems-neutral-200: #D0D5DD;  /* INPUT BORDER */
+    --aems-neutral-300: #98A2B3;  /* PLACEHOLDER / TEXTO TERCIÁRIO */
+    --aems-neutral-400: #667085;  /* TEXTO SECUNDÁRIO */
+    --aems-neutral-500: #475467;
+    --aems-neutral-600: #344054;
+    --aems-neutral-700: #1D2939;  /* TEXTO PRINCIPAL */
+    --aems-neutral-800: #141B2D;  /* SIDEBAR GRADIENTE FIM */
+    --aems-neutral-900: #0C111D;  /* SIDEBAR GRADIENTE INÍCIO */
+    --aems-neutral-950: #080B14;
+
+    /* Semânticas */
+    --aems-success: #12B76A;
+    --aems-success-light: #ECFDF3;
+    --aems-warning: #F79009;
+    --aems-warning-light: #FFFAEB;
+    --aems-error: #F04438;
+    --aems-error-light: #FEF3F2;
+    --aems-info: #2E90FA;
+    --aems-info-light: #EFF8FF;
+
+    /* Semáforo de Lojas */
+    --aems-semaphore-active: #12B76A;
+    --aems-semaphore-attention: #F79009;
+    --aems-semaphore-critical: #F04438;
+    --aems-semaphore-exhausted: #667085;
+
+    /* Tipografia */
+    --aems-font: 'DM Sans', sans-serif;
+    --aems-font-mono: 'JetBrains Mono', monospace;
+
+    /* Border Radius */
+    --aems-radius-sm: 6px;
+    --aems-radius: 8px;
+    --aems-radius-lg: 12px;
+    --aems-radius-xl: 16px;
+
+    /* Shadows */
+    --aems-shadow-sm: 0 1px 2px rgba(12, 17, 29, 0.05);
+    --aems-shadow-md: 0 4px 8px -2px rgba(12, 17, 29, 0.1), 0 2px 4px -2px rgba(12, 17, 29, 0.06);
+    --aems-shadow-lg: 0 12px 24px -4px rgba(12, 17, 29, 0.08), 0 4px 8px -4px rgba(12, 17, 29, 0.03);
+    --aems-shadow-glow: 0 0 20px rgba(252, 175, 22, 0.25);
+
+    /* Shadcn mappings to AEMS */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 215 28% 17%; /* #1D2939 (neutral-700 approx) */
+ 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 28% 17%;
+ 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 215 28% 17%;
+ 
+    --primary: 38 96% 54%; /* #FCAF16 */
+    --primary-foreground: 222 47% 11%; /* #0C111D (neutral-900) */
+ 
+    --secondary: 210 40% 96%; /* #F0F2F5 (neutral-100) */
+    --secondary-foreground: 215 16% 47%; /* #667085 (neutral-400) */
+ 
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+ 
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+ 
+    --destructive: 0 84% 60%; /* #EF4444 (default red) -> #F04438 (AEMS Error) */
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+
+    --border: 214 32% 91%; /* #E4E7EC (neutral-150 approx or neutral-200) */
+    --input: 214 32% 91%;
+    --ring: 38 96% 54%; /* Primary color */
+ 
     --radius: 0.5rem;
   }
-
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+ 
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+ 
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+ 
+    --primary: 38 96% 54%;
+    --primary-foreground: 222 47% 11%;
+ 
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+ 
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+ 
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+ 
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
   }
 }
 
@@ -53,8 +130,13 @@
   * {
     @apply border-border;
   }
+  html, body {
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--aems-font);
+    overflow-x: hidden; /* Check point 4 of instructions */
   }
 }
 

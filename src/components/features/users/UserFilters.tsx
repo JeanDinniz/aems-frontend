@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { UserFilters as Filters, UserRole, UserStatus } from '@/types/user.types';
+import type { UserFilters as Filters } from '@/types/user.types';
 import { useQuery } from '@tanstack/react-query';
 import { storesService } from '@/services/api/stores.service';
 
@@ -44,22 +44,22 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
             </Select>
 
             <Select
-                value={filters.status || 'all'}
-                onValueChange={(value) => handleChange('status', value)}
+                value={filters.is_active === undefined ? 'all' : filters.is_active ? 'true' : 'false'}
+                onValueChange={(value) => handleChange('is_active', value === 'all' ? undefined : value === 'true')}
             >
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="true">Ativo</SelectItem>
+                    <SelectItem value="false">Inativo</SelectItem>
                 </SelectContent>
             </Select>
 
             <Select
-                value={filters.storeId?.toString() || 'all'}
-                onValueChange={(value) => handleChange('storeId', value === 'all' ? undefined : Number(value))}
+                value={filters.store_id?.toString() || 'all'}
+                onValueChange={(value) => handleChange('store_id', value === 'all' ? undefined : Number(value))}
             >
                 <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Loja" />

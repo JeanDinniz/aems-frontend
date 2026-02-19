@@ -140,7 +140,7 @@ export function PurchaseRequestsPage() {
                             value={filters.status}
                             onValueChange={(v: PurchaseRequestStatus | 'all') => setFilters({ ...filters, status: v })}
                         >
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -158,7 +158,7 @@ export function PurchaseRequestsPage() {
                             value={filters.urgency}
                             onValueChange={(v: UrgencyLevel | 'all') => setFilters({ ...filters, urgency: v })}
                         >
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Urgência" />
                             </SelectTrigger>
                             <SelectContent>

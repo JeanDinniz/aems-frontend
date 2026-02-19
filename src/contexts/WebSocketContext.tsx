@@ -17,8 +17,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
     // If user has specific store, connect to it
     // If owner, connect to "all" (or handle logic inside hook)
-    const storeId = (user?.role !== 'owner') && user?.storeId
-        ? user.storeId
+    const storeId = (user?.role !== 'owner') && user?.store_id
+        ? user.store_id
         : undefined;
 
     const ws = useWebSocket(storeId);

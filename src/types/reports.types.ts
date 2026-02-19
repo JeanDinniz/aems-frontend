@@ -32,7 +32,9 @@ export enum AuditStatus {
 export enum ServiceDepartment {
     FILM = 'film',             // Película
     BODYWORK = 'bodywork',     // Funilaria
-    AESTHETICS = 'aesthetics'  // Estética
+    WORKSHOP = 'workshop',     // Oficina
+    VN = 'vn',                 // VN
+    VU = 'vu'                  // VU
 }
 
 // ===== LABELS TRADUZIDOS =====
@@ -52,7 +54,9 @@ export const AuditStatusLabels: Record<AuditStatus, string> = {
 export const ServiceDepartmentLabels: Record<ServiceDepartment, string> = {
     [ServiceDepartment.FILM]: 'Película',
     [ServiceDepartment.BODYWORK]: 'Funilaria',
-    [ServiceDepartment.AESTHETICS]: 'Estética'
+    [ServiceDepartment.WORKSHOP]: 'Oficina',
+    [ServiceDepartment.VN]: 'VN',
+    [ServiceDepartment.VU]: 'VU'
 };
 
 // ===== DASHBOARD =====

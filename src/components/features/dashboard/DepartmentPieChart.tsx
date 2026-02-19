@@ -24,16 +24,11 @@ export function DepartmentPieChart({ data }: DepartmentPieChartProps) {
                             cx="50%"
                             cy="50%"
                             outerRadius={100}
-                            label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-                                const RADIAN = Math.PI / 180;
-                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                                const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                                return `${(percent * 100).toFixed(0)}%`;
+                            label={({ percent }: { percent?: number }) => {
+                                return `${((percent ?? 0) * 100).toFixed(0)}%`;
                             }}
                         >
-                            {data.map((entry, index) => (
+                            {data.map((_entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>

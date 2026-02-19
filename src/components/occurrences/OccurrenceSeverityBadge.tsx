@@ -14,7 +14,7 @@ export function OccurrenceSeverityBadge({
     className = ''
 }: Props) {
     const label = OccurrenceSeverityLabels[severity];
-    const colorClass = SEVERITY_COLORS[label] || 'bg-gray-100 text-gray-800 border-gray-300';
+    const colorClass = SEVERITY_COLORS[label as keyof typeof SEVERITY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300';
 
     return (
         <span className={`

@@ -9,21 +9,14 @@ import { serviceOrdersService } from '@/services/api/service-orders.service';
 export const calculateSemaphoreColor = (entryTime: string, department: Department): SemaphoreColor => {
     const minutes = differenceInMinutes(new Date(), new Date(entryTime));
 
-    if (department === 'film') {
+    if (department === 'film' || department === 'vn' || department === 'vu') {
         if (minutes < 45) return 'white';
         if (minutes < 90) return 'yellow';
         if (minutes < 180) return 'orange';
         return 'red';
     }
 
-    if (department === 'esthetics') {
-        if (minutes < 30) return 'white';
-        if (minutes < 60) return 'yellow';
-        if (minutes < 120) return 'orange';
-        return 'red';
-    }
-
-    if (department === 'bodywork') {
+    if (department === 'bodywork' || department === 'workshop') {
         if (minutes < 60) return 'white';
         if (minutes < 120) return 'yellow';
         if (minutes < 240) return 'orange';

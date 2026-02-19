@@ -160,7 +160,7 @@ export default function InventoryPage() {
                     </div>
 
                     <Select value={filmTypeFilter} onValueChange={setFilmTypeFilter}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Tipo de Película" />
                         </SelectTrigger>
                         <SelectContent>
@@ -172,7 +172,7 @@ export default function InventoryPage() {
                     </Select>
 
                     <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as any)}>
-                        <SelectTrigger className="w-[150px]">
+                        <SelectTrigger className="w-full sm:w-[150px]">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>

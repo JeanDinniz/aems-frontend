@@ -8,7 +8,9 @@ export interface User {
     is_active: boolean;
     must_change_password: boolean;
     store_id?: number | null;
+    store_name?: string | null;
     supervised_store_ids?: number[];
+    phone?: string | null;
     last_login?: string | null;
     created_at: string;
     updated_at?: string | null;

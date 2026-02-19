@@ -10,6 +10,8 @@ export interface Store {
     phone?: string;
     active: boolean;
     isActive?: boolean; // For compatibility if API returns different casing or for frontend logic
+    store_type: 'dealership' | 'direct_sales' | 'warehouse';
+    dealership_id?: number | null; // For dealership stores
 }
 
 export const storesService = {

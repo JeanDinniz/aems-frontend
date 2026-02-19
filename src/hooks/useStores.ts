@@ -22,11 +22,11 @@ export function useStores() {
         if (user.role === 'owner') {
             setAvailableStores(allStores);
         } else if (user.role === 'supervisor') {
-            const supervised = allStores.filter(s => user.supervisedStoreIds?.includes(s.id));
+            const supervised = allStores.filter(s => user.supervised_store_ids?.includes(s.id));
             setAvailableStores(supervised);
         } else {
             // operator - only their store
-            const myStore = allStores.filter(s => s.id === user.storeId);
+            const myStore = allStores.filter(s => s.id === user.store_id);
             setAvailableStores(myStore);
         }
     }, [user, allStores, setAvailableStores]);

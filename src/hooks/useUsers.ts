@@ -17,13 +17,13 @@ export function useUsers(filters?: UserFilters, page = 1) {
             queryClient.invalidateQueries({ queryKey: ['users'] });
             toast({
                 title: 'Usuário criado',
-                description: `${newUser.name} foi adicionado ao sistema.`,
+                description: `${newUser.full_name} foi adicionado ao sistema.`,
             });
         },
         onError: (error: any) => {
             toast({
                 title: 'Erro ao criar usuário',
-                description: error.response?.data?.message || 'Tente novamente.',
+                description: error.response?.data?.detail || 'Tente novamente.',
                 variant: 'destructive',
             });
         },
@@ -42,7 +42,7 @@ export function useUsers(filters?: UserFilters, page = 1) {
         onError: (error: any) => {
             toast({
                 title: 'Erro ao atualizar',
-                description: error.response?.data?.message || 'Tente novamente.',
+                description: error.response?.data?.detail || 'Tente novamente.',
                 variant: 'destructive',
             });
         },
@@ -69,7 +69,14 @@ export function useUsers(filters?: UserFilters, page = 1) {
         onSuccess: (data) => {
             toast({
                 title: 'Senha resetada',
-                description: `Nova senha: ${data.temporaryPassword}`,
+                description: `Nova senha temporária: ${data.temporary_password}`,
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Erro ao resetar senha',
+                description: error.response?.data?.detail || 'Tente novamente.',
+                variant: 'destructive',
             });
         },
     });

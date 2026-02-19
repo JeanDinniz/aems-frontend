@@ -52,11 +52,70 @@ module.exports = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+                // AEMS Colors
+                aems: {
+                    primary: {
+                        50: "var(--aems-primary-50)",
+                        100: "var(--aems-primary-100)",
+                        200: "var(--aems-primary-200)",
+                        300: "var(--aems-primary-300)",
+                        400: "var(--aems-primary-400)",
+                        500: "var(--aems-primary-500)",
+                        600: "var(--aems-primary-600)",
+                        700: "var(--aems-primary-700)",
+                        800: "var(--aems-primary-800)",
+                        900: "var(--aems-primary-900)",
+                    },
+                    neutral: {
+                        50: "var(--aems-neutral-50)",
+                        100: "var(--aems-neutral-100)",
+                        150: "var(--aems-neutral-150)",
+                        200: "var(--aems-neutral-200)",
+                        300: "var(--aems-neutral-300)",
+                        400: "var(--aems-neutral-400)",
+                        500: "var(--aems-neutral-500)",
+                        600: "var(--aems-neutral-600)",
+                        700: "var(--aems-neutral-700)",
+                        800: "var(--aems-neutral-800)",
+                        900: "var(--aems-neutral-900)",
+                        950: "var(--aems-neutral-950)",
+                    },
+                    success: {
+                        DEFAULT: "var(--aems-success)",
+                        light: "var(--aems-success-light)",
+                    },
+                    warning: {
+                        DEFAULT: "var(--aems-warning)",
+                        light: "var(--aems-warning-light)",
+                    },
+                    error: {
+                        DEFAULT: "var(--aems-error)",
+                        light: "var(--aems-error-light)",
+                    },
+                    info: {
+                        DEFAULT: "var(--aems-info)",
+                        light: "var(--aems-info-light)",
+                    },
+                },
+            },
+            fontFamily: {
+                sans: ["var(--aems-font)", "sans-serif"],
+                mono: ["var(--aems-font-mono)", "monospace"],
             },
             borderRadius: {
                 lg: "var(--radius)",
                 md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
+                'aems-sm': "var(--aems-radius-sm)",
+                'aems': "var(--aems-radius)",
+                'aems-lg': "var(--aems-radius-lg)",
+                'aems-xl': "var(--aems-radius-xl)",
+            },
+            boxShadow: {
+                'aems-sm': "var(--aems-shadow-sm)",
+                'aems-md': "var(--aems-shadow-md)",
+                'aems-lg': "var(--aems-shadow-lg)",
+                'aems-glow': "var(--aems-shadow-glow)",
             },
             keyframes: {
                 "accordion-down": {

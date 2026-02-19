@@ -1,6 +1,6 @@
 export type SemaphoreColor = 'white' | 'yellow' | 'orange' | 'red';
 export type ServiceOrderStatus = 'waiting' | 'in_progress' | 'inspection' | 'ready' | 'delivered';
-export type Department = 'film' | 'esthetics' | 'bodywork';
+export type Department = 'film' | 'vn' | 'vu' | 'bodywork' | 'workshop';
 
 export interface ServiceOrderCard {
     id: number;

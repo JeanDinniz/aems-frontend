@@ -5,7 +5,7 @@ export type ServiceOrderStatus =
     | 'ready'        // Pronto
     | 'delivered';   // Entregue
 
-export type Department = 'film' | 'bodywork' | 'aesthetic';
+export type Department = 'film' | 'vn' | 'vu' | 'bodywork' | 'workshop';
 
 export type SemaphoreColor = 'white' | 'yellow' | 'orange' | 'red';
 
@@ -27,15 +27,17 @@ export interface ServiceOrder {
     order_number: string;
 
     // Cliente e Veículo
-    client_name: string;
-    client_phone: string;
-    client_vehicle: string;
+    client_name?: string;
+    client_phone?: string;
+    vehicle_model?: string;
+    vehicle_color?: string;
     plate: string;
 
     // Departamento e Serviço
     department: Department;
     service_type: string;        // Mantendo compatibilidade se necessário, ou usar service_description
-    service_description: string;  // Descrição livre do serviço
+    service_description?: string;  // Descrição livre do serviço (LEGACY - use items)
+    items?: Array<{ service_id: number; quantity: number; notes?: string }>;
     film_type?: string;          // Opcional agora, específico de film?
 
     // Workflow
@@ -62,6 +64,8 @@ export interface ServiceOrder {
     location_name: string;
     dealership_id: number;
     dealership_name: string;
+    destination_store_id?: number; // For warehouse: the store where the service is billed
+    destination_store_name?: string;
 
     // Valores
     total_value: number;
@@ -82,23 +86,26 @@ export interface ServiceOrder {
 }
 
 export interface CreateServiceOrderData {
-    client_name: string;
-    client_phone: string;
-    client_vehicle: string;
     plate: string;
+    vehicle_plate?: string;
+    vehicle_model?: string;
+    vehicle_color?: string;
     department: Department;
-    service_description: string;
-    service_type?: string; // Legacy comp.
-    film_type?: string;    // Legacy comp.
+    items: Array<{ service_id: number; quantity: number; notes?: string }>;
     location_id: number;
-    dealership_id: number;
-    technician_id?: number;
+    dealership_id?: number;
     consultant_id?: number;
-    total_value: number;
+    workers?: Array<{ user_id: number }>;
     notes?: string;
-    photos: string[];
+    photos?: string[];
     damage_map?: string;
     invoice_number?: string;
+    // Campos de venda direta
+    client_name?: string;
+    client_phone?: string;
+    total_value?: number;
+    // Campo de galpão
+    destination_store_id?: number;
 }
 
 export interface UpdateServiceOrderData {

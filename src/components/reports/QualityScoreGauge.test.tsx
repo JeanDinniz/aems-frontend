@@ -34,7 +34,7 @@ describe('QualityScoreGauge', () => {
     });
 
     it('should use green color for excellent score', () => {
-        const { container } = render(<QualityScoreGauge score={95} />);
+        render(<QualityScoreGauge score={95} />);
 
         const badge = screen.getByText('Excelente');
         expect(badge).toHaveClass('text-green-600');

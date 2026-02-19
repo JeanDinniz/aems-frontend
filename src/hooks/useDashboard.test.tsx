@@ -42,6 +42,7 @@ describe('useDashboard', () => {
             revenue_metrics: {
                 total_revenue: 50000,
                 revenue_by_department: {},
+                revenue_by_store: {},
                 comparison_previous_period: null,
             },
             os_metrics: {
@@ -59,7 +60,7 @@ describe('useDashboard', () => {
             goal_progress: [],
         };
 
-        vi.mocked(reportsService.getDashboard).mockResolvedValue(mockData);
+        vi.mocked(reportsService.getDashboard).mockResolvedValue(mockData as any);
 
         const filters = {
             start_date: '2024-01-01',

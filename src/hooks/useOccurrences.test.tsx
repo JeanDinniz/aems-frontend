@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useOccurrences } from './useOccurrences';
 import { occurrencesService } from '@/services/api/occurrences.service';
+import { OccurrenceType } from '@/types/occurrence.types';
 import type { Occurrence, OccurrenceFilters } from '@/types/occurrence.types';
 
 vi.mock('@/services/api/occurrences.service');
@@ -39,7 +40,7 @@ describe('useOccurrences', () => {
         vi.mocked(occurrencesService.list).mockResolvedValue(mockData);
 
         const filters: OccurrenceFilters = {
-            occurrence_type: 'absence',
+            occurrence_type: OccurrenceType.ABSENCE,
         };
 
         const { result } = renderHook(() => useOccurrences(filters), {

@@ -29,17 +29,20 @@ import type { Department } from '@/types/service-order.types';
 
 const DEPARTMENTS: { value: Department; label: string }[] = [
     { value: 'film', label: 'Película' },
+    { value: 'vn', label: 'VN (Veículos Novos)' },
+    { value: 'vu', label: 'VU (Veículos Usados)' },
     { value: 'bodywork', label: 'Funilaria' },
-    { value: 'aesthetic', label: 'Estética' }
+    { value: 'workshop', label: 'Oficina' },
 ];
 
 const editServiceOrderSchema = z.object({
     client_name: z.string().min(2, 'Nome do cliente é obrigatório'),
     client_phone: z.string().regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Formato inválido: (XX) XXXXX-XXXX').min(1, 'Telefone é obrigatório'),
-    client_vehicle: z.string().min(2, 'Veículo é obrigatório'),
+    vehicle_model: z.string().min(2, 'Modelo do veículo é obrigatório'),
+    vehicle_color: z.string().min(2, 'Cor do veículo é obrigatória'),
     plate: z.string().regex(/^[A-Z]{3}\d[A-Z\d]\d{2}$/, 'Placa inválida (Mercosul ou Antiga)'),
 
-    department: z.enum(['film', 'bodywork', 'aesthetic']),
+    department: z.enum(['film', 'vn', 'vu', 'bodywork', 'workshop']),
     service_description: z.string().min(10, 'Descrição do serviço deve ter no mínimo 10 caracteres'),
 
     dealership_id: z.coerce.number().positive('Selecione uma concessionária'),
@@ -80,7 +83,8 @@ export default function EditServiceOrderPage() {
         defaultValues: {
             client_name: '',
             client_phone: '',
-            client_vehicle: '',
+            vehicle_model: '',
+            vehicle_color: '',
             plate: '',
             department: 'film',
             service_description: '',
@@ -101,7 +105,8 @@ export default function EditServiceOrderPage() {
             form.reset({
                 client_name: os.client_name,
                 client_phone: os.client_phone,
-                client_vehicle: os.client_vehicle,
+                vehicle_model: os.vehicle_model || '',
+                vehicle_color: os.vehicle_color || '',
                 plate: os.plate || 'ABC1234', // fallback if old data missing
                 department: os.department || 'film',
                 service_description: os.service_description || (os.service_type ? `${os.service_type} - ${os.film_type}` : ''),
@@ -200,12 +205,26 @@ export default function EditServiceOrderPage() {
 
                                 <FormField
                                     control={form.control as any}
-                                    name="client_vehicle"
+                                    name="vehicle_model"
                                     render={({ field }: { field: any }) => (
                                         <FormItem>
-                                            <FormLabel>Veículo *</FormLabel>
+                                            <FormLabel>Modelo do Veículo *</FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input placeholder="Ex: Honda Civic" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control as any}
+                                    name="vehicle_color"
+                                    render={({ field }: { field: any }) => (
+                                        <FormItem>
+                                            <FormLabel>Cor do Veículo *</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ex: Preto" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

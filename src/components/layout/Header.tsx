@@ -10,11 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     Menu,
-    Bell,
-    User,
-    LogOut,
-    Settings,
-    ChevronDown
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ConnectionIndicator } from '@/components/common/ConnectionIndicator';
@@ -44,7 +39,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-white px-4 shadow-sm md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-aems-neutral-100 bg-aems-white px-4 shadow-sm md:px-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
                     <Menu className="h-5 w-5" />
@@ -66,15 +61,15 @@ export function Header({ onMenuClick }: HeaderProps) {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={user?.avatar} alt={user?.name} />
-                                <AvatarFallback>{user?.name ? getInitials(user.name) : 'U'}</AvatarFallback>
+                                <AvatarImage src={undefined} alt={user?.full_name} />
+                                <AvatarFallback>{user?.full_name ? getInitials(user.full_name) : 'U'}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                                <p className="text-sm font-medium leading-none">{user?.full_name}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
                                     {user?.email}
                                 </p>

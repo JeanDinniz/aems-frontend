@@ -47,7 +47,7 @@ export function ApprovalCard({ request, isSelected, onSelect }: ApprovalCardProp
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-lg font-semibold">#{request.request_number}</h3>
                                     <Badge variant="outline">{CATEGORY_LABELS[request.category]}</Badge>
-                                    <UrgencyBadge level={request.urgency} />
+                                    <UrgencyBadge urgency={request.urgency} />
                                 </div>
 
                                 <div className="flex items-center gap-4 text-sm text-gray-600">

@@ -25,10 +25,10 @@ export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialo
                 <div className="space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b">
                         <div>
-                            <h3 className="text-lg font-semibold">{user.name}</h3>
+                            <h3 className="text-lg font-semibold">{user.full_name}</h3>
                             <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
-                        <UserStatusBadge status={user.status} />
+                        <UserStatusBadge isActive={user.is_active} />
                     </div>
 
                     <div className="space-y-3">
@@ -47,30 +47,38 @@ export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialo
                         {user.role === 'operator' && (
                             <div>
                                 <span className="text-sm font-medium text-gray-500">Loja Atribuída</span>
-                                <p>{user.storeName || '-'}</p>
+                                <p>{user.store_name || '-'}</p>
                             </div>
                         )}
 
                         {user.role === 'supervisor' && (
                             <div>
                                 <span className="text-sm font-medium text-gray-500">Lojas Supervisionadas</span>
-                                <p>{user.supervisedStoreNames?.join(', ') || '-'}</p>
+                                <p>{user.supervised_store_ids?.length ? `${user.supervised_store_ids.length} loja(s)` : '-'}</p>
                             </div>
                         )}
 
                         <div>
                             <span className="text-sm font-medium text-gray-500">Último Login</span>
                             <p>
-                                {user.lastLoginAt
-                                    ? new Date(user.lastLoginAt).toLocaleString('pt-BR')
+                                {user.last_login
+                                    ? new Date(user.last_login).toLocaleString('pt-BR')
                                     : 'Nunca'}
                             </p>
                         </div>
 
                         <div>
                             <span className="text-sm font-medium text-gray-500">Data de Criação</span>
-                            <p>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</p>
+                            <p>{new Date(user.created_at).toLocaleDateString('pt-BR')}</p>
                         </div>
+
+                        {user.must_change_password && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p className="text-sm text-yellow-800">
+                                    Este usuário precisa alterar a senha no próximo login.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </DialogContent>

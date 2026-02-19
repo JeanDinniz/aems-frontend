@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { User, Lock, Mail, Phone, Loader2 } from 'lucide-react';
+import { User as UserIcon, Lock, Mail, Phone, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/api/auth.service';
 import { useToast } from '@/hooks/use-toast';
+import type { User as UserType } from '@/types/auth.types';
 
 const profileSchema = z.object({
     name: z.string().min(3, 'Nome muito curto'),
@@ -48,7 +49,7 @@ export function ProfilePage() {
     } = useForm<ProfileForm>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
-            name: user?.name || '',
+            name: user?.full_name || '',
             phone: user?.phone || '',
         },
     });
@@ -63,8 +64,8 @@ export function ProfilePage() {
     });
 
     const updateProfileMutation = useMutation({
-        mutationFn: (data: ProfileForm) => authService.updateProfile(data),
-        onSuccess: (updatedUser) => {
+        mutationFn: (data: ProfileForm) => authService.updateProfile(data) as Promise<Partial<UserType>>,
+        onSuccess: (updatedUser: Partial<UserType>) => {
             updateUser(updatedUser);
             toast({
                 title: 'Perfil atualizado',
@@ -117,9 +118,9 @@ export function ProfilePage() {
                     <CardContent className="space-y-4">
                         <div className="text-center">
                             <div className="mx-auto w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-4">
-                                <User className="h-12 w-12 text-primary-600" />
+                                <UserIcon className="h-12 w-12 text-primary-600" />
                             </div>
-                            <h2 className="text-xl font-semibold">{user.name}</h2>
+                            <h2 className="text-xl font-semibold">{user.full_name}</h2>
                             <p className="text-sm text-gray-600">{user.email}</p>
                         </div>
 
@@ -128,16 +129,16 @@ export function ProfilePage() {
                                 <span className="text-sm text-gray-600">Cargo:</span>
                                 <Badge>{roleLabels[user.role]}</Badge>
                             </div>
-                            {user.storeName && (
+                            {user.store_name && (
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-600">Loja:</span>
-                                    <span className="text-sm font-medium">{user.storeName}</span>
+                                    <span className="text-sm font-medium">{user.store_name}</span>
                                 </div>
                             )}
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-600">Status:</span>
-                                <Badge variant={user.active ? 'default' : 'secondary'}>
-                                    {user.active ? 'Ativo' : 'Inativo'}
+                                <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                                    {user.is_active ? 'Ativo' : 'Inativo'}
                                 </Badge>
                             </div>
                         </div>
@@ -161,7 +162,7 @@ export function ProfilePage() {
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Nome Completo</label>
                                         <div className="relative">
-                                            <User className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                                            <UserIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
                                                 className="pl-9"
                                                 {...registerProfile('name')}

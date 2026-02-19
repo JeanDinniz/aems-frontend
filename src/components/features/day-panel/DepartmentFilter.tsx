@@ -25,11 +25,13 @@ export function DepartmentFilter({
                 onValueChange={(v) => onDepartmentChange(v as Department | 'all')}
                 className="w-full sm:w-auto"
             >
-                <TabsList className="grid w-full grid-cols-4 sm:w-auto bg-gray-100/50">
+                <TabsList className="grid w-full grid-cols-6 sm:w-auto bg-gray-100/50">
                     <TabsTrigger value="all">Todos</TabsTrigger>
                     <TabsTrigger value="film">Película</TabsTrigger>
-                    <TabsTrigger value="esthetics">Estética</TabsTrigger>
+                    <TabsTrigger value="vn">VN</TabsTrigger>
+                    <TabsTrigger value="vu">VU</TabsTrigger>
                     <TabsTrigger value="bodywork">Funilaria</TabsTrigger>
+                    <TabsTrigger value="workshop">Oficina</TabsTrigger>
                 </TabsList>
             </Tabs>
 

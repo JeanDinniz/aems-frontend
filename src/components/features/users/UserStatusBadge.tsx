@@ -1,14 +1,13 @@
 import { Badge } from '@/components/ui/badge';
-import type { UserStatus } from '@/types/user.types';
 
 interface UserStatusBadgeProps {
-    status: UserStatus;
+    isActive: boolean;
 }
 
-export function UserStatusBadge({ status }: UserStatusBadgeProps) {
+export function UserStatusBadge({ isActive }: UserStatusBadgeProps) {
     return (
-        <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-            {status === 'active' ? 'Ativo' : 'Inativo'}
+        <Badge variant={isActive ? 'default' : 'secondary'}>
+            {isActive ? 'Ativo' : 'Inativo'}
         </Badge>
     );
 }

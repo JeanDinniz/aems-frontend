@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Trash, Key, Eye } from 'lucide-react';
+import { MoreHorizontal, Edit, Key, Eye } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -58,7 +58,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     };
 
     const handleToggleStatus = (user: User) => {
-        if (user.active) {
+        if (user.is_active) {
             deactivateUser(user.id);
         } else {
             activateUser(user.id);
@@ -105,7 +105,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                         <div className="flex items-center gap-3">
                                             <Avatar>
                                                 <AvatarFallback>
-                                                    {user.name
+                                                    {user.full_name
                                                         .split(' ')
                                                         .slice(0, 2)
                                                         .map((n) => n[0])
@@ -114,7 +114,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <p className="font-medium">{user.name}</p>
+                                                <p className="font-medium">{user.full_name}</p>
                                                 <p className="text-sm text-gray-500">{user.email}</p>
                                             </div>
                                         </div>
@@ -128,26 +128,26 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                         {user.role === 'owner' && (
                                             <span className="text-sm text-gray-600">Todas</span>
                                         )}
-                                        {user.role === 'supervisor' && user.supervisedStoreNames && (
+                                        {user.role === 'supervisor' && user.supervised_store_ids && (
                                             <span className="text-sm text-gray-600">
-                                                {user.supervisedStoreNames.length > 0
-                                                    ? user.supervisedStoreNames.join(', ')
+                                                {user.supervised_store_ids.length > 0
+                                                    ? `${user.supervised_store_ids.length} loja(s)`
                                                     : 'Nenhuma'}
                                             </span>
                                         )}
                                         {user.role === 'operator' && (
-                                            <span className="text-sm text-gray-600">{user.storeName || '-'}</span>
+                                            <span className="text-sm text-gray-600">{user.store_name || '-'}</span>
                                         )}
                                     </TableCell>
 
                                     <TableCell>
-                                        <UserStatusBadge status={user.status} />
+                                        <UserStatusBadge isActive={user.is_active} />
                                     </TableCell>
 
                                     <TableCell>
-                                        {user.lastLoginAt ? (
+                                        {user.last_login ? (
                                             <span className="text-sm text-gray-600">
-                                                {new Date(user.lastLoginAt).toLocaleDateString('pt-BR')}
+                                                {new Date(user.last_login).toLocaleDateString('pt-BR')}
                                             </span>
                                         ) : (
                                             <span className="text-sm text-gray-400">Nunca</span>
@@ -175,8 +175,8 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                     Resetar Senha
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
-                                                    <span className={user.active ? 'text-red-600' : 'text-green-600'}>
-                                                        {user.active ? 'Desativar' : 'Ativar'}
+                                                    <span className={user.is_active ? 'text-red-600' : 'text-green-600'}>
+                                                        {user.is_active ? 'Desativar' : 'Ativar'}
                                                     </span>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

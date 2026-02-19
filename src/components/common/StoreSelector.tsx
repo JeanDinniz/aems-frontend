@@ -3,7 +3,6 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
 } from "@/components/ui/select";
 import { useStores } from "@/hooks/useStores";
 import { useQueryClient } from "@tanstack/react-query";

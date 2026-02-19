@@ -347,15 +347,15 @@ export function PurchaseRequestDetailsPage() {
                 open={orderDialogOpen}
                 onOpenChange={setOrderDialogOpen}
                 onConfirm={handleOrderConfirm}
-                isSubmitting={isOrderPending}
+                isPending={isOrderPending}
             />
 
             <ReceiveGoodsDialog
                 open={receiveDialogOpen}
                 onOpenChange={setReceiveDialogOpen}
-                request={request}
+                items={request.items}
                 onConfirm={handleReceiveConfirm}
-                isSubmitting={isReceivePending}
+                isPending={isReceivePending}
             />
         </div>
     );
