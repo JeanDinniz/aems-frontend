@@ -159,7 +159,7 @@ export default function CreateServiceOrderPage() {
     const [selectedDepartment, setSelectedDepartment] = useState<string>('film');
 
     const { data: services, isLoading: isLoadingServices } = useServices(selectedDepartment);
-    const { stores, allStores, selectedStoreId } = useStores();
+    const { allStores, selectedStoreId } = useStores();
 
     // Get the selected store details from global context
     const selectedStore = useMemo(() => {
@@ -598,42 +598,6 @@ export default function CreateServiceOrderPage() {
                         <div>
                             <h3 className="text-lg font-medium mb-4">Origem e Responsáveis</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField
-                                    control={form.control as any}
-                                    name="location_id"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Loja *</FormLabel>
-                                            <Select
-                                                onValueChange={(value) => {
-                                                    const numValue = Number(value);
-                                                    field.onChange(numValue);
-                                                    setSelectedStoreId(numValue);
-                                                    // Reset consultant and worker when store changes
-                                                    form.setValue('consultant_id', undefined);
-                                                    form.setValue('worker_id', undefined);
-                                                    form.setValue('destination_store_id', undefined);
-                                                }}
-                                                defaultValue={field.value?.toString()}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Selecione a loja" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {stores?.map((store) => (
-                                                        <SelectItem key={store.id} value={store.id.toString()}>
-                                                            {store.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
                                 {/* Destination Store - only for warehouse stores */}
                                 {isWarehouse && (
                                     <FormField
@@ -649,11 +613,7 @@ export default function CreateServiceOrderPage() {
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder={
-                                                                !selectedStoreId
-                                                                    ? "Selecione o Galpão primeiro"
-                                                                    : "Selecione a loja de destino"
-                                                            } />
+                                                            <SelectValue placeholder="Selecione a loja de destino" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -688,11 +648,7 @@ export default function CreateServiceOrderPage() {
                                                 >
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder={
-                                                                !selectedStoreId
-                                                                    ? "Selecione uma loja primeiro"
-                                                                    : "Selecione o consultor"
-                                                            } />
+                                                            <SelectValue placeholder="Selecione o consultor" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
