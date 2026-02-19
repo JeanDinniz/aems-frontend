@@ -28,34 +28,26 @@ export const incidentsService = {
     },
 
     async getUpdates(id: string): Promise<any[]> {
-        const { data } = await apiClient.get(`/incidents/${id}/updates`);
+        const { data } = await apiClient.get(`/incidents/${id}/comments`);
         return data;
     },
 
     async addCommentWithAttachments(id: string, content: string, files: File[]): Promise<any> {
-        const formData = new FormData();
-        formData.append('content', content);
-        files.forEach((file) => formData.append('files', file));
-
-        const { data } = await apiClient.post(`/incidents/${id}/comments`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const { data } = await apiClient.post(`/incidents/${id}/comments`, { comment: content });
         return data;
     },
 
     async deleteUpdate(incidentId: string, updateId: string): Promise<void> {
-        await apiClient.delete(`/incidents/${incidentId}/updates/${updateId}`);
+        await apiClient.delete(`/incidents/${incidentId}/comments/${updateId}`);
     },
 
     async editUpdate(incidentId: string, updateId: string, content: string): Promise<any> {
-        const { data } = await apiClient.patch(`/incidents/${incidentId}/updates/${updateId}`, { content });
+        const { data } = await apiClient.patch(`/incidents/${incidentId}/comments/${updateId}`, { comment: content });
         return data;
     },
 
     async addComment(id: string, content: string): Promise<any> {
-        const { data } = await apiClient.post(`/incidents/${id}/comments`, { content });
+        const { data } = await apiClient.post(`/incidents/${id}/comments`, { comment: content });
         return data;
     },
 

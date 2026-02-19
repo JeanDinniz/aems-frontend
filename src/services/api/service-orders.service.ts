@@ -38,7 +38,7 @@ export const serviceOrdersService = {
     },
 
     update: async (id: number, data: Partial<CreateServiceOrderData>) => {
-        const response = await apiClient.put<ServiceOrder>(`/service-orders/${id}`, data);
+        const response = await apiClient.patch<ServiceOrder>(`/service-orders/${id}`, data);
         return response.data;
     },
 
