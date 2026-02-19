@@ -56,12 +56,12 @@ export const purchaseRequestsService = {
     },
 
     markOrdered: async (id: number, data: { supplier_name: string; expected_delivery: string; order_date?: string; payment_terms?: string }) => {
-        const response = await apiClient.post<PurchaseRequest>(`/purchase-requests/${id}/order`, data);
+        const response = await apiClient.post<PurchaseRequest>(`/purchase-requests/${id}/mark-ordered`, data);
         return response.data;
     },
 
     receiveGoods: async (id: number, data: ReceiveGoodsData) => {
-        const response = await apiClient.post<PurchaseRequest>(`/purchase-requests/${id}/receive`, data);
+        const response = await apiClient.post<PurchaseRequest>(`/purchase-requests/${id}/mark-received`, data);
         return response.data;
     },
 

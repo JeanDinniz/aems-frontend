@@ -1,0 +1,470 @@
+import { useState, useCallback, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Store, Building2, Edit } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { storesService, type Store as StoreType, type UpdateStorePayload } from '@/services/api/stores.service';
+
+const STORE_TYPE_LABELS: Record<StoreType['store_type'], string> = {
+    dealership: 'Concessionária',
+    direct_sales: 'Venda Direta',
+    warehouse: 'Galpão',
+};
+
+const STORE_TYPE_VARIANTS: Record<StoreType['store_type'], 'default' | 'secondary' | 'outline'> = {
+    dealership: 'default',
+    direct_sales: 'secondary',
+    warehouse: 'outline',
+};
+
+const editStoreSchema = z.object({
+    name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+    store_type: z.enum(['dealership', 'direct_sales', 'warehouse']),
+    active: z.boolean(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    address: z.string().optional(),
+    phone: z.string().optional(),
+});
+
+type EditStoreFormValues = z.infer<typeof editStoreSchema>;
+
+interface EditStoreDialogProps {
+    store: StoreType | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const form = useForm<EditStoreFormValues>({
+        resolver: zodResolver(editStoreSchema),
+        values: store
+            ? {
+                  name: store.name,
+                  store_type: store.store_type,
+                  active: store.active,
+                  city: store.city ?? '',
+                  state: store.state ?? '',
+                  address: store.address ?? '',
+                  phone: store.phone ?? '',
+              }
+            : undefined,
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: UpdateStorePayload) => storesService.update(store!.id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['stores'] });
+            toast({ title: 'Loja atualizada com sucesso.' });
+            onOpenChange(false);
+        },
+        onError: () => {
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'Falha ao atualizar a loja. Tente novamente.',
+            });
+        },
+    });
+
+    const onSubmit = useCallback(
+        (data: EditStoreFormValues) => {
+            updateMutation.mutate(data);
+        },
+        [updateMutation]
+    );
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                    <DialogTitle>Editar Loja</DialogTitle>
+                    <DialogDescription>
+                        Atualize os dados de{' '}
+                        <span className="font-semibold">{store?.code}</span> —{' '}
+                        {store?.name}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome da Loja</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Ex: AEMS Toyota - Centro" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="store_type"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tipo de Loja</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o tipo" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="dealership">Concessionária</SelectItem>
+                                            <SelectItem value="direct_sales">Venda Direta</SelectItem>
+                                            <SelectItem value="warehouse">Galpão</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="active"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select
+                                        onValueChange={(val) => field.onChange(val === 'true')}
+                                        value={field.value ? 'true' : 'false'}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o status" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="true">Ativo</SelectItem>
+                                            <SelectItem value="false">Inativo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="city"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Cidade</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ex: São Paulo" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="state"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Estado</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ex: SP" maxLength={2} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Telefone</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Endereço</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Rua, número, bairro" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                disabled={updateMutation.isPending}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={updateMutation.isPending}>
+                                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function StoreManagementPage() {
+    const { user } = useAuth();
+    const isOwner = user?.role === 'owner';
+
+    const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState<StoreType['store_type'] | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [editStore, setEditStore] = useState<StoreType | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+    const { data: stores = [], isLoading } = useQuery({
+        queryKey: ['stores'],
+        queryFn: () => storesService.list(),
+        enabled: isOwner,
+        staleTime: 1000 * 60 * 60,
+    });
+
+    const filteredStores = useMemo(() => {
+        return stores.filter((store) => {
+            const matchesSearch =
+                search.trim() === '' ||
+                store.name.toLowerCase().includes(search.toLowerCase()) ||
+                store.code.toLowerCase().includes(search.toLowerCase());
+
+            const matchesType = typeFilter === 'all' || store.store_type === typeFilter;
+
+            const matchesStatus =
+                statusFilter === 'all' ||
+                (statusFilter === 'active' && store.active) ||
+                (statusFilter === 'inactive' && !store.active);
+
+            return matchesSearch && matchesType && matchesStatus;
+        });
+    }, [stores, search, typeFilter, statusFilter]);
+
+    const handleEditClick = useCallback((store: StoreType) => {
+        setEditStore(store);
+        setEditDialogOpen(true);
+    }, []);
+
+    if (!isOwner) {
+        return <Navigate to="/unauthorized" replace />;
+    }
+
+    return (
+        <div className="container mx-auto p-6 space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <Building2 className="h-8 w-8" />
+                        Gestão de Lojas
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Visualize e edite as configurações das{' '}
+                        <span className="font-medium">{stores.length} lojas</span> da rede
+                    </p>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 max-w-sm">
+                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por nome ou código..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+
+                <Select
+                    value={typeFilter}
+                    onValueChange={(val) => setTypeFilter(val as typeof typeFilter)}
+                >
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Tipo de loja" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os tipos</SelectItem>
+                        <SelectItem value="dealership">Concessionária</SelectItem>
+                        <SelectItem value="direct_sales">Venda Direta</SelectItem>
+                        <SelectItem value="warehouse">Galpão</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select
+                    value={statusFilter}
+                    onValueChange={(val) => setStatusFilter(val as typeof statusFilter)}
+                >
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Results count */}
+            <p className="text-sm text-muted-foreground">
+                {filteredStores.length} loja(s) encontrada(s)
+            </p>
+
+            {/* Table */}
+            <div className="border rounded-lg overflow-hidden">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-24">Código</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Cidade / Estado</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            Array.from({ length: 6 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    {Array.from({ length: 6 }).map((__, j) => (
+                                        <TableCell key={j}>
+                                            <Skeleton className="h-5 w-full" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : filteredStores.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={6}
+                                    className="text-center py-12 text-muted-foreground"
+                                >
+                                    Nenhuma loja encontrada com os filtros aplicados.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredStores.map((store) => (
+                                <TableRow key={store.id}>
+                                    <TableCell>
+                                        <span className="font-mono font-semibold text-sm">
+                                            {store.code}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{store.name}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        {store.city && store.state
+                                            ? `${store.city} / ${store.state}`
+                                            : store.city || store.state || '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={STORE_TYPE_VARIANTS[store.store_type]}>
+                                            {STORE_TYPE_LABELS[store.store_type]}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={store.active ? 'default' : 'secondary'}
+                                            className={
+                                                store.active
+                                                    ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-100'
+                                                    : 'bg-gray-100 text-gray-600 border-gray-300'
+                                            }
+                                        >
+                                            {store.active ? 'Ativo' : 'Inativo'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleEditClick(store)}
+                                            aria-label={`Editar loja ${store.name}`}
+                                        >
+                                            <Edit className="h-4 w-4 mr-1" />
+                                            Editar
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Edit Dialog */}
+            <EditStoreDialog
+                store={editStore}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+            />
+        </div>
+    );
+}

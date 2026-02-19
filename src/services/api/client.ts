@@ -70,7 +70,7 @@ apiClient.interceptors.response.use(
             try {
                 const refreshResponse = await axios.post(
                     `${apiClient.defaults.baseURL}/auth/refresh`,
-                    { refreshToken: tokens.refreshToken }
+                    { refresh_token: tokens.refreshToken }
                 );
 
                 // Backend returns: { access_token, refresh_token, expires_in, must_change_password }

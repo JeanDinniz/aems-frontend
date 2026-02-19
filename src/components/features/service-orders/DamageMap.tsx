@@ -10,7 +10,11 @@ import type { DamagePoint, VehicleView, DamageType } from '@/types/damage.types'
 
 interface DamageMapProps {
     damages: DamagePoint[];
-    onDamagesChange: (damages: DamagePoint[]) => void;
+    onDamagesChange?: (damages: DamagePoint[]) => void;
+    /** Alias for onDamagesChange */
+    onChange?: (damages: DamagePoint[]) => void;
+    /** When true, prevents adding/removing damage points */
+    readOnly?: boolean;
 }
 
 const viewLabels: Record<VehicleView, string> = {
@@ -36,7 +40,9 @@ const severityColors = {
     high: 'bg-red-100 text-red-800 border-red-300',
 };
 
-export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
+export function DamageMap({ damages, onDamagesChange, onChange, readOnly = false }: DamageMapProps) {
+    const notifyChange = onDamagesChange ?? onChange ?? (() => undefined);
+
     const [activeView, setActiveView] = useState<VehicleView>('front');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedPosition, setSelectedPosition] = useState<{ x: number; y: number } | null>(
@@ -44,12 +50,13 @@ export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
     );
 
     const handleDiagramClick = (x: number, y: number) => {
+        if (readOnly) return;
         setSelectedPosition({ x, y });
         setDialogOpen(true);
     };
 
     const handleAddDamage = (damage: Omit<DamagePoint, 'id' | 'createdAt' | 'view' | 'x' | 'y'>) => {
-        if (!selectedPosition) return;
+        if (!selectedPosition || readOnly) return;
 
         const newDamage: DamagePoint = {
             id: crypto.randomUUID(),
@@ -60,13 +67,14 @@ export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
             createdAt: new Date().toISOString(),
         };
 
-        onDamagesChange([...damages, newDamage]);
+        notifyChange([...damages, newDamage]);
         setDialogOpen(false);
         setSelectedPosition(null);
     };
 
     const handleRemoveDamage = (id: string) => {
-        onDamagesChange(damages.filter((d) => d.id !== id));
+        if (readOnly) return;
+        notifyChange(damages.filter((d) => d.id !== id));
     };
 
     const damagesInCurrentView = damages.filter((d) => d.view === activeView);
@@ -90,12 +98,14 @@ export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
             </CardHeader>
             <CardContent className="space-y-4">
                 {/* Instructions */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                        💡 Clique no diagrama do veículo para marcar pontos de avaria. Registre
-                        todos os danos pré-existentes para evitar problemas futuros.
-                    </p>
-                </div>
+                {!readOnly && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-800">
+                            Clique no diagrama do veículo para marcar pontos de avaria. Registre
+                            todos os danos pré-existentes para evitar problemas futuros.
+                        </p>
+                    </div>
+                )}
 
                 {/* Tabs por Vista */}
                 <Tabs value={activeView} onValueChange={(v) => setActiveView(v as VehicleView)}>
@@ -160,15 +170,18 @@ export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
                                                             <p className="text-sm">{damage.description}</p>
                                                         )}
                                                     </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0"
-                                                        onClick={() => handleRemoveDamage(damage.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-600" />
-                                                    </Button>
+                                                    {!readOnly && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() => handleRemoveDamage(damage.id)}
+                                                            aria-label="Remover avaria"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-600" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -180,11 +193,13 @@ export function DamageMap({ damages, onDamagesChange }: DamageMapProps) {
                 </Tabs>
 
                 {/* Dialog para Adicionar Avaria */}
-                <DamageDialog
-                    open={dialogOpen}
-                    onOpenChange={setDialogOpen}
-                    onSubmit={handleAddDamage}
-                />
+                {!readOnly && (
+                    <DamageDialog
+                        open={dialogOpen}
+                        onOpenChange={setDialogOpen}
+                        onSubmit={handleAddDamage}
+                    />
+                )}
             </CardContent>
         </Card>
     );

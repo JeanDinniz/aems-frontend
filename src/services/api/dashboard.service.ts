@@ -8,7 +8,7 @@ export const dashboardService = {
         if (filters?.storeId) params.append('store_id', filters.storeId.toString());
         if (filters?.department) params.append('department', filters.department);
 
-        const response = await apiClient.get<DashboardData>(`/dashboard?${params.toString()}`);
+        const response = await apiClient.get<DashboardData>(`/reports/dashboard?${params.toString()}`);
         return response.data;
     },
 
@@ -17,7 +17,7 @@ export const dashboardService = {
         if (filters?.period) params.append('period', filters.period);
         if (filters?.storeId) params.append('store_id', filters.storeId.toString());
 
-        const response = await apiClient.get(`/dashboard/export?${params.toString()}`, {
+        const response = await apiClient.get(`/reports/dashboard/export?${params.toString()}`, {
             responseType: 'blob',
         });
         return response.data as Blob;

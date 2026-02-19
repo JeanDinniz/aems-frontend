@@ -37,6 +37,7 @@ import AnalyticsPage from '@/pages/analytics/AnalyticsPage';
 import SettingsPage from '@/pages/settings/SettingsPage';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import { ConsultantManagementPage } from '@/pages/admin/ConsultantManagementPage';
+import { StoreManagementPage } from '@/pages/admin/StoreManagementPage';
 import { ApprovalsPage } from '@/pages/approvals/ApprovalsPage';
 import { BIDashboardPage } from '@/pages/reports/BIDashboardPage';
 import IncidentsList from '@/pages/incidents/IncidentsList';
@@ -134,6 +135,7 @@ const router = createBrowserRouter([
             children: [
               { path: '/admin/users', element: <UserManagementPage /> },
               { path: '/admin/consultants', element: <ConsultantManagementPage /> },
+              { path: '/admin/stores', element: <StoreManagementPage /> },
               { path: '/reports/multi-store', element: <MultiStoreBIPage /> },
               { path: '/reports/bi', element: <BIDashboardPage /> }, // Redireciona
               { path: '/analytics', element: <AnalyticsPage /> },    // Redireciona

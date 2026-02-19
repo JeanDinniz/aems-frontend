@@ -20,7 +20,7 @@ export const analyticsService = {
         if (params?.end_date) queryParams.append('end_date', params.end_date);
 
         const response = await apiClient.get<AnalyticsOverview>(
-            `/api/v1/analytics/overview?${queryParams.toString()}`
+            `/analytics/overview?${queryParams.toString()}`
         );
         return response.data;
     }
