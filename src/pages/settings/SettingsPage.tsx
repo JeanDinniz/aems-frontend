@@ -59,8 +59,8 @@ export default function SettingsPage() {
     return (
         <div className="container mx-auto p-6 space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Configurações</h1>
-                <p className="text-gray-600">Ajustes do sistema e perfil</p>
+                <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+                <p className="text-muted-foreground">Ajustes do sistema e perfil</p>
             </div>
 
             {/* Perfil */}
@@ -71,19 +71,19 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <p className="text-sm text-gray-500">Nome</p>
+                            <p className="text-sm text-muted-foreground">Nome</p>
                             <p className="font-medium">{user?.full_name || 'Não informado'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500">Email</p>
+                            <p className="text-sm text-muted-foreground">Email</p>
                             <p className="font-medium">{user?.email || 'Não informado'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500">Cargo</p>
+                            <p className="text-sm text-muted-foreground">Cargo</p>
                             <p className="font-medium capitalize">{user?.role || 'Não informado'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500">Loja</p>
+                            <p className="text-sm text-muted-foreground">Loja</p>
                             <p className="font-medium">
                                 {user?.role === 'owner'
                                     ? 'Todas as lojas'
@@ -106,7 +106,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label htmlFor="email-notifications">Notificações por Email</Label>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 Receber alertas de ocorrências e aprovações
                             </p>
                         </div>
@@ -119,7 +119,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label htmlFor="push-notifications">Notificações Push</Label>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 Alertas em tempo real no navegador
                             </p>
                         </div>
@@ -129,7 +129,7 @@ export default function SettingsPage() {
                             onCheckedChange={handleNotifyPushChange}
                         />
                     </div>
-                    <p className="text-sm text-gray-400">Preferências salvas automaticamente</p>
+                    <p className="text-sm text-muted-foreground">Preferências salvas automaticamente</p>
                 </CardContent>
             </Card>
 
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label htmlFor="dark-mode">Modo Escuro</Label>
-                            <p className="text-sm text-gray-500">Alterar para tema escuro</p>
+                            <p className="text-sm text-muted-foreground">Alterar para tema escuro</p>
                         </div>
                         <Switch
                             id="dark-mode"
@@ -160,7 +160,7 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div>
-                        <p className="text-sm text-gray-500">Tempo de sessão</p>
+                        <p className="text-sm text-muted-foreground">Tempo de sessão</p>
                         <p className="text-sm">8 horas de inatividade</p>
                     </div>
                     <div className="flex flex-wrap gap-3">

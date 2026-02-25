@@ -21,9 +21,13 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
             });
         },
         onError: (error: any) => {
+            const detail = error.response?.data?.detail;
+            const description = Array.isArray(detail)
+                ? detail.map((e: any) => e.msg).join('; ')
+                : (typeof detail === 'string' ? detail : 'Tente novamente.');
             toast({
                 title: 'Erro ao criar consultor',
-                description: error.response?.data?.detail || 'Tente novamente.',
+                description,
                 variant: 'destructive',
             });
         },

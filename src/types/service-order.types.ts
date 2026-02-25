@@ -3,9 +3,10 @@ export type ServiceOrderStatus =
     | 'doing'        // Fazendo
     | 'inspection'   // Inspeção
     | 'ready'        // Pronto
-    | 'delivered';   // Entregue
+    | 'delivered'    // Entregue
+    | 'cancelled';   // Cancelada
 
-export type Department = 'film' | 'vn' | 'vu' | 'bodywork' | 'workshop';
+export type Department = 'film' | 'ppf' | 'vn' | 'vu' | 'bodywork' | 'workshop';
 
 export type SemaphoreColor = 'white' | 'yellow' | 'orange' | 'red';
 
@@ -25,6 +26,7 @@ export interface QualityChecklist {
 export interface ServiceOrder {
     id: number;
     order_number: string;
+    external_os_number?: string | null;
 
     // Cliente e Veículo
     client_name?: string;
@@ -62,8 +64,8 @@ export interface ServiceOrder {
     // Localização
     location_id: number;
     location_name: string;
-    dealership_id: number;
-    dealership_name: string;
+    dealership_id?: number;
+    dealership_name?: string;
     destination_store_id?: number; // For warehouse: the store where the service is billed
     destination_store_name?: string;
 
@@ -88,6 +90,7 @@ export interface ServiceOrder {
 export interface CreateServiceOrderData {
     plate: string;
     vehicle_plate?: string;
+    external_os_number?: string;
     vehicle_model?: string;
     vehicle_color?: string;
     department: Department;
@@ -95,7 +98,7 @@ export interface CreateServiceOrderData {
     location_id: number;
     dealership_id?: number;
     consultant_id?: number;
-    workers?: Array<{ user_id: number }>;
+    workers?: Array<{ employee_id: number }>;
     notes?: string;
     photos?: string[];
     damage_map?: string;

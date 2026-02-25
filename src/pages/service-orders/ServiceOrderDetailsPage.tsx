@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useServiceOrder, useUpdateServiceOrderStatus } from '@/hooks/useServiceOrders';
+import { useServiceOrder, useUpdateServiceOrder, useUpdateServiceOrderStatus, useCancelServiceOrder } from '@/hooks/useServiceOrders';
+import { useStores } from '@/hooks/useStores';
+import { useAuth } from '@/hooks/useAuth';
 import { WorkerAssignmentDialog } from '@/components/features/service-orders/WorkerAssignmentDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrafficLightStatus } from '@/components/features/service-orders/TrafficLightStatus';
-import { ChevronLeft, User, Car, Tag, MapPin, Loader2, Edit, CheckCircle2, AlertTriangle, Play, FileText } from 'lucide-react';
+import { ChevronLeft, Car, Tag, Loader2, Edit, CheckCircle2, AlertTriangle, Play, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceOrderStatus, QualityChecklistItem } from '@/types/service-order.types';
 import { QualityChecklistDialog } from '@/components/features/service-orders/QualityChecklistDialog';
 import { InvoiceRequiredDialog } from '@/components/features/service-orders/InvoiceRequiredDialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const STATUS_LABELS: Record<string, string> = {
     waiting: 'Aguardando',
@@ -18,14 +28,16 @@ const STATUS_LABELS: Record<string, string> = {
     inspection: 'Inspeção',
     ready: 'Pronto',
     delivered: 'Entregue',
+    cancelled: 'Cancelada',
 };
 
 const DEPARTMENTS: Record<string, string> = {
     film: 'Película',
+    ppf: 'PPF',
     vn: 'VN',
     vu: 'VU',
     bodywork: 'Funilaria',
-    workshop: 'Oficina'
+    workshop: 'Oficina',
 };
 
 export default function ServiceOrderDetailsPage() {
@@ -34,33 +46,65 @@ export default function ServiceOrderDetailsPage() {
     const { toast } = useToast();
     const { data: os, isLoading, isError } = useServiceOrder(Number(id));
     const updateStatus = useUpdateServiceOrderStatus();
+    const updateOrder = useUpdateServiceOrder();
+    const { allStores } = useStores();
+
+    const { user } = useAuth();
+    const cancelOrder = useCancelServiceOrder();
 
     const [showWorkerDialog, setShowWorkerDialog] = useState(false);
     const [showQualityDialog, setShowQualityDialog] = useState(false);
     const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
     const [pendingQualityItems, setPendingQualityItems] = useState<QualityChecklistItem[]>([]);
 
+    const canCancel = (user?.role === 'owner' || user?.role === 'supervisor')
+        && os?.status !== 'cancelled'
+        && os?.status !== 'delivered';
+
+    // Determine store type from the OS's location_id
+    const osStore = useMemo(() => {
+        if (!os || !allStores?.length) return null;
+        return allStores.find((s) => s.id === os.location_id) ?? null;
+    }, [os, allStores]);
+
+    const isDirectSales = osStore?.store_type === 'direct_sales';
+
     const handleWorkerAssignment = (workerIds: number[], primaryWorkerId: number) => {
-        updateStatus.mutate({
-            id: Number(id),
-            status: 'doing',
-            extras: {
-                worker_ids: workerIds,
-                primary_worker_id: primaryWorkerId
-            }
-        }, {
+        // 1. Save selected employees to the OS
+        const workers = [
+            { employee_id: primaryWorkerId },
+            ...workerIds
+                .filter(id => id !== primaryWorkerId)
+                .map(id => ({ employee_id: id })),
+        ];
+
+        updateOrder.mutate({ id: Number(id), data: { workers } as any }, {
             onSuccess: () => {
-                setShowWorkerDialog(false);
-                toast({
-                    title: "Serviço Iniciado",
-                    description: "Funcionários atribuídos com sucesso."
+                // 2. Change status to 'doing'
+                updateStatus.mutate({ id: Number(id), status: 'doing' }, {
+                    onSuccess: () => {
+                        setShowWorkerDialog(false);
+                        toast({
+                            title: "Serviço Iniciado",
+                            description: "Funcionários atribuídos com sucesso."
+                        });
+                    },
+                    onError: () => {
+                        toast({
+                            variant: "destructive",
+                            title: "Erro",
+                            description: "Não foi possível iniciar o serviço."
+                        });
+                    }
                 });
             },
             onError: () => {
                 toast({
                     variant: "destructive",
                     title: "Erro",
-                    description: "Não foi possível iniciar o serviço."
+                    description: "Não foi possível atribuir os funcionários."
                 });
             }
         });
@@ -208,7 +252,9 @@ export default function ServiceOrderDetailsPage() {
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-tight">OS #{os.order_number}</h1>
-                            <Badge variant="outline">
+                            <Badge
+                                variant={os.status === 'cancelled' ? 'destructive' : 'outline'}
+                            >
                                 {STATUS_LABELS[os.status] || os.status}
                             </Badge>
                         </div>
@@ -220,11 +266,23 @@ export default function ServiceOrderDetailsPage() {
                             />
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" onClick={() => navigate(`/service-orders/${id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar
-                            </Button>
+                            {os.status !== 'cancelled' && (
+                                <Button variant="outline" onClick={() => navigate(`/service-orders/${id}/edit`)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                </Button>
+                            )}
                             {renderActionButtons()}
+                            {canCancel && (
+                                <Button
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => setShowCancelDialog(true)}
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    Cancelar OS
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -264,7 +322,8 @@ export default function ServiceOrderDetailsPage() {
                                 </div>
                             </div>
 
-                            {os.damage_map && (
+                            {/* Damage Map — only for direct_sales */}
+                            {isDirectSales && os.damage_map && (
                                 <div className="space-y-1">
                                     <span className="text-sm font-medium text-muted-foreground text-orange-600 flex items-center gap-1">
                                         <AlertTriangle className="h-3 w-3" /> Mapa de Avarias
@@ -284,24 +343,27 @@ export default function ServiceOrderDetailsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Galeria de Fotos ({os.photos?.length || 0})</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {!os.photos || os.photos.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">Nenhuma foto registrada.</p>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                    {os.photos.map((url, index) => (
-                                        <div key={index} className="relative aspect-video bg-gray-100 rounded-md overflow-hidden border">
-                                            <img src={url} alt={`Foto ${index}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    {/* Photo Gallery — only for direct_sales */}
+                    {isDirectSales && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Galeria de Fotos ({os.photos?.length || 0})</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {!os.photos || os.photos.length === 0 ? (
+                                    <p className="text-muted-foreground text-sm">Nenhuma foto registrada.</p>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                        {os.photos.map((url, index) => (
+                                            <div key={index} className="relative aspect-video bg-gray-100 rounded-md overflow-hidden border">
+                                                <img src={url} alt={`Foto ${index}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Sidebar Info */}
@@ -364,73 +426,22 @@ export default function ServiceOrderDetailsPage() {
                         </Card>
                     )}
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Cliente / Origem</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {os.client_name && (
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                        <User className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{os.client_name}</p>
-                                        <p className="text-sm text-muted-foreground">{os.client_phone}</p>
-                                    </div>
+                    {/* Financial card — only for direct_sales */}
+                    {isDirectSales && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Financeiro</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg dark:bg-green-900/10 border border-green-100 dark:border-green-900/20">
+                                    <span className="text-muted-foreground text-sm mb-1">Valor Total</span>
+                                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.total_value)}
+                                    </span>
                                 </div>
-                            )}
-                            <div className={os.client_name ? "pt-2 border-t" : ""}>
-                                {os.destination_store_id ? (
-                                    <>
-                                        <div className="flex justify-between text-sm py-1">
-                                            <span className="text-muted-foreground">Feito no</span>
-                                            <Badge variant="outline" className="font-normal">
-                                                Galpão
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between text-sm py-1">
-                                            <span className="text-muted-foreground">Cobrado em</span>
-                                            <span className="font-medium flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" /> {os.destination_store_name || 'N/A'}
-                                            </span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="flex justify-between text-sm py-1">
-                                            <span className="text-muted-foreground">Concessionária</span>
-                                            <span className="font-medium">{os.dealership_name || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm py-1">
-                                            <span className="text-muted-foreground">Consultor</span>
-                                            <span className="font-medium">{os.consultant_name || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm py-1">
-                                            <span className="text-muted-foreground">Local</span>
-                                            <span className="font-medium flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" /> {os.location_name || 'N/A'}
-                                            </span>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Financeiro</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg dark:bg-green-900/10 border border-green-100 dark:border-green-900/20">
-                                <span className="text-muted-foreground text-sm mb-1">Valor Total</span>
-                                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.total_value)}
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
 
@@ -458,6 +469,79 @@ export default function ServiceOrderDetailsPage() {
                 onConfirm={handleWorkerAssignment}
                 isSubmitting={updateStatus.isPending}
             />
+
+            {/* Dialog: Confirmar Cancelamento */}
+            <Dialog
+                open={showCancelDialog}
+                onOpenChange={(open) => {
+                    setShowCancelDialog(open);
+                    if (!open) setCancelReason('');
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-destructive flex items-center gap-2">
+                            <XCircle className="h-5 w-5" />
+                            Cancelar Ordem de Serviço
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                        A OS <strong>#{os.order_number}</strong> será cancelada e removida do painel
+                        operacional. O registro ficará disponível para auditoria.
+                    </p>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium">Motivo (opcional)</label>
+                        <Textarea
+                            placeholder="Ex: OS lançada por engano, veículo não compareceu..."
+                            className="min-h-[80px]"
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowCancelDialog(false);
+                                setCancelReason('');
+                            }}
+                        >
+                            Voltar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                cancelOrder.mutate(
+                                    { id: Number(id), reason: cancelReason || undefined },
+                                    {
+                                        onSuccess: () => {
+                                            setShowCancelDialog(false);
+                                            setCancelReason('');
+                                            toast({
+                                                title: 'OS Cancelada',
+                                                description: 'A ordem de serviço foi cancelada.',
+                                            });
+                                        },
+                                        onError: () => {
+                                            toast({
+                                                variant: 'destructive',
+                                                title: 'Erro',
+                                                description: 'Não foi possível cancelar a OS.',
+                                            });
+                                        },
+                                    }
+                                );
+                            }}
+                            disabled={cancelOrder.isPending}
+                        >
+                            {cancelOrder.isPending && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Confirmar Cancelamento
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

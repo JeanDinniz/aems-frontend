@@ -25,43 +25,30 @@ interface QualityChecklistDialogProps {
     isSubmitting?: boolean;
 }
 
+const CHECKLIST_FILM: string[] = [
+    "Película aplicada sem bolhas ou imperfeições",
+    "Bordas alinhadas e sem descolamento",
+    "Corte preciso sem rebarbas visíveis",
+    "Vidro/superfície completamente limpa após aplicação",
+    "Nenhum arranhão causado no veículo durante o processo",
+    "Cura visual adequada (sem marcas de espátula)",
+];
+
+const CHECKLIST_GERAL: string[] = [
+    "Serviço executado conforme o solicitado",
+    "Veículo entregue limpo e apresentável",
+    "Nenhuma avaria causada durante o processo",
+    "Interior do veículo sem sujeira ou resíduos",
+    "Rodas e pneus limpos",
+    "Nenhuma ferramenta ou material esquecido no veículo",
+];
+
 const CHECKLISTS: Record<Department, string[]> = {
-    film: [
-        "Película aplicada sem bolhas",
-        "Bordas alinhadas e sem descolamento",
-        "Limpeza do vidro adequada",
-        "Película sem riscos ou imperfeições",
-        "Corte preciso nas bordas",
-        "Cura visual adequada"
-    ],
-    bodywork: [
-        "Superfície nivelada e sem imperfeições",
-        "Pintura uniforme sem marcas",
-        "Sem resíduos de massa ou lixa",
-        "Polimento final realizado",
-        "Alinhamento dos painéis correto"
-    ],
-    vn: [
-        "Lavagem técnica completa",
-        "Remoção de proteções de transporte",
-        "Verificação de pintura",
-        "Calibragem de pneus",
-        "Limpeza interna básica"
-    ],
-    vu: [
-        "Lavagem detalhada",
-        "Higienização interna",
-        "Polimento comercial",
-        "Limpeza de motor",
-        "Pretinho nos pneus"
-    ],
-    workshop: [
-        "Peças substituídas corretamente",
-        "Torque dos parafusos conferido",
-        "Fluídos no nível correto",
-        "Ausência de vazamentos",
-        "Teste de rodagem realizado"
-    ]
+    film: CHECKLIST_FILM,
+    vn: CHECKLIST_GERAL,
+    vu: CHECKLIST_GERAL,
+    bodywork: CHECKLIST_GERAL,
+    workshop: CHECKLIST_GERAL,
 };
 
 export function QualityChecklistDialog({
@@ -106,7 +93,7 @@ export function QualityChecklistDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Checklist de Qualidade - {department.toUpperCase()}</DialogTitle>
+                    <DialogTitle>Checklist de Qualidade</DialogTitle>
                     <DialogDescription>
                         Verifique os itens abaixo para aprovar o serviço.
                     </DialogDescription>

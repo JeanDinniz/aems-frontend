@@ -87,6 +87,7 @@ export function DashboardFilters({ filters, onFiltersChange }: DashboardFiltersP
                 <SelectContent>
                     <SelectItem value="all">Todos departamentos</SelectItem>
                     <SelectItem value="film">Película</SelectItem>
+                    <SelectItem value="ppf">PPF</SelectItem>
                     <SelectItem value="vn">VN</SelectItem>
                     <SelectItem value="vu">VU</SelectItem>
                     <SelectItem value="bodywork">Funilaria</SelectItem>

@@ -23,6 +23,7 @@ export const useCreateServiceOrder = () => {
         mutationFn: (data: CreateServiceOrderData) => serviceOrdersService.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
     });
 };
@@ -34,9 +35,22 @@ export const useUpdateServiceOrder = () => {
             serviceOrdersService.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
-            // Also invalidate the specific order details
             queryClient.invalidateQueries({ queryKey: ['service-order'] });
+            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
+    });
+};
+
+export const useCancelServiceOrder = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+            serviceOrdersService.cancel(id, reason),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['service-order', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
+        },
     });
 };
 
@@ -48,6 +62,7 @@ export const useUpdateServiceOrderStatus = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
             queryClient.invalidateQueries({ queryKey: ['service-order', variables.id] });
+            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
     });
 };

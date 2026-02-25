@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,26 +11,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useConsultants } from '@/hooks/useConsultants';
+import { useEmployees } from '@/hooks/useEmployees';
 import { useStores } from '@/hooks/useStores';
+import { EMPLOYEE_POSITIONS, positionToDepartment } from '@/constants/employees';
 
-const createConsultantSchema = z.object({
-    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+const schema = z.object({
+    name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
     store_id: z.number({ required_error: 'Loja é obrigatória' }),
-    phone: z.string().optional(),
-    email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+    position: z.string().optional(),
 });
 
-type CreateConsultantForm = z.infer<typeof createConsultantSchema>;
+type FormData = z.infer<typeof schema>;
 
-interface CreateConsultantDialogProps {
+interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantDialogProps) {
-    const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>();
-    const { createConsultant, isCreating } = useConsultants();
+export function CreateEmployeeDialog({ open, onOpenChange }: Props) {
+    const { createEmployee, isCreating } = useEmployees();
     const { stores } = useStores();
 
     const {
@@ -40,49 +38,36 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
         setValue,
         formState: { errors },
         reset,
-    } = useForm<CreateConsultantForm>({
-        resolver: zodResolver(createConsultantSchema),
-    });
+    } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-    const onSubmit = (data: CreateConsultantForm) => {
+    const onSubmit = (data: FormData) => {
         const payload = {
             name: data.name,
             store_id: data.store_id,
-            phone: data.phone || undefined,
-            email: data.email || undefined,
+            position: data.position || undefined,
+            department: positionToDepartment(data.position),
         };
-
-        createConsultant(payload, {
+        createEmployee(payload, {
             onSuccess: () => {
                 reset();
-                setSelectedStoreId(undefined);
                 onOpenChange(false);
             },
         });
     };
 
-    const handleStoreChange = (value: string) => {
-        const storeId = parseInt(value);
-        setSelectedStoreId(storeId);
-        setValue('store_id', storeId);
-    };
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Novo Consultor</DialogTitle>
+                    <DialogTitle>Novo Funcionário</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">
-                            Nome <span className="text-red-500">*</span>
+                            Nome Completo <span className="text-red-500">*</span>
                         </label>
-                        <Input
-                            {...register('name')}
-                            placeholder="Ex: João da Silva"
-                        />
+                        <Input {...register('name')} placeholder="Ex: Jean Silva" />
                         {errors.name && (
                             <p className="text-sm text-red-500">{errors.name.message}</p>
                         )}
@@ -92,7 +77,7 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                         <label className="text-sm font-medium">
                             Loja <span className="text-red-500">*</span>
                         </label>
-                        <Select onValueChange={handleStoreChange}>
+                        <Select onValueChange={(v) => setValue('store_id', parseInt(v))}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
@@ -109,30 +94,24 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Telefone</label>
-                            <Input
-                                {...register('phone')}
-                                placeholder="(00) 00000-0000"
-                                type="tel"
-                            />
-                            {errors.phone && (
-                                <p className="text-sm text-red-500">{errors.phone.message}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail</label>
-                            <Input
-                                type="email"
-                                {...register('email')}
-                                placeholder="email@exemplo.com"
-                            />
-                            {errors.email && (
-                                <p className="text-sm text-red-500">{errors.email.message}</p>
-                            )}
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Cargo</label>
+                        <Select onValueChange={(v) => setValue('position', v === 'none' ? undefined : v)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o cargo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">Sem cargo definido</SelectItem>
+                                {EMPLOYEE_POSITIONS.map((pos) => (
+                                    <SelectItem key={pos.value} value={pos.value}>
+                                        {pos.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                            Instaladores de Película aparecem somente em OS de Película. Os demais aparecem em todos os tipos de OS.
+                        </p>
                     </div>
 
                     <DialogFooter>
@@ -140,7 +119,7 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isCreating}>
-                            {isCreating ? 'Criando...' : 'Criar Consultor'}
+                            {isCreating ? 'Cadastrando...' : 'Cadastrar Funcionário'}
                         </Button>
                     </DialogFooter>
                 </form>

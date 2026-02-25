@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Store, Building2, Edit } from 'lucide-react';
+import { Store, Building2, Edit, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { storesService, type Store as StoreType, type UpdateStorePayload } from '@/services/api/stores.service';
+import { storesService, type Store as StoreType, type UpdateStorePayload, type CreateStorePayload } from '@/services/api/stores.service';
 
 const STORE_TYPE_LABELS: Record<StoreType['store_type'], string> = {
     dealership: 'Concessionária',
@@ -55,6 +55,232 @@ const STORE_TYPE_VARIANTS: Record<StoreType['store_type'], 'default' | 'secondar
     direct_sales: 'secondary',
     warehouse: 'outline',
 };
+
+const DEALERSHIP_BRANDS = [
+    { value: 'byd', label: 'BYD' },
+    { value: 'fiat', label: 'FIAT' },
+    { value: 'hyundai', label: 'HYUNDAI' },
+    { value: 'toyota', label: 'TOYOTA' },
+];
+
+const createStoreSchema = z.object({
+    name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+    code: z
+        .string()
+        .regex(/^LJ\d{2}$/, 'Código deve ser no formato LJ01 a LJ99'),
+    store_type: z.enum(['dealership', 'direct_sales', 'warehouse']),
+    dealership_brand: z.string().optional().nullable(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+});
+
+type CreateStoreFormValues = z.infer<typeof createStoreSchema>;
+
+interface CreateStoreDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    nextCode: string;
+}
+
+function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogProps) {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const form = useForm<CreateStoreFormValues>({
+        resolver: zodResolver(createStoreSchema),
+        defaultValues: {
+            name: '',
+            code: nextCode,
+            store_type: 'dealership',
+            dealership_brand: null,
+            phone: '',
+            address: '',
+        },
+    });
+
+    // Atualiza o código sugerido quando o dialog abre
+    const storeType = form.watch('store_type');
+
+    const createMutation = useMutation({
+        mutationFn: (data: CreateStorePayload) => storesService.create(data),
+        onSuccess: (newStore) => {
+            queryClient.invalidateQueries({ queryKey: ['stores'] });
+            toast({ title: `Loja ${newStore.code} criada com sucesso.` });
+            onOpenChange(false);
+            form.reset();
+        },
+        onError: (error: any) => {
+            const detail = error?.response?.data?.detail;
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao criar loja',
+                description: typeof detail === 'string' ? detail : 'Verifique os dados e tente novamente.',
+            });
+        },
+    });
+
+    const onSubmit = useCallback(
+        (data: CreateStoreFormValues) => {
+            createMutation.mutate({
+                name: data.name,
+                code: data.code,
+                store_type: data.store_type,
+                dealership_brand: data.store_type === 'dealership' ? (data.dealership_brand || null) : null,
+                phone: data.phone || null,
+                address: data.address || null,
+            });
+        },
+        [createMutation]
+    );
+
+    return (
+        <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset({ code: nextCode }); }}>
+            <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                    <DialogTitle>Nova Loja</DialogTitle>
+                    <DialogDescription>
+                        Cadastre uma nova unidade para a rede AEMS.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome da Loja *</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Ex: AEMS Toyota - Centro" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Código *</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Ex: LJ13"
+                                                maxLength={4}
+                                                className="uppercase font-mono"
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="store_type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="dealership">Concessionária</SelectItem>
+                                                <SelectItem value="direct_sales">Venda Direta</SelectItem>
+                                                <SelectItem value="warehouse">Galpão</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {storeType === 'dealership' && (
+                            <FormField
+                                control={form.control}
+                                name="dealership_brand"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Marca da Concessionária</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value ?? ''}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a marca" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {DEALERSHIP_BRANDS.map((b) => (
+                                                    <SelectItem key={b.value} value={b.value}>
+                                                        {b.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
+                        <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Telefone</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Endereço</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Rua, número, bairro" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                disabled={createMutation.isPending}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={createMutation.isPending}>
+                                {createMutation.isPending ? 'Criando...' : 'Criar Loja'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 const editStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -279,6 +505,7 @@ export function StoreManagementPage() {
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [editStore, setEditStore] = useState<StoreType | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
     const { data: stores = [], isLoading } = useQuery({
         queryKey: ['stores'],
@@ -305,6 +532,16 @@ export function StoreManagementPage() {
         });
     }, [stores, search, typeFilter, statusFilter]);
 
+    // Calcula o próximo código de loja disponível (LJ01, LJ02, ...)
+    const nextStoreCode = useMemo(() => {
+        const codes = stores
+            .map((s) => s.code.match(/^LJ(\d{2})$/)?.at(1))
+            .filter(Boolean)
+            .map(Number);
+        const max = codes.length > 0 ? Math.max(...codes) : 0;
+        return `LJ${String(max + 1).padStart(2, '0')}`;
+    }, [stores]);
+
     const handleEditClick = useCallback((store: StoreType) => {
         setEditStore(store);
         setEditDialogOpen(true);
@@ -328,6 +565,10 @@ export function StoreManagementPage() {
                         <span className="font-medium">{stores.length} lojas</span> da rede
                     </p>
                 </div>
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Loja
+                </Button>
             </div>
 
             {/* Filters */}
@@ -464,6 +705,13 @@ export function StoreManagementPage() {
                 store={editStore}
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
+            />
+
+            {/* Create Dialog */}
+            <CreateStoreDialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+                nextCode={nextStoreCode}
             />
         </div>
     );

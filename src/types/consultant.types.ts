@@ -15,7 +15,7 @@ export interface Consultant {
 export interface CreateConsultantPayload {
     name: string;
     store_id: number;
-    dealership_id: number;
+    dealership_id?: number;
     phone?: string;
     email?: string;
 }

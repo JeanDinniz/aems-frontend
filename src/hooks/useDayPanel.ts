@@ -4,6 +4,7 @@ import { differenceInMinutes } from 'date-fns';
 import type { ServiceOrderCard, Department, SemaphoreColor, ServiceOrderStatus } from '@/types/day-panel.types';
 import { useWebSocket } from './useWebSocket';
 import { serviceOrdersService } from '@/services/api/service-orders.service';
+import { useAuthStore } from '@/stores/auth.store';
 
 // Helper to calculate semaphore color
 export const calculateSemaphoreColor = (entryTime: string, department: Department): SemaphoreColor => {
@@ -23,17 +24,25 @@ export const calculateSemaphoreColor = (entryTime: string, department: Departmen
         return 'red';
     }
 
+    // ppf — mesmo threshold que film
+    if (department === 'ppf') {
+        if (minutes < 45) return 'white';
+        if (minutes < 90) return 'yellow';
+        if (minutes < 180) return 'orange';
+        return 'red';
+    }
+
     return 'white';
 };
 
 interface UseDayPanelOptions {
+    // Permite forçar uma loja específica (ex: Supervisor/Owner escolhe via select)
     storeId?: number;
 }
 
-export function useDayPanel({ storeId }: UseDayPanelOptions = {}) {
-    // const { user } = useAuth();
-    // const queryClient = useQueryClient();
-    const { connection } = useWebSocket(storeId);
+export function useDayPanel({ storeId: propStoreId }: UseDayPanelOptions = {}) {
+    const { user } = useAuthStore();
+    const { connection } = useWebSocket(propStoreId ?? user?.store_id ?? undefined);
     const [now, setNow] = useState(new Date());
 
     // Local state for filters
@@ -46,16 +55,27 @@ export function useDayPanel({ storeId }: UseDayPanelOptions = {}) {
         return () => clearInterval(interval);
     }, []);
 
+    // Determinar o store_id a enviar para o backend:
+    // - Operator: não envia (backend usa JWT)
+    // - Supervisor/Owner: envia propStoreId se fornecido, senão o store_id do próprio usuário
+    const resolvedStoreId = useMemo(() => {
+        if (user?.role === 'operator') return undefined;
+        return propStoreId ?? user?.store_id ?? undefined;
+    }, [user, propStoreId]);
+
     // Fetch initial data
     const { data: orders = [], isLoading, error } = useQuery({
-        queryKey: ['day-panel-orders', storeId],
+        queryKey: ['day-panel-orders', resolvedStoreId],
         queryFn: async () => {
-            const response = await serviceOrdersService.getDayPanel(storeId);
+            const response = await serviceOrdersService.getDayPanel(resolvedStoreId);
             return response;
         },
-        enabled: !!storeId,
-        staleTime: 1000 * 60 * 5,
-        refetchInterval: 30000,  // Refetch a cada 30s como backup do WebSocket
+        // Só habilita a query quando tivermos certeza do storeId necessário:
+        // - Operator: sempre ok (backend resolve via JWT)
+        // - Supervisor/Owner: só dispara se resolvedStoreId for definido
+        enabled: user?.role === 'operator' || resolvedStoreId !== undefined,
+        staleTime: 0,
+        refetchInterval: 10_000, // Refetch a cada 10s como backup do WebSocket
     });
 
     // Derived state with semaphore colors recalculated based on "now"
@@ -75,8 +95,8 @@ export function useDayPanel({ storeId }: UseDayPanelOptions = {}) {
                 return false;
             }
 
-            // 2. Delayed Filter (Orange or Red)
-            if (onlyDelayed) {
+            // 2. Delayed Filter (Orange or Red) — não aplica a entregues
+            if (onlyDelayed && order.status !== 'delivered') {
                 return order.semaphoreColor === 'orange' || order.semaphoreColor === 'red';
             }
 
@@ -84,30 +104,32 @@ export function useDayPanel({ storeId }: UseDayPanelOptions = {}) {
         });
     }, [processedOrders, departmentFilter, onlyDelayed]);
 
-    // Group by status for Kanban
+    // Group by status for Kanban board
     const columns = useMemo(() => {
         const cols: Record<ServiceOrderStatus, ServiceOrderCard[]> = {
-            waiting: [],
+            waiting:     [],
             in_progress: [],
-            inspection: [],
-            ready: [],
-            delivered: [],
+            inspection:  [],
+            ready:       [],
+            delivered:   [],
         };
 
         filteredOrders.forEach(order => {
-            if (cols[order.status]) {
-                cols[order.status].push(order);
+            const key = order.status as ServiceOrderStatus;
+            if (key in cols) {
+                cols[key].push(order);
             }
         });
 
         return cols;
     }, [filteredOrders]);
 
-    // Statistics
+    // Statistics (excluindo entregues dos contadores de semáforo)
     const stats = useMemo(() => {
+        const activeOrders = processedOrders.filter(o => o.status !== 'delivered');
         const total = orders.length;
-        const delayed = processedOrders.filter(o => o.semaphoreColor === 'orange' || o.semaphoreColor === 'red').length;
-        const critical = processedOrders.filter(o => o.semaphoreColor === 'red').length;
+        const delayed = activeOrders.filter(o => o.semaphoreColor === 'orange' || o.semaphoreColor === 'red').length;
+        const critical = activeOrders.filter(o => o.semaphoreColor === 'red').length;
         return { total, delayed, critical };
     }, [orders, processedOrders]);
 
@@ -117,6 +139,7 @@ export function useDayPanel({ storeId }: UseDayPanelOptions = {}) {
         stats,
         isLoading,
         error,
+        resolvedStoreId,
         filters: {
             department: departmentFilter,
             setDepartment: setDepartmentFilter,

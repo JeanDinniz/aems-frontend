@@ -69,7 +69,6 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                         <TableRow>
                             <TableHead>Nome</TableHead>
                             <TableHead>Loja</TableHead>
-                            <TableHead>Concessionária</TableHead>
                             <TableHead>Telefone</TableHead>
                             <TableHead>E-mail</TableHead>
                             <TableHead>Status</TableHead>
@@ -79,7 +78,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                     <TableBody>
                         {consultants.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                                <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                                     Nenhum consultor encontrado
                                 </TableCell>
                             </TableRow>
@@ -93,12 +92,6 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                     <TableCell>
                                         <span className="text-sm text-gray-600">
                                             {consultant.store_name || 'N/A'}
-                                        </span>
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <span className="text-sm text-gray-600">
-                                            {consultant.dealership_name || 'N/A'}
                                         </span>
                                     </TableCell>
 

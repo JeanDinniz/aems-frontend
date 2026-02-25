@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useServiceOrder, useUpdateServiceOrder } from '@/hooks/useServiceOrders';
+import { useStores } from '@/hooks/useStores';
+import { useConsultants } from '@/hooks/useConsultants';
+import { useEmployeesByDepartment } from '@/hooks/useEmployees';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -29,6 +32,7 @@ import type { Department } from '@/types/service-order.types';
 
 const DEPARTMENTS: { value: Department; label: string }[] = [
     { value: 'film', label: 'Película' },
+    { value: 'ppf', label: 'PPF' },
     { value: 'vn', label: 'VN (Veículos Novos)' },
     { value: 'vu', label: 'VU (Veículos Usados)' },
     { value: 'bodywork', label: 'Funilaria' },
@@ -36,24 +40,29 @@ const DEPARTMENTS: { value: Department; label: string }[] = [
 ];
 
 const editServiceOrderSchema = z.object({
-    client_name: z.string().min(2, 'Nome do cliente é obrigatório'),
-    client_phone: z.string().regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Formato inválido: (XX) XXXXX-XXXX').min(1, 'Telefone é obrigatório'),
+    // Vehicle — always required
     vehicle_model: z.string().min(2, 'Modelo do veículo é obrigatório'),
     vehicle_color: z.string().min(2, 'Cor do veículo é obrigatória'),
     plate: z.string().regex(/^[A-Z]{3}\d[A-Z\d]\d{2}$/, 'Placa inválida (Mercosul ou Antiga)'),
 
+    // Service — always required
     department: z.enum(['film', 'vn', 'vu', 'bodywork', 'workshop']),
-    service_description: z.string().min(10, 'Descrição do serviço deve ter no mínimo 10 caracteres'),
+    service_description: z.string().optional(),
 
-    dealership_id: z.coerce.number().positive('Selecione uma concessionária'),
+    // Internal identifiers — always present but not exposed as form fields
     location_id: z.number().default(1),
     technician_id: z.coerce.number().optional(),
     consultant_id: z.coerce.number().optional(),
 
-    total_value: z.coerce.number().positive('Valor deve ser maior que zero'),
-
-    photos: z.array(z.string()).min(4, 'Mínimo 4 fotos obrigatórias'),
+    // Conditional — only for direct_sales (Wash Center)
+    client_name: z.string().optional(),
+    client_phone: z.string().optional(),
+    total_value: z.coerce.number().optional(),
+    photos: z.array(z.string()).optional(),
     damage_map: z.string().optional(),
+
+    // Always optional
+    external_os_number: z.string().optional(),
     invoice_number: z.string().optional(),
     notes: z.string().optional(),
 }).refine(
@@ -65,7 +74,7 @@ const editServiceOrderSchema = z.object({
     },
     {
         message: 'Nota Fiscal é obrigatória para serviços de Película',
-        path: ['invoice_number']
+        path: ['invoice_number'],
     }
 );
 
@@ -77,6 +86,16 @@ export default function EditServiceOrderPage() {
     const { toast } = useToast();
     const { data: os, isLoading: isLoadingOS } = useServiceOrder(Number(id));
     const updateServiceOrder = useUpdateServiceOrder();
+    const { allStores, selectedStoreId } = useStores();
+
+    // Determine store type from the OS's location_id
+    const osStore = useMemo(() => {
+        if (!os || !allStores?.length) return null;
+        return allStores.find((s) => s.id === os.location_id) ?? null;
+    }, [os, allStores]);
+
+    const isDirectSales = osStore?.store_type === 'direct_sales';
+    const isDealership = osStore?.store_type === 'dealership';
 
     const form = useForm<EditServiceOrderFormValues>({
         resolver: zodResolver(editServiceOrderSchema) as any,
@@ -87,10 +106,8 @@ export default function EditServiceOrderPage() {
             vehicle_color: '',
             plate: '',
             department: 'film',
-            service_description: '',
-            dealership_id: 0,
             location_id: 1,
-            total_value: 0,
+            total_value: undefined,
             photos: [],
             damage_map: '',
             invoice_number: '',
@@ -98,37 +115,41 @@ export default function EditServiceOrderPage() {
         },
     });
 
-
-
     useEffect(() => {
         if (os) {
             form.reset({
-                client_name: os.client_name,
-                client_phone: os.client_phone,
-                vehicle_model: os.vehicle_model || '',
-                vehicle_color: os.vehicle_color || '',
-                plate: os.plate || 'ABC1234', // fallback if old data missing
-                department: os.department || 'film',
-                service_description: os.service_description || (os.service_type ? `${os.service_type} - ${os.film_type}` : ''),
-                dealership_id: os.dealership_id || 1, // fallback
+                client_name: os.client_name ?? '',
+                client_phone: os.client_phone ?? '',
+                vehicle_model: os.vehicle_model ?? '',
+                vehicle_color: os.vehicle_color ?? '',
+                plate: os.plate ?? 'ABC1234',
+                department: os.department ?? 'film',
                 location_id: os.location_id,
                 total_value: os.total_value,
-                photos: os.photos || ['https://placehold.co/600x400', 'https://placehold.co/600x400', 'https://placehold.co/600x400', 'https://placehold.co/600x400'], // Mock if missing for validation
-                damage_map: os.damage_map || '',
-                invoice_number: os.invoice_number || '',
-                notes: os.notes || '',
-                technician_id: os.technician_id || undefined,
-                consultant_id: os.consultant_id || undefined,
+                photos: os.photos ?? [],
+                damage_map: os.damage_map ?? '',
+                external_os_number: os.external_os_number ?? '',
+                invoice_number: os.invoice_number ?? '',
+                notes: os.notes ?? '',
+                technician_id: os.technician_id ?? undefined,
+                consultant_id: os.consultant_id ?? undefined,
             });
         }
     }, [os, form]);
 
     const onSubmit = (data: EditServiceOrderFormValues) => {
+        // Strip direct_sales-only fields when the store is not direct_sales
+        const payload: any = { ...data };
+        if (!isDirectSales) {
+            delete payload.client_name;
+            delete payload.client_phone;
+            delete payload.total_value;
+            delete payload.photos;
+            delete payload.damage_map;
+        }
+
         updateServiceOrder.mutate(
-            {
-                id: Number(id),
-                data: data as any
-            },
+            { id: Number(id), data: payload },
             {
                 onSuccess: () => {
                     toast({
@@ -149,11 +170,25 @@ export default function EditServiceOrderPage() {
         );
     };
 
+    const selectedDepartment = form.watch('department') ?? 'film';
+
+    // storeId: uses the OS's store once loaded, falls back to the globally selected store
+    const storeId = os?.location_id || selectedStoreId;
+
+    // Fetch consultants filtered by the store
+    const { consultants, isLoading: isLoadingConsultants } = useConsultants(
+        storeId ? { store_id: storeId, is_active: true } : undefined
+    );
+
+    // Fetch employees filtered by store and department
+    const { data: workers, isLoading: isLoadingWorkers } = useEmployeesByDepartment(
+        storeId,
+        selectedDepartment,
+    );
+
     if (isLoadingOS) {
         return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
-
-    const selectedDepartment = form.watch('department');
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto pb-10">
@@ -172,36 +207,46 @@ export default function EditServiceOrderPage() {
             <div className="border rounded-lg p-6 bg-background shadow-sm">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                        <div>
-                            <h3 className="text-lg font-medium mb-4">Dados do Cliente e Veículo</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField
-                                    control={form.control as any}
-                                    name="client_name"
-                                    render={({ field }: { field: any }) => (
-                                        <FormItem>
-                                            <FormLabel>Nome do Cliente *</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
 
-                                <FormField
-                                    control={form.control as any}
-                                    name="client_phone"
-                                    render={({ field }: { field: any }) => (
-                                        <FormItem>
-                                            <FormLabel>Telefone *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="(XX) XXXXX-XXXX" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                        {/* SECTION 1: Dados do Cliente e Veículo */}
+                        <div>
+                            <h3 className="text-lg font-medium mb-4">
+                                {isDirectSales ? 'Dados do Cliente e Veículo' : 'Dados do Veículo'}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Client Name — only for direct_sales */}
+                                {isDirectSales && (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="client_name"
+                                        render={({ field }: { field: any }) => (
+                                            <FormItem>
+                                                <FormLabel>Nome do Cliente *</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+
+                                {/* Client Phone — only for direct_sales */}
+                                {isDirectSales && (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="client_phone"
+                                        render={({ field }: { field: any }) => (
+                                            <FormItem>
+                                                <FormLabel>Telefone *</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
 
                                 <FormField
                                     control={form.control as any}
@@ -238,7 +283,12 @@ export default function EditServiceOrderPage() {
                                         <FormItem>
                                             <FormLabel>Placa *</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="ABC1D23" className="uppercase" {...field} maxLength={7} />
+                                                <Input
+                                                    placeholder="ABC1D23"
+                                                    className="uppercase"
+                                                    {...field}
+                                                    maxLength={7}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -247,6 +297,7 @@ export default function EditServiceOrderPage() {
                             </div>
                         </div>
 
+                        {/* SECTION 2: Detalhes do Serviço */}
                         <div>
                             <h3 className="text-lg font-medium mb-4">Detalhes do Serviço</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -275,35 +326,19 @@ export default function EditServiceOrderPage() {
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control as any}
-                                    name="total_value"
-                                    render={({ field }: { field: any }) => (
-                                        <FormItem>
-                                            <FormLabel>Valor Total (R$) *</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormItem className="col-span-1 md:col-span-2">
+                                {/* Total Value — only for direct_sales */}
+                                {isDirectSales && (
                                     <FormField
                                         control={form.control as any}
-                                        name="service_description"
+                                        name="total_value"
                                         render={({ field }: { field: any }) => (
                                             <FormItem>
-                                                <FormLabel>Descrição do Serviço *</FormLabel>
+                                                <FormLabel>Valor Total (R$) *</FormLabel>
                                                 <FormControl>
-                                                    <Textarea
-                                                        className="min-h-[80px]"
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -311,56 +346,115 @@ export default function EditServiceOrderPage() {
                                             </FormItem>
                                         )}
                                     />
-                                </FormItem>
+                                )}
+
                             </div>
                         </div>
 
-                        {/* SECTION 3: Origem e Responsáveis */}
+                        {/* SECTION 3: Responsáveis */}
                         <div>
-                            <h3 className="text-lg font-medium mb-4">Origem e Responsáveis</h3>
+                            <h3 className="text-lg font-medium mb-4">Responsáveis</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField
-                                    control={form.control as any}
-                                    name="dealership_id"
-                                    render={({ field }: { field: any }) => (
-                                        <FormItem>
-                                            <FormLabel>Concessionária *</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} value={field.value?.toString()}>
+                                {/* External OS Number — only for dealership */}
+                                {isDealership && (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="external_os_number"
+                                        render={({ field }: { field: any }) => (
+                                            <FormItem>
+                                                <FormLabel>Nº OS da Concessionária</FormLabel>
                                                 <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Selecione" />
-                                                    </SelectTrigger>
+                                                    <Input
+                                                        placeholder="Ex: 12345"
+                                                        {...field}
+                                                    />
                                                 </FormControl>
-                                                <SelectContent>
-                                                    {/* Mock Data */}
-                                                    <SelectItem value="1">Honda Plaza</SelectItem>
-                                                    <SelectItem value="2">Toyota Sulpar</SelectItem>
-                                                    <SelectItem value="3">Viancar</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
 
                                 <FormField
                                     control={form.control as any}
                                     name="consultant_id"
                                     render={({ field }: { field: any }) => (
                                         <FormItem>
-                                            <FormLabel>Consultor Técnico</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value?.toString()} value={field.value?.toString()}>
+                                            <FormLabel>Consultor{isDealership ? ' *' : ''}</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value?.toString()}
+                                                value={field.value?.toString()}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Selecione (Opcional)" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {/* Mock Data */}
-                                                    <SelectItem value="101">Carlos Souza</SelectItem>
-                                                    <SelectItem value="102">Ana Pereira</SelectItem>
+                                                    {isLoadingConsultants ? (
+                                                        <div className="p-2 text-sm text-muted-foreground">Carregando...</div>
+                                                    ) : consultants?.length === 0 ? (
+                                                        <div className="p-2 text-sm text-muted-foreground">Nenhum consultor encontrado</div>
+                                                    ) : (
+                                                        consultants?.map((consultant) => (
+                                                            <SelectItem key={consultant.id} value={consultant.id.toString()}>
+                                                                {consultant.name}
+                                                            </SelectItem>
+                                                        ))
+                                                    )}
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control as any}
+                                    name="technician_id"
+                                    render={({ field }: { field: any }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {selectedDepartment === 'film' ? 'Instalador' : 'Funcionário'}
+                                            </FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value?.toString()}
+                                                value={field.value?.toString()}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder={
+                                                            selectedDepartment === 'film'
+                                                                ? 'Selecione o instalador'
+                                                                : 'Selecione o funcionário'
+                                                        } />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {isLoadingWorkers ? (
+                                                        <div className="p-2 text-sm text-muted-foreground">Carregando...</div>
+                                                    ) : workers?.length === 0 ? (
+                                                        <div className="p-2 text-sm text-muted-foreground">
+                                                            Nenhum {selectedDepartment === 'film' ? 'instalador' : 'funcionário'} encontrado
+                                                        </div>
+                                                    ) : (
+                                                        workers?.map((worker) => (
+                                                            <SelectItem key={worker.id} value={worker.id.toString()}>
+                                                                {worker.name}
+                                                                {worker.store_name && (
+                                                                    <span className="text-muted-foreground text-xs ml-1">
+                                                                        ({worker.store_name})
+                                                                    </span>
+                                                                )}
+                                                            </SelectItem>
+                                                        ))
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormDescription>Opcional - pode ser alterado depois</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -368,7 +462,7 @@ export default function EditServiceOrderPage() {
                             </div>
                         </div>
 
-
+                        {/* SECTION 4: Documentação */}
                         <div>
                             <h3 className="text-lg font-medium mb-4">Documentação</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,71 +485,76 @@ export default function EditServiceOrderPage() {
                                     />
                                 )}
 
-                                <FormItem className="col-span-1 md:col-span-2">
-                                    <FormField
-                                        control={form.control as any}
-                                        name="damage_map"
-                                        render={({ field }: { field: any }) => (
-                                            <FormItem>
-                                                <FormLabel>Mapa de Avarias</FormLabel>
-                                                <FormControl>
-                                                    <Textarea
-                                                        className="min-h-[80px]"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </FormItem>
-                            </div>
-
-                            {/* Photos */}
-                            <FormField
-                                control={form.control as any}
-                                name="photos"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fotos do Veículo (Mínimo 4) *</FormLabel>
-                                        <FormControl>
-                                            <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                {field.value?.map((photo: string, index: number) => (
-                                                    <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden border">
-                                                        <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="absolute top-1 right-1 h-6 w-6"
-                                                            onClick={() => {
-                                                                const newPhotos = [...field.value];
-                                                                newPhotos.splice(index, 1);
-                                                                field.onChange(newPhotos);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    className="aspect-video h-auto flex flex-col gap-2 border-dashed"
-                                                    onClick={() => {
-                                                        const mockUrl = `https://placehold.co/600x400?text=Photo+${(field.value?.length || 0) + 1}`;
-                                                        field.onChange([...(field.value || []), mockUrl]);
-                                                    }}
-                                                >
-                                                    <Upload className="h-6 w-6" />
-                                                    <span>Adicionar Foto</span>
-                                                </Button>
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
+                                {/* Damage Map — only for direct_sales */}
+                                {isDirectSales && (
+                                    <FormItem className="col-span-1 md:col-span-2">
+                                        <FormField
+                                            control={form.control as any}
+                                            name="damage_map"
+                                            render={({ field }: { field: any }) => (
+                                                <FormItem>
+                                                    <FormLabel>Mapa de Avarias</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            className="min-h-[80px]"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
                                     </FormItem>
                                 )}
-                            />
+                            </div>
+
+                            {/* Photos — only for direct_sales */}
+                            {isDirectSales && (
+                                <FormField
+                                    control={form.control as any}
+                                    name="photos"
+                                    render={({ field }) => (
+                                        <FormItem className="mt-6">
+                                            <FormLabel>Fotos do Veículo</FormLabel>
+                                            <FormControl>
+                                                <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    {field.value?.map((photo: string, index: number) => (
+                                                        <div key={index} className="relative aspect-video bg-muted rounded-md overflow-hidden border">
+                                                            <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                className="absolute top-1 right-1 h-6 w-6"
+                                                                onClick={() => {
+                                                                    const newPhotos = [...(field.value ?? [])];
+                                                                    newPhotos.splice(index, 1);
+                                                                    field.onChange(newPhotos);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        className="aspect-video h-auto flex flex-col gap-2 border-dashed"
+                                                        onClick={() => {
+                                                            const mockUrl = `https://placehold.co/600x400?text=Photo+${(field.value?.length || 0) + 1}`;
+                                                            field.onChange([...(field.value || []), mockUrl]);
+                                                        }}
+                                                    >
+                                                        <Upload className="h-6 w-6" />
+                                                        <span>Adicionar Foto</span>
+                                                    </Button>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
                         </div>
 
                         <FormField

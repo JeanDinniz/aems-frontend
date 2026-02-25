@@ -26,8 +26,9 @@ export function useWebSocket(storeId?: number) {
             case 'service_order_created':
             case 'service_order_updated':
             case 'service_order_status_changed':
-                // Invalidar cache de service orders
+                // Invalidar cache de service orders e do painel do dia
                 queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+                queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
 
                 if (event.event === 'service_order_created') {
                     toast({
@@ -40,6 +41,7 @@ export function useWebSocket(storeId?: number) {
             case 'semaphore_updated':
                 // Atualizar apenas o semáforo específico (pode ser otimizado depois)
                 queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+                queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
                 break;
 
             case 'purchase_request_created':

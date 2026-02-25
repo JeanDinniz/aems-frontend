@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { employeesService } from '@/services/api/employees.service';
 import { useQuery } from '@tanstack/react-query';
-import { usersService } from '@/services/api/users.service';
 import {
     Dialog,
     DialogContent,
@@ -34,14 +34,12 @@ export function WorkerAssignmentDialog({
     const [selectedWorkers, setSelectedWorkers] = useState<number[]>([]);
     const [primaryWorker, setPrimaryWorker] = useState<string | null>(null);
 
-    // Fetch operators for this store
-    const { data: usersData, isLoading } = useQuery({
-        queryKey: ['users', 'operators', storeId],
-        queryFn: () => usersService.list({ role: 'operator', storeId, status: 'active' }, 1, 100),
-        enabled: open && !!storeId
+    // Fetch registered employees for this store
+    const { data: employees, isLoading } = useQuery({
+        queryKey: ['employees', 'by-store', storeId],
+        queryFn: () => employeesService.listByStore(storeId),
+        enabled: open && !!storeId,
     });
-
-    const operators = usersData?.users || [];
 
     // Reset state when opening
     useEffect(() => {
@@ -55,7 +53,6 @@ export function WorkerAssignmentDialog({
         setSelectedWorkers(prev => {
             if (prev.includes(workerId)) {
                 const newSelection = prev.filter(id => id !== workerId);
-                // If we removed the primary worker, reset primary
                 if (primaryWorker === workerId.toString()) {
                     setPrimaryWorker(null);
                 }
@@ -88,44 +85,46 @@ export function WorkerAssignmentDialog({
                         <div className="flex justify-center p-4">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
-                    ) : operators.length === 0 ? (
+                    ) : !employees || employees.length === 0 ? (
                         <p className="text-center text-muted-foreground py-4">
-                            Nenhum operador ativo encontrado nesta loja.
+                            Nenhum funcionário ativo encontrado nesta loja.
                         </p>
                     ) : (
                         <ScrollArea className="h-[300px] pr-4">
                             <div className="space-y-4">
                                 <RadioGroup value={primaryWorker || ''} onValueChange={setPrimaryWorker}>
-                                    {operators.map((operator) => {
-                                        const isSelected = selectedWorkers.includes(operator.id);
+                                    {employees.map((employee) => {
+                                        const isSelected = selectedWorkers.includes(employee.id);
                                         return (
-                                            <div key={operator.id} className={`flex items-start space-x-3 p-2 rounded-md transition-colors ${isSelected ? 'bg-muted/50' : ''}`}>
+                                            <div key={employee.id} className={`flex items-start space-x-3 p-2 rounded-md transition-colors ${isSelected ? 'bg-muted/50' : ''}`}>
                                                 <Checkbox
-                                                    id={`worker-${operator.id}`}
+                                                    id={`worker-${employee.id}`}
                                                     checked={isSelected}
-                                                    onCheckedChange={() => handleToggleWorker(operator.id)}
+                                                    onCheckedChange={() => handleToggleWorker(employee.id)}
                                                     className="mt-1"
                                                 />
                                                 <div className="flex-1 space-y-1">
                                                     <div className="flex items-center gap-2">
                                                         <Label
-                                                            htmlFor={`worker-${operator.id}`}
+                                                            htmlFor={`worker-${employee.id}`}
                                                             className="font-medium cursor-pointer"
                                                         >
-                                                            {operator.name}
+                                                            {employee.name}
                                                         </Label>
-                                                        {selectedWorkers.includes(operator.id) && (
+                                                        {isSelected && (
                                                             <div className="flex items-center space-x-1 ml-auto">
-                                                                <RadioGroupItem value={operator.id.toString()} id={`primary-${operator.id}`} />
-                                                                <Label htmlFor={`primary-${operator.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                                                                <RadioGroupItem value={employee.id.toString()} id={`primary-${employee.id}`} />
+                                                                <Label htmlFor={`primary-${employee.id}`} className="text-xs text-muted-foreground cursor-pointer">
                                                                     Principal
                                                                 </Label>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {operator.email}
-                                                    </p>
+                                                    {employee.position && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {employee.position}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         );

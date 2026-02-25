@@ -157,7 +157,7 @@ export function ClientDetailsPage() {
                                                 </TableCell>
                                                 <TableCell>{new Date(os.created_at).toLocaleDateString('pt-BR')}</TableCell>
                                                 <TableCell>{os.vehicle_plate || os.vehicle_model || '-'}</TableCell>
-                                                <TableCell className="capitalize">{os.department === 'film' ? 'Película' : os.department === 'bodywork' ? 'Funilaria' : 'Estética'}</TableCell>
+                                                <TableCell className="capitalize">{{ film: 'Película', ppf: 'PPF', bodywork: 'Funilaria', vn: 'VN', vu: 'VU', workshop: 'Oficina' }[os.department] ?? os.department}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="capitalize">
                                                         {os.status === 'waiting' ? 'Aguardando' :

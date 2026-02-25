@@ -37,6 +37,7 @@ import AnalyticsPage from '@/pages/analytics/AnalyticsPage';
 import SettingsPage from '@/pages/settings/SettingsPage';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import { ConsultantManagementPage } from '@/pages/admin/ConsultantManagementPage';
+import { EmployeeManagementPage } from '@/pages/admin/EmployeeManagementPage';
 import { StoreManagementPage } from '@/pages/admin/StoreManagementPage';
 import { ApprovalsPage } from '@/pages/approvals/ApprovalsPage';
 import { BIDashboardPage } from '@/pages/reports/BIDashboardPage';
@@ -50,6 +51,7 @@ import ExecutiveDashboardPage from '@/pages/reports/ExecutiveDashboardPage';
 import WorkerRankingPage from '@/pages/reports/WorkerRankingPage';
 import MultiStoreBIPage from '@/pages/reports/MultiStoreBIPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import ServicesPage from '@/pages/services/ServicesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,7 +137,9 @@ const router = createBrowserRouter([
             children: [
               { path: '/admin/users', element: <UserManagementPage /> },
               { path: '/admin/consultants', element: <ConsultantManagementPage /> },
+              { path: '/admin/employees', element: <EmployeeManagementPage /> },
               { path: '/admin/stores', element: <StoreManagementPage /> },
+              { path: '/servicos', element: <ServicesPage /> },
               { path: '/reports/multi-store', element: <MultiStoreBIPage /> },
               { path: '/reports/bi', element: <BIDashboardPage /> }, // Redireciona
               { path: '/analytics', element: <AnalyticsPage /> },    // Redireciona

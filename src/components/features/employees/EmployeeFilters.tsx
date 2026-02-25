@@ -1,14 +1,14 @@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { ConsultantFilters as Filters } from '@/types/consultant.types';
 import { useStores } from '@/hooks/useStores';
+import type { EmployeeFilters as Filters } from '@/types/employee.types';
 
-interface ConsultantFiltersProps {
+interface Props {
     filters: Filters;
     onFiltersChange: (filters: Filters) => void;
 }
 
-export function ConsultantFilters({ filters, onFiltersChange }: ConsultantFiltersProps) {
+export function EmployeeFilters({ filters, onFiltersChange }: Props) {
     const { stores } = useStores();
 
     const handleChange = (key: keyof Filters, value: any) => {
@@ -20,13 +20,13 @@ export function ConsultantFilters({ filters, onFiltersChange }: ConsultantFilter
             <Input
                 placeholder="Buscar por nome"
                 value={filters.search || ''}
-                onChange={(e) => handleChange('search', e.target.value)}
+                onChange={(e) => handleChange('search', e.target.value || undefined)}
                 className="max-w-xs"
             />
 
             <Select
                 value={filters.store_id?.toString() || 'all'}
-                onValueChange={(value) => handleChange('store_id', value === 'all' ? undefined : Number(value))}
+                onValueChange={(v) => handleChange('store_id', v === 'all' ? undefined : Number(v))}
             >
                 <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Loja" />
@@ -42,16 +42,29 @@ export function ConsultantFilters({ filters, onFiltersChange }: ConsultantFilter
             </Select>
 
             <Select
-                value={filters.is_active === undefined ? 'all' : filters.is_active ? 'true' : 'false'}
-                onValueChange={(value) => handleChange('is_active', value === 'all' ? undefined : value === 'true')}
+                value={filters.department || 'all'}
+                onValueChange={(v) => handleChange('department', v === 'all' ? undefined : v)}
             >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos os cargos</SelectItem>
+                    <SelectItem value="film">Instaladores de Película</SelectItem>
+                </SelectContent>
+            </Select>
+
+            <Select
+                value={filters.is_active === undefined ? 'all' : filters.is_active ? 'true' : 'false'}
+                onValueChange={(v) => handleChange('is_active', v === 'all' ? undefined : v === 'true')}
+            >
+                <SelectTrigger className="w-[160px]">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="true">Ativo</SelectItem>
-                    <SelectItem value="false">Inativo</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="true">Ativos</SelectItem>
+                    <SelectItem value="false">Inativos</SelectItem>
                 </SelectContent>
             </Select>
         </div>

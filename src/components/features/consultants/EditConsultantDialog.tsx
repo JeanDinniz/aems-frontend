@@ -95,18 +95,6 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
                         </p>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Concessionária</label>
-                        <Input
-                            value={consultant.dealership_name || 'N/A'}
-                            disabled
-                            className="bg-gray-50"
-                        />
-                        <p className="text-sm text-gray-500">
-                            A concessionária não pode ser alterada após a criação
-                        </p>
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Telefone</label>
