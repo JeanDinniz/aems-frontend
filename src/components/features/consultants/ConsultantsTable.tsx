@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -14,6 +14,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConsultantStatusBadge } from './ConsultantStatusBadge';
@@ -33,20 +43,13 @@ interface ConsultantsTableProps {
 export function ConsultantsTable({ consultants, isLoading, page, pageSize, total, onPageChange }: ConsultantsTableProps) {
     const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [consultantToDelete, setConsultantToDelete] = useState<Consultant | null>(null);
 
-    const { deactivateConsultant, activateConsultant } = useConsultants();
+    const { deleteConsultant, isDeletingConsultant } = useConsultants();
 
     const handleEdit = (consultant: Consultant) => {
         setSelectedConsultant(consultant);
         setEditDialogOpen(true);
-    };
-
-    const handleToggleStatus = (consultant: Consultant) => {
-        if (consultant.is_active) {
-            deactivateConsultant(consultant.id);
-        } else {
-            activateConsultant(consultant.id);
-        }
     };
 
     if (isLoading) {
@@ -127,10 +130,12 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                                     <Edit className="h-4 w-4 mr-2" />
                                                     Editar
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(consultant)}>
-                                                    <span className={consultant.is_active ? 'text-red-600' : 'text-green-600'}>
-                                                        {consultant.is_active ? 'Desativar' : 'Ativar'}
-                                                    </span>
+                                                <DropdownMenuItem
+                                                    onClick={() => setConsultantToDelete(consultant)}
+                                                    className="text-red-600 focus:text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Excluir
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -178,6 +183,35 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                     onOpenChange={setEditDialogOpen}
                 />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                open={!!consultantToDelete}
+                onOpenChange={(open) => { if (!open) setConsultantToDelete(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir consultor?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            O consultor{' '}
+                            <span className="font-semibold">{consultantToDelete?.name}</span>{' '}
+                            será excluído permanentemente. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingConsultant}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => consultantToDelete && deleteConsultant(consultantToDelete.id, {
+                                onSuccess: () => setConsultantToDelete(null),
+                            })}
+                            disabled={isDeletingConsultant}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {isDeletingConsultant ? 'Excluindo...' : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -65,6 +65,21 @@ export function useUsers(filters?: UserFilters, page = 1) {
         },
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => usersService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            toast({ title: 'Usuário excluído com sucesso.' });
+        },
+        onError: () => {
+            toast({
+                title: 'Erro ao excluir usuário',
+                description: 'Verifique se o usuário não possui vínculos ativos e tente novamente.',
+                variant: 'destructive',
+            });
+        },
+    });
+
     const resetPasswordMutation = useMutation({
         mutationFn: (id: number) => usersService.resetPassword(id),
         onSuccess: (data) => {
@@ -91,6 +106,8 @@ export function useUsers(filters?: UserFilters, page = 1) {
         updateUser: updateMutation.mutate,
         activateUser: activateMutation.mutate,
         deactivateUser: deactivateMutation.mutate,
+        deleteUser: deleteMutation.mutate,
+        isDeletingUser: deleteMutation.isPending,
         resetPassword: resetPasswordMutation.mutate,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,

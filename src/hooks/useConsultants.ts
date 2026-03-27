@@ -65,6 +65,21 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
         },
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => consultantsService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['consultants'] });
+            toast({ title: 'Consultor excluído com sucesso.' });
+        },
+        onError: () => {
+            toast({
+                title: 'Erro ao excluir consultor',
+                description: 'Verifique se o consultor não possui vínculos ativos e tente novamente.',
+                variant: 'destructive',
+            });
+        },
+    });
+
     return {
         consultants: data?.consultants || [],
         total: data?.total || 0,
@@ -74,6 +89,8 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
         updateConsultant: updateMutation.mutate,
         activateConsultant: activateMutation.mutate,
         deactivateConsultant: deactivateMutation.mutate,
+        deleteConsultant: deleteMutation.mutate,
+        isDeletingConsultant: deleteMutation.isPending,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
     };

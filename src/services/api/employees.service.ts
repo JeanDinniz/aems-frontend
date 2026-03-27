@@ -64,6 +64,10 @@ export const employeesService = {
         return response.data;
     },
 
+    async delete(id: number): Promise<void> {
+        await apiClient.delete(`/employees/${id}`);
+    },
+
     async deactivate(id: number): Promise<Employee> {
         const response = await apiClient.delete<Employee>(`/employees/${id}`);
         return response.data;

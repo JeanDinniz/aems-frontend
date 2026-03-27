@@ -60,6 +60,21 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
         },
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => employeesService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
+            toast({ title: 'Funcionário excluído com sucesso.' });
+        },
+        onError: () => {
+            toast({
+                title: 'Erro ao excluir funcionário',
+                description: 'Verifique se o funcionário não possui vínculos ativos e tente novamente.',
+                variant: 'destructive',
+            });
+        },
+    });
+
     return {
         employees: data?.employees || [],
         total: data?.total || 0,
@@ -69,6 +84,8 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
         updateEmployee: updateMutation.mutate,
         deactivateEmployee: deactivateMutation.mutate,
         activateEmployee: activateMutation.mutate,
+        deleteEmployee: deleteMutation.mutate,
+        isDeletingEmployee: deleteMutation.isPending,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
     };

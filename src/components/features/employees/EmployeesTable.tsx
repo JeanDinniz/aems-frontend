@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -14,6 +14,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,15 +43,9 @@ interface Props {
 export function EmployeesTable({ employees, isLoading, page, pageSize, total, onPageChange }: Props) {
     const [selected, setSelected] = useState<Employee | null>(null);
     const [editOpen, setEditOpen] = useState(false);
-    const { deactivateEmployee, activateEmployee } = useEmployees();
+    const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
-    const handleToggle = (emp: Employee) => {
-        if (emp.is_active) {
-            deactivateEmployee(emp.id);
-        } else {
-            activateEmployee(emp.id);
-        }
-    };
+    const { deleteEmployee, isDeletingEmployee } = useEmployees();
 
     if (isLoading) {
         return (
@@ -100,10 +104,12 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
                                                     <Edit className="h-4 w-4 mr-2" />
                                                     Editar
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggle(emp)}>
-                                                    <span className={emp.is_active ? 'text-red-600' : 'text-green-600'}>
-                                                        {emp.is_active ? 'Desativar (Demitido)' : 'Reativar'}
-                                                    </span>
+                                                <DropdownMenuItem
+                                                    onClick={() => setEmployeeToDelete(emp)}
+                                                    className="text-red-600 focus:text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Excluir
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -134,6 +140,35 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
             {selected && (
                 <EditEmployeeDialog employee={selected} open={editOpen} onOpenChange={setEditOpen} />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                open={!!employeeToDelete}
+                onOpenChange={(open) => { if (!open) setEmployeeToDelete(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir funcionário?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            O funcionário{' '}
+                            <span className="font-semibold">{employeeToDelete?.name}</span>{' '}
+                            será excluído permanentemente. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingEmployee}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => employeeToDelete && deleteEmployee(employeeToDelete.id, {
+                                onSuccess: () => setEmployeeToDelete(null),
+                            })}
+                            disabled={isDeletingEmployee}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {isDeletingEmployee ? 'Excluindo...' : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

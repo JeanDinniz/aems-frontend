@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Key, Eye, ShieldCheck } from 'lucide-react';
+import { MoreHorizontal, Edit, Key, Eye, ShieldCheck, Trash2 } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -14,6 +14,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,8 +51,9 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
     const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-    const { deactivateUser, activateUser } = useUsers();
+    const { deleteUser, isDeletingUser } = useUsers();
 
     const handleEdit = (user: User) => {
         setSelectedUser(user);
@@ -57,14 +68,6 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     const handleResetPassword = (user: User) => {
         setSelectedUser(user);
         setResetPasswordDialogOpen(true);
-    };
-
-    const handleToggleStatus = (user: User) => {
-        if (user.is_active) {
-            deactivateUser(user.id);
-        } else {
-            activateUser(user.id);
-        }
     };
 
     if (isLoading) {
@@ -180,10 +183,12 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                     <Key className="h-4 w-4 mr-2" />
                                                     Resetar Senha
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
-                                                    <span className={user.is_active ? 'text-red-600' : 'text-green-600'}>
-                                                        {user.is_active ? 'Desativar' : 'Ativar'}
-                                                    </span>
+                                                <DropdownMenuItem
+                                                    onClick={() => setUserToDelete(user)}
+                                                    className="text-red-600 focus:text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Excluir
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -250,6 +255,35 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                 open={permissionsUser !== null}
                 onClose={() => setPermissionsUser(null)}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                open={!!userToDelete}
+                onOpenChange={(open) => { if (!open) setUserToDelete(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            O usuário{' '}
+                            <span className="font-semibold">{userToDelete?.full_name}</span>{' '}
+                            será excluído permanentemente. Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingUser}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => userToDelete && deleteUser(userToDelete.id, {
+                                onSuccess: () => setUserToDelete(null),
+                            })}
+                            disabled={isDeletingUser}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {isDeletingUser ? 'Excluindo...' : 'Excluir'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
