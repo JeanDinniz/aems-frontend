@@ -292,7 +292,7 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 const editStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
     store_type: z.enum(['dealership', 'warehouse']),
-    active: z.boolean(),
+    is_active: z.boolean(),
     city: z.string().optional(),
     state: z.string().optional(),
     address: z.string().optional(),
@@ -317,7 +317,7 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
             ? {
                   name: store.name,
                   store_type: store.store_type,
-                  active: store.active,
+                  is_active: store.is_active,
                   city: store.city ?? '',
                   state: store.state ?? '',
                   address: store.address ?? '',
@@ -401,7 +401,7 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
 
                         <FormField
                             control={form.control}
-                            name="active"
+                            name="is_active"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Status</FormLabel>
@@ -551,8 +551,8 @@ export function StoreManagementPage() {
 
             const matchesStatus =
                 statusFilter === 'all' ||
-                (statusFilter === 'active' && store.active) ||
-                (statusFilter === 'inactive' && !store.active);
+                (statusFilter === 'active' && store.is_active) ||
+                (statusFilter === 'inactive' && !store.is_active);
 
             return matchesSearch && matchesType && matchesStatus;
         });
@@ -701,14 +701,14 @@ export function StoreManagementPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Badge
-                                            variant={store.active ? 'default' : 'secondary'}
+                                            variant={store.is_active ? 'default' : 'secondary'}
                                             className={
-                                                store.active
+                                                store.is_active
                                                     ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-100'
                                                     : 'bg-gray-100 text-gray-600 border-gray-300'
                                             }
                                         >
-                                            {store.active ? 'Ativo' : 'Inativo'}
+                                            {store.is_active ? 'Ativo' : 'Inativo'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
