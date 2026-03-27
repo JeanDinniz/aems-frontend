@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+mk
 
 # Editor directories and files
 .vscode/*
@@ -37,6 +38,8 @@ estrutura-pastas.txt
 arquivos-tsx.txt
 TESTING_GUIDE.md
 TEST_SUMMARY.md
+.log
+.txt
 
 # Path alias directory at root (should be in src/)
 @/
