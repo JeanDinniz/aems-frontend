@@ -67,8 +67,18 @@ export function useUsers(filters?: UserFilters, page = 1) {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => usersService.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+        onSuccess: (_, deletedId) => {
+            queryClient.setQueriesData(
+                { queryKey: ['users'] },
+                (old: { users: Array<{ id: number }>; total: number } | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        users: old.users.filter((u) => u.id !== deletedId),
+                        total: Math.max(0, old.total - 1),
+                    };
+                }
+            );
             toast({ title: 'Usuário excluído com sucesso.' });
         },
         onError: () => {

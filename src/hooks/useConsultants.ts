@@ -67,8 +67,18 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => consultantsService.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['consultants'] });
+        onSuccess: (_, deletedId) => {
+            queryClient.setQueriesData(
+                { queryKey: ['consultants'] },
+                (old: { consultants: Array<{ id: number }>; total: number } | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        consultants: old.consultants.filter((c) => c.id !== deletedId),
+                        total: Math.max(0, old.total - 1),
+                    };
+                }
+            );
             toast({ title: 'Consultor excluído com sucesso.' });
         },
         onError: () => {

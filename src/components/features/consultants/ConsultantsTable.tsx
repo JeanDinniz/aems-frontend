@@ -45,7 +45,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [consultantToDelete, setConsultantToDelete] = useState<Consultant | null>(null);
 
-    const { deleteConsultant, isDeletingConsultant } = useConsultants();
+    const { deleteConsultant, isDeletingConsultant, activateConsultant, deactivateConsultant } = useConsultants();
 
     const handleEdit = (consultant: Consultant) => {
         setSelectedConsultant(consultant);
@@ -130,6 +130,15 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                                     <Edit className="h-4 w-4 mr-2" />
                                                     Editar
                                                 </DropdownMenuItem>
+                                                {consultant.is_active ? (
+                                                    <DropdownMenuItem onClick={() => deactivateConsultant(consultant.id)}>
+                                                        <span className="text-yellow-600">Desativar</span>
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                    <DropdownMenuItem onClick={() => activateConsultant(consultant.id)}>
+                                                        <span className="text-green-600">Ativar</span>
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem
                                                     onClick={() => setConsultantToDelete(consultant)}
                                                     className="text-red-600 focus:text-red-600"

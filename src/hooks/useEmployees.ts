@@ -62,8 +62,18 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => employeesService.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['employees'] });
+        onSuccess: (_, deletedId) => {
+            queryClient.setQueriesData(
+                { queryKey: ['employees'] },
+                (old: { employees: Array<{ id: number }>; total: number } | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        employees: old.employees.filter((e) => e.id !== deletedId),
+                        total: Math.max(0, old.total - 1),
+                    };
+                }
+            );
             toast({ title: 'Funcionário excluído com sucesso.' });
         },
         onError: () => {

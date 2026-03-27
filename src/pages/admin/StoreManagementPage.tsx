@@ -520,7 +520,9 @@ export function StoreManagementPage() {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => storesService.delete(id),
         onSuccess: (deleted) => {
-            queryClient.invalidateQueries({ queryKey: ['stores'] });
+            queryClient.setQueryData<StoreType[]>(['stores'], (old) =>
+                old ? old.filter((s) => s.id !== deleted.id) : []
+            );
             toast({ title: `Loja ${deleted.code} excluída com sucesso.` });
             setStoreToDelete(null);
         },

@@ -11,11 +11,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useConsultants } from '@/hooks/useConsultants';
+import { useStores } from '@/hooks/useStores';
 import type { Consultant } from '@/types/consultant.types';
 
 const editConsultantSchema = z.object({
     name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    store_id: z.number({ error: 'Loja é obrigatória' }),
     phone: z.string().optional(),
     email: z.string().email('E-mail inválido').optional().or(z.literal('')),
 });
@@ -30,20 +33,26 @@ interface EditConsultantDialogProps {
 
 export function EditConsultantDialog({ consultant, open, onOpenChange }: EditConsultantDialogProps) {
     const { updateConsultant, isUpdating } = useConsultants();
+    const { stores } = useStores();
 
     const {
         register,
         handleSubmit,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<EditConsultantForm>({
         resolver: zodResolver(editConsultantSchema),
     });
 
+    const selectedStoreId = watch('store_id');
+
     useEffect(() => {
         if (open && consultant) {
             reset({
                 name: consultant.name,
+                store_id: consultant.store_id,
                 phone: consultant.phone || '',
                 email: consultant.email || '',
             });
@@ -51,19 +60,16 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
     }, [open, consultant, reset]);
 
     const onSubmit = (data: EditConsultantForm) => {
-        const payload = {
-            name: data.name,
-            phone: data.phone || undefined,
-            email: data.email || undefined,
-        };
-
         updateConsultant({
             id: consultant.id,
-            payload,
-        }, {
-            onSuccess: () => {
-                onOpenChange(false);
+            payload: {
+                name: data.name,
+                store_id: data.store_id,
+                phone: data.phone || undefined,
+                email: data.email || undefined,
             },
+        }, {
+            onSuccess: () => onOpenChange(false),
         });
     };
 
@@ -84,16 +90,27 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="ec-store" className="text-sm font-medium">Loja</label>
-                        <Input
-                            id="ec-store"
-                            value={consultant.store_name || 'N/A'}
-                            disabled
-                            className="bg-gray-50"
-                        />
-                        <p className="text-sm text-gray-500">
-                            A loja não pode ser alterada após a criação
-                        </p>
+                        <label htmlFor="ec-store" className="text-sm font-medium">
+                            Loja <span className="text-red-500">*</span>
+                        </label>
+                        <Select
+                            value={selectedStoreId?.toString()}
+                            onValueChange={(val) => setValue('store_id', parseInt(val))}
+                        >
+                            <SelectTrigger id="ec-store">
+                                <SelectValue placeholder="Selecione a loja" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {stores?.map((store) => (
+                                    <SelectItem key={store.id} value={store.id.toString()}>
+                                        {store.code} - {store.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.store_id && (
+                            <p className="text-sm text-red-500">{errors.store_id.message}</p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
