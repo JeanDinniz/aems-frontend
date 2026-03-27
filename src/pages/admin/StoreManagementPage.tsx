@@ -519,15 +519,15 @@ export function StoreManagementPage() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => storesService.delete(id),
-        onSuccess: (deactivated) => {
+        onSuccess: (deleted) => {
             queryClient.invalidateQueries({ queryKey: ['stores'] });
-            toast({ title: `Loja ${deactivated.code} desativada com sucesso.` });
+            toast({ title: `Loja ${deleted.code} excluída com sucesso.` });
             setStoreToDelete(null);
         },
         onError: () => {
             toast({
                 variant: 'destructive',
-                title: 'Erro ao desativar loja',
+                title: 'Erro ao excluir loja',
                 description: 'Verifique se a loja não possui vínculos ativos e tente novamente.',
             });
         },
@@ -726,7 +726,7 @@ export function StoreManagementPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDeleteClick(store)}
-                                                aria-label={`Desativar loja ${store.name}`}
+                                                aria-label={`Excluir loja ${store.name}`}
                                                 className="hover:bg-red-50 hover:text-red-600 text-muted-foreground"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -761,13 +761,13 @@ export function StoreManagementPage() {
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Desativar loja?</AlertDialogTitle>
+                        <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
                         <AlertDialogDescription>
                             A loja{' '}
                             <span className="font-semibold">
                                 {storeToDelete?.code} — {storeToDelete?.name}
                             </span>{' '}
-                            será desativada. Esta ação pode ser desfeita editando a loja e reativando-a.
+                            será excluída permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -777,7 +777,7 @@ export function StoreManagementPage() {
                             disabled={deleteMutation.isPending}
                             className="bg-red-600 hover:bg-red-700 text-white"
                         >
-                            {deleteMutation.isPending ? 'Desativando...' : 'Desativar'}
+                            {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
