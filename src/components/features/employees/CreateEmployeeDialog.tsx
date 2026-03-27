@@ -17,7 +17,7 @@ import { EMPLOYEE_POSITIONS, positionToDepartment } from '@/constants/employees'
 
 const schema = z.object({
     name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
-    store_id: z.number({ required_error: 'Loja é obrigatória' }),
+    store_id: z.number({ error: 'Loja é obrigatória' }),
     position: z.string().optional(),
 });
 
@@ -64,21 +64,21 @@ export function CreateEmployeeDialog({ open, onOpenChange }: Props) {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">
+                        <label htmlFor="cre-name" className="text-sm font-medium">
                             Nome Completo <span className="text-red-500">*</span>
                         </label>
-                        <Input {...register('name')} placeholder="Ex: Jean Silva" />
+                        <Input id="cre-name" {...register('name')} placeholder="Ex: Jean Silva" />
                         {errors.name && (
                             <p className="text-sm text-red-500">{errors.name.message}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">
+                        <label htmlFor="cre-store" className="text-sm font-medium">
                             Loja <span className="text-red-500">*</span>
                         </label>
                         <Select onValueChange={(v) => setValue('store_id', parseInt(v))}>
-                            <SelectTrigger>
+                            <SelectTrigger id="cre-store">
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
                             <SelectContent>
@@ -95,9 +95,9 @@ export function CreateEmployeeDialog({ open, onOpenChange }: Props) {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Cargo</label>
+                        <label htmlFor="cre-position" className="text-sm font-medium">Cargo</label>
                         <Select onValueChange={(v) => setValue('position', v === 'none' ? undefined : v)}>
-                            <SelectTrigger>
+                            <SelectTrigger id="cre-position">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>

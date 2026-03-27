@@ -27,8 +27,8 @@ export function UnauthorizedPage() {
                         <Button variant="outline" onClick={() => navigate(-1)} className="flex-1">
                             Voltar
                         </Button>
-                        <Button onClick={() => navigate('/dashboard')} className="flex-1">
-                            Ir para Dashboard
+                        <Button onClick={() => navigate('/service-orders')} className="flex-1">
+                            Ir para Ordens de Serviço
                         </Button>
                     </div>
                 </CardContent>

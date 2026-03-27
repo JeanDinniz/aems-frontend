@@ -26,6 +26,9 @@ export function ConnectionIndicator() {
         <div
             className="flex items-center gap-2 text-red-600 cursor-pointer"
             onClick={reconnect}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') reconnect(); }}
+            role="button"
+            tabIndex={0}
             title="Clique para reconectar"
         >
             <WifiOff className="h-4 w-4" />

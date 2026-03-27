@@ -70,26 +70,26 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: Props) {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Nome Completo</label>
-                        <Input {...register('name')} />
+                        <label htmlFor="ee-name" className="text-sm font-medium">Nome Completo</label>
+                        <Input id="ee-name" {...register('name')} />
                         {errors.name && (
                             <p className="text-sm text-red-500">{errors.name.message}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Loja</label>
-                        <Input value={employee.store_name || 'N/A'} disabled className="bg-gray-50" />
+                        <label htmlFor="ee-store" className="text-sm font-medium">Loja</label>
+                        <Input id="ee-store" value={employee.store_name || 'N/A'} disabled className="bg-gray-50" />
                         <p className="text-sm text-gray-500">A loja não pode ser alterada após o cadastro</p>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Cargo</label>
+                        <label htmlFor="ee-position" className="text-sm font-medium">Cargo</label>
                         <Select
                             value={currentPosition || 'none'}
                             onValueChange={(v) => setValue('position', v === 'none' ? undefined : v)}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger id="ee-position">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>

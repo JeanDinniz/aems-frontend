@@ -13,6 +13,7 @@ interface TrafficLightStatusProps {
 // Regras de semáforo por departamento (em minutos)
 const SEMAPHORE_RULES: Record<Department, { white: number; yellow: number; orange: number }> = {
     film: { white: 45, yellow: 90, orange: 180 },      // 45min
+    ppf: { white: 30, yellow: 60, orange: 120 },       // 30min - Similar à estética
     vn: { white: 45, yellow: 90, orange: 180 },        // 45min - Igual Film
     vu: { white: 45, yellow: 90, orange: 180 },        // 45min - Igual Film
     bodywork: { white: 60, yellow: 120, orange: 240 },  // 1h

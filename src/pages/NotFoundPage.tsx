@@ -11,8 +11,8 @@ export function NotFoundPage() {
             <p className="text-gray-500 mb-8">
                 A página que você está procurando não existe ou foi movida.
             </p>
-            <Button onClick={() => navigate('/dashboard')}>
-                Voltar para o Dashboard
+            <Button onClick={() => navigate('/service-orders')}>
+                Voltar para Ordens de Serviço
             </Button>
         </div>
     );

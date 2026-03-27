@@ -8,13 +8,3 @@ export interface Photo {
     url?: string; // URL no servidor (após upload)
     error?: string; // Erro de upload
 }
-
-export interface PhotoUploadOptions {
-    maxFiles: number; // Máximo de arquivos
-    minFiles: number; // Mínimo de arquivos
-    maxSizePerFile: number; // MB
-    acceptedTypes: string[]; // ['image/jpeg', 'image/png']
-    compressionQuality: number; // 0-1
-    maxWidth: number; // Largura máxima
-    maxHeight: number; // Altura máxima
-}

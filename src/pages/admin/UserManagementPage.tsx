@@ -23,9 +23,8 @@ export function UserManagementPage() {
         return <Navigate to="/" replace />;
     }
 
-    const handleExport = async () => {
-        // TODO: Implement export
-        console.log('Exporting...', filters);
+    const handleExport = () => {
+        // TODO: Exportar lista de usuários para Excel
     };
 
     return (

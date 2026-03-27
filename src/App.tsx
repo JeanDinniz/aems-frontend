@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
@@ -10,48 +11,31 @@ import { Toaster } from '@/components/ui/toaster';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
-// Páginas
+// Lazy-loaded pages
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
+const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const ServiceOrdersPage = lazy(() => import('@/pages/service-orders/ServiceOrdersPage'));
+const ServiceOrderDetailsPage = lazy(() => import('@/pages/service-orders/ServiceOrderDetailsPage'));
+const EditServiceOrderPage = lazy(() => import('@/pages/service-orders/EditServiceOrderPage'));
+const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const UserManagementPage = lazy(() => import('@/pages/admin/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
+const ConsultantManagementPage = lazy(() => import('@/pages/admin/ConsultantManagementPage').then(m => ({ default: m.ConsultantManagementPage })));
+const EmployeeManagementPage = lazy(() => import('@/pages/admin/EmployeeManagementPage').then(m => ({ default: m.EmployeeManagementPage })));
+const StoreManagementPage = lazy(() => import('@/pages/admin/StoreManagementPage').then(m => ({ default: m.StoreManagementPage })));
+const VehicleModelsPage = lazy(() => import('@/pages/admin/VehicleModelsPage').then(m => ({ default: m.VehicleModelsPage })));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+const ServicesPage = lazy(() => import('@/pages/services/ServicesPage'));
+const ConferencePage = lazy(() => import('@/pages/conference/ConferencePage').then(m => ({ default: m.ConferencePage })));
+const FechamentoPage = lazy(() => import('@/pages/fechamento/FechamentoPage').then(m => ({ default: m.FechamentoPage })));
 
-import LoginPage from '@/pages/auth/LoginPage';
-import ChangePasswordPage from '@/pages/auth/ChangePasswordPage';
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
-import DashboardPage from '@/pages/dashboard/DashboardPage';
-import { ProfilePage } from '@/pages/profile/ProfilePage';
-import DayPanelPage from '@/pages/day-panel/DayPanelPage';
-import ServiceOrdersPage from '@/pages/service-orders/ServiceOrdersPage';
-import CreateServiceOrderPage from '@/pages/service-orders/CreateServiceOrderPage';
-import ServiceOrderDetailsPage from '@/pages/service-orders/ServiceOrderDetailsPage';
-import EditServiceOrderPage from '@/pages/service-orders/EditServiceOrderPage';
-import InventoryPage from '@/pages/inventory/InventoryPage';
-import CreateFilmBobbinPage from '@/pages/inventory/CreateFilmBobbinPage';
-import FilmBobbinDetailsPage from '@/pages/inventory/FilmBobbinDetailsPage';
-import EditFilmBobbinPage from '@/pages/inventory/EditFilmBobbinPage';
-import { ClientsPage } from '@/pages/clients/ClientsPage';
-import { CreateClientPage } from '@/pages/clients/CreateClientPage';
-import { EditClientPage } from '@/pages/clients/EditClientPage';
-import { ClientDetailsPage } from '@/pages/clients/ClientDetailsPage';
-import { PurchaseRequestsPage } from '@/pages/purchase-requests/PurchaseRequestsPage';
-import { CreatePurchaseRequestPage } from '@/pages/purchase-requests/CreatePurchaseRequestPage';
-import { PurchaseRequestDetailsPage } from '@/pages/purchase-requests/PurchaseRequestDetailsPage';
-import AnalyticsPage from '@/pages/analytics/AnalyticsPage';
-import SettingsPage from '@/pages/settings/SettingsPage';
-import { UserManagementPage } from '@/pages/admin/UserManagementPage';
-import { ConsultantManagementPage } from '@/pages/admin/ConsultantManagementPage';
-import { EmployeeManagementPage } from '@/pages/admin/EmployeeManagementPage';
-import { StoreManagementPage } from '@/pages/admin/StoreManagementPage';
-import { ApprovalsPage } from '@/pages/approvals/ApprovalsPage';
-import { BIDashboardPage } from '@/pages/reports/BIDashboardPage';
-import IncidentsList from '@/pages/incidents/IncidentsList';
-import CreateIncident from '@/pages/incidents/CreateIncident';
-import IncidentDetails from '@/pages/incidents/IncidentDetails';
-import OccurrencesListPage from '@/pages/occurrences/OccurrencesListPage';
-import CreateOccurrencePage from '@/pages/occurrences/CreateOccurrencePage';
-import OccurrenceDetailsPage from '@/pages/occurrences/OccurrenceDetailsPage';
-import ExecutiveDashboardPage from '@/pages/reports/ExecutiveDashboardPage';
-import WorkerRankingPage from '@/pages/reports/WorkerRankingPage';
-import MultiStoreBIPage from '@/pages/reports/MultiStoreBIPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
-import ServicesPage from '@/pages/services/ServicesPage';
+const PageFallback = () => (
+  <div className="flex items-center justify-center min-h-[200px]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+  </div>
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,9 +53,9 @@ const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
-      { path: '/change-password', element: <ChangePasswordPage /> },
+      { path: '/login', element: <Suspense fallback={<PageFallback />}><LoginPage /></Suspense> },
+      { path: '/forgot-password', element: <Suspense fallback={<PageFallback />}><ForgotPasswordPage /></Suspense> },
+      { path: '/change-password', element: <Suspense fallback={<PageFallback />}><ChangePasswordPage /></Suspense> },
     ],
   },
 
@@ -87,47 +71,21 @@ const router = createBrowserRouter([
         ),
         children: [
           // Redirecionar raiz
-          { path: '/', element: <Navigate to="/dashboard" replace /> },
+          { path: '/', element: <Navigate to="/service-orders" replace /> },
 
           // Rotas acessíveis por todos (autenticados)
-          { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/profile', element: <ProfilePage /> },
-          { path: '/settings', element: <SettingsPage /> },
+          { path: '/profile', element: <Suspense fallback={<PageFallback />}><ProfilePage /></Suspense> },
+          { path: '/settings', element: <Suspense fallback={<PageFallback />}><SettingsPage /></Suspense> },
 
           // Rotas operacionais (operator, supervisor, owner)
           {
             element: <RoleGuard allowedRoles={['operator', 'supervisor', 'owner']} />,
             children: [
-              { path: '/day-panel', element: <DayPanelPage /> },
-              { path: '/service-orders', element: <ServiceOrdersPage /> },
-              { path: '/service-orders/new', element: <CreateServiceOrderPage /> },
-              { path: '/service-orders/:id', element: <ServiceOrderDetailsPage /> },
-              { path: '/service-orders/:id/edit', element: <EditServiceOrderPage /> },
-              { path: '/clients', element: <ClientsPage /> },
-              { path: '/clients/new', element: <CreateClientPage /> },
-              { path: '/clients/:id', element: <ClientDetailsPage /> },
-              { path: '/clients/:id/edit', element: <EditClientPage /> },
-              { path: '/inventory', element: <InventoryPage /> },
-              { path: '/inventory/new', element: <CreateFilmBobbinPage /> },
-              { path: '/inventory/:id', element: <FilmBobbinDetailsPage /> },
-              { path: '/inventory/:id/edit', element: <EditFilmBobbinPage /> },
-              { path: '/purchase-requests/new', element: <CreatePurchaseRequestPage /> },
-              { path: '/purchase-requests/:id', element: <PurchaseRequestDetailsPage /> },
-              { path: '/incidents', element: <IncidentsList /> },
-              { path: '/incidents/new', element: <CreateIncident /> },
-              { path: '/incidents/:id', element: <IncidentDetails /> },
-              { path: '/hr/occurrences', element: <OccurrencesListPage /> },
-              { path: '/hr/occurrences/new', element: <CreateOccurrencePage /> },
-              { path: '/hr/occurrences/:id', element: <OccurrenceDetailsPage /> },
-            ],
-          },
-
-          // Rotas de aprovação e lista de compras (supervisor, owner)
-          {
-            element: <RoleGuard allowedRoles={['supervisor', 'owner']} />,
-            children: [
-              { path: '/purchase-requests', element: <PurchaseRequestsPage /> },
-              { path: '/approvals', element: <ApprovalsPage /> },
+              { path: '/service-orders', element: <Suspense fallback={<PageFallback />}><ServiceOrdersPage /></Suspense> },
+              { path: '/service-orders/:id', element: <Suspense fallback={<PageFallback />}><ServiceOrderDetailsPage /></Suspense> },
+              { path: '/service-orders/:id/edit', element: <Suspense fallback={<PageFallback />}><EditServiceOrderPage /></Suspense> },
+              { path: '/conference', element: <Suspense fallback={<PageFallback />}><ConferencePage /></Suspense> },
+              { path: '/fechamento', element: <Suspense fallback={<PageFallback />}><FechamentoPage /></Suspense> },
             ],
           },
 
@@ -135,23 +93,13 @@ const router = createBrowserRouter([
           {
             element: <RoleGuard allowedRoles={['owner']} />,
             children: [
-              { path: '/admin/users', element: <UserManagementPage /> },
-              { path: '/admin/consultants', element: <ConsultantManagementPage /> },
-              { path: '/admin/employees', element: <EmployeeManagementPage /> },
-              { path: '/admin/stores', element: <StoreManagementPage /> },
-              { path: '/servicos', element: <ServicesPage /> },
-              { path: '/reports/multi-store', element: <MultiStoreBIPage /> },
-              { path: '/reports/bi', element: <BIDashboardPage /> }, // Redireciona
-              { path: '/analytics', element: <AnalyticsPage /> },    // Redireciona
-            ],
-          },
-
-          // Rotas de Reports (supervisor, owner)
-          {
-            element: <RoleGuard allowedRoles={['supervisor', 'owner']} />,
-            children: [
-              { path: '/reports/dashboard', element: <ExecutiveDashboardPage /> },
-              { path: '/reports/ranking', element: <WorkerRankingPage /> },
+              { path: '/admin/users', element: <Suspense fallback={<PageFallback />}><UserManagementPage /></Suspense> },
+              { path: '/admin/consultants', element: <Suspense fallback={<PageFallback />}><ConsultantManagementPage /></Suspense> },
+              { path: '/admin/employees', element: <Suspense fallback={<PageFallback />}><EmployeeManagementPage /></Suspense> },
+              { path: '/admin/stores', element: <Suspense fallback={<PageFallback />}><StoreManagementPage /></Suspense> },
+              { path: '/servicos', element: <Suspense fallback={<PageFallback />}><ServicesPage /></Suspense> },
+              { path: '/admin/modelos', element: <Suspense fallback={<PageFallback />}><VehicleModelsPage /></Suspense> },
+              { path: '/analytics', element: <Suspense fallback={<PageFallback />}><AnalyticsPage /></Suspense> },
             ],
           },
         ],
@@ -161,7 +109,7 @@ const router = createBrowserRouter([
 
   // Rotas de erro
   { path: '/unauthorized', element: <UnauthorizedPage /> },
-  { path: '*', element: <NotFoundPage /> },
+  { path: '*', element: <Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense> },
 ]);
 
 function App() {

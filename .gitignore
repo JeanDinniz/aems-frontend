@@ -31,3 +31,19 @@ dist-ssr
 # Temp/artifact files
 errors.txt
 nul
+build_output.log
+build_log.txt
+estrutura-pastas.txt
+arquivos-tsx.txt
+TESTING_GUIDE.md
+TEST_SUMMARY.md
+
+# Path alias directory at root (should be in src/)
+@/
+
+# Claude AI config (local/personal)
+.claude/
+
+# Playwright test reports
+playwright-report/
+test-results/

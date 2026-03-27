@@ -74,12 +74,12 @@ export function DamageDialog({ open, onOpenChange, onSubmit }: DamageDialogProps
                 <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
                     {/* Tipo de Avaria */}
                     <div>
-                        <label className="block text-sm font-medium mb-2">Tipo de Avaria</label>
+                        <label htmlFor="dd-type" className="block text-sm font-medium mb-2">Tipo de Avaria</label>
                         <Select
                             onValueChange={(value) => setValue('type', value as DamageType)}
                             defaultValue={watch('type')}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger id="dd-type">
                                 <SelectValue placeholder="Selecione o tipo" />
                             </SelectTrigger>
                             <SelectContent>
@@ -97,12 +97,12 @@ export function DamageDialog({ open, onOpenChange, onSubmit }: DamageDialogProps
 
                     {/* Gravidade */}
                     <div>
-                        <label className="block text-sm font-medium mb-2">Gravidade</label>
+                        <label htmlFor="dd-severity" className="block text-sm font-medium mb-2">Gravidade</label>
                         <Select
                             onValueChange={(value) => setValue('severity', value as 'low' | 'medium' | 'high')}
                             defaultValue={watch('severity')}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger id="dd-severity">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -115,8 +115,9 @@ export function DamageDialog({ open, onOpenChange, onSubmit }: DamageDialogProps
 
                     {/* Descrição */}
                     <div className="grid gap-2">
-                        <label className="text-sm font-medium">Descrição (opcional)</label>
+                        <label htmlFor="dd-description" className="text-sm font-medium">Descrição (opcional)</label>
                         <Textarea
+                            id="dd-description"
                             placeholder="Ex: Arranhão de 10cm na porta traseira esquerda..."
                             rows={3}
                             {...register('description')}

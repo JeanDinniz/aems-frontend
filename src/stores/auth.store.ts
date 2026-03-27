@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthTokens, AuthState } from '@/types/auth.types';
 
 interface AuthStore extends AuthState {
@@ -47,15 +47,29 @@ export const useAuthStore = create<AuthStore>()(
         }),
         {
             name: 'aems-auth',
+            storage: createJSONStorage(() => sessionStorage),
             partialize: (state) => ({
                 user: state.user,
-                tokens: state.tokens,
+                tokens: state.tokens ? { ...state.tokens, persistedAt: Date.now() } : null,
                 isAuthenticated: state.isAuthenticated,
             }),
             onRehydrateStorage: () => (state) => {
-                // Após carregar do localStorage, setar isLoading para false
                 if (state) {
                     state.isLoading = false;
+
+                    // Validate token expiration on rehydration
+                    if (state.tokens && state.isAuthenticated) {
+                        const { expiresIn, persistedAt } = state.tokens as AuthTokens & { persistedAt?: number };
+                        if (persistedAt) {
+                            const elapsedSeconds = (Date.now() - persistedAt) / 1000;
+                            if (elapsedSeconds >= expiresIn) {
+                                // Token expired — clear auth state
+                                state.user = null;
+                                state.tokens = null;
+                                state.isAuthenticated = false;
+                            }
+                        }
+                    }
                 }
             },
         }

@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import apiClient from './client';
 
 export interface ServiceItem {
     id: number;
@@ -83,6 +83,19 @@ export const servicesService = {
         available_for_all_departments?: boolean;
     }): Promise<ServiceItem> => {
         const response = await apiClient.post('/services', payload);
+        return response.data;
+    },
+
+    update: async (id: number, payload: {
+        name?: string;
+        department?: string;
+        base_price?: number;
+        brand?: string | null;
+        code?: string | null;
+        category?: string | null;
+        available_for_all_departments?: boolean;
+    }): Promise<ServiceItem> => {
+        const response = await apiClient.patch(`/services/${id}`, payload);
         return response.data;
     },
 

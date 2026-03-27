@@ -1,24 +1,25 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, ClipboardList, Package, Users, Settings, X,
-    ShoppingCart, AlertTriangle, UserX, PieChart, UserCog,
-    Contact, HardHat, Wrench, Store, MonitorPlay, ChevronRight,
-    CheckSquare,
+    ClipboardList, Settings, X,
+    UserCog,
+    Contact, HardHat, Wrench, Store, ChevronRight, Car,
+    ClipboardCheck, FileSpreadsheet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useApprovals } from '@/hooks/useApprovals';
+import { useMyPermissions } from '@/hooks/useMyPermissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type UserRole = 'owner' | 'supervisor' | 'operator';
 
 interface SidebarItem {
-    icon: typeof LayoutDashboard;
+    icon: typeof ClipboardList;
     label: string;
     href: string;
     roles?: UserRole[];
-    badgeKey?: 'pendingApprovals';
+    /** Chave do módulo em MODULE_GROUPS. Se definida, filtra por can_view. */
+    moduleKey?: string;
 }
 
 interface SidebarGroup {
@@ -29,45 +30,23 @@ interface SidebarGroup {
 
 const sidebarGroups: SidebarGroup[] = [
     {
-        label: 'Visão Geral',
-        items: [
-            { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-            { icon: MonitorPlay,     label: 'Painel do Dia', href: '/day-panel' },
-        ],
-    },
-    {
         label: 'Operacional',
         items: [
-            { icon: ClipboardList, label: 'Ordens de Serviço',      href: '/service-orders' },
-            { icon: Users,          label: 'Clientes',               href: '/clients' },
-            { icon: Package,        label: 'Inventário',             href: '/inventory' },
-            { icon: ShoppingCart,   label: 'Solicitações de Compra', href: '/purchase-requests' },
-            { icon: CheckSquare,    label: 'Aprovações',             href: '/approvals', roles: ['owner', 'supervisor'], badgeKey: 'pendingApprovals' },
-        ],
-    },
-    {
-        label: 'RH & Incidentes',
-        items: [
-            { icon: AlertTriangle, label: 'Incidentes',      href: '/incidents' },
-            { icon: UserX,         label: 'RH / Ocorrências', href: '/hr/occurrences' },
-        ],
-    },
-    {
-        label: 'Relatórios',
-        roles: ['owner', 'supervisor'],
-        items: [
-            { icon: PieChart, label: 'Reports', href: '/reports/dashboard' },
+            { icon: ClipboardList,    label: 'Ordens de Serviço', href: '/service-orders', moduleKey: 'service_orders' },
+            { icon: ClipboardCheck,   label: 'Conferência',       href: '/conference',     moduleKey: 'conference' },
+            { icon: FileSpreadsheet,  label: 'Fechamento',        href: '/fechamento',     moduleKey: 'fechamento' },
         ],
     },
     {
         label: 'Administração',
         roles: ['owner'],
         items: [
-            { icon: UserCog, label: 'Usuários',    href: '/admin/users' },
-            { icon: HardHat, label: 'Funcionários', href: '/admin/employees' },
-            { icon: Contact, label: 'Consultores',  href: '/admin/consultants' },
-            { icon: Store,   label: 'Lojas',        href: '/admin/stores' },
-            { icon: Wrench,  label: 'Serviços',     href: '/servicos' },
+            { icon: UserCog, label: 'Usuários',    href: '/admin/users',       moduleKey: 'users' },
+            { icon: HardHat, label: 'Funcionários', href: '/admin/employees',  moduleKey: 'employees' },
+            { icon: Contact, label: 'Consultores',  href: '/admin/consultants', moduleKey: 'consultants' },
+            { icon: Store,   label: 'Lojas',        href: '/admin/stores',     moduleKey: 'stores' },
+            { icon: Wrench,  label: 'Serviços',     href: '/servicos',         moduleKey: 'services' },
+            { icon: Car,     label: 'Modelos',      href: '/admin/modelos',    moduleKey: 'vehicle_models' },
         ],
     },
     {
@@ -86,19 +65,19 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { user } = useAuth();
-
-    // Aprovações pendentes para badge (só usado por owner/supervisor)
-    const isSupervisorOrOwner = user?.role === 'owner' || user?.role === 'supervisor';
-    const { pendingRequests } = useApprovals();
-    const pendingApprovals = isSupervisorOrOwner ? (pendingRequests?.length ?? 0) : 0;
-
-    const badges: Record<string, number> = {
-        pendingApprovals,
-    };
+    const { data: myPermissions } = useMyPermissions();
+    const isOwner = user?.role === 'owner';
 
     const isActive = (href: string) =>
-        location.pathname.startsWith(href) &&
-        (href !== '/dashboard' || location.pathname === '/dashboard');
+        location.pathname.startsWith(href);
+
+    /** Owner vê tudo. Para outros, verifica can_view. Sem moduleKey = sempre visível. */
+    const canViewItem = (item: SidebarItem): boolean => {
+        if (!item.moduleKey || isOwner) return true;
+        if (!myPermissions) return true; // padrão enquanto carrega
+        const perm = myPermissions.module_permissions.find((p) => p.module === item.moduleKey);
+        return perm?.can_view ?? true;
+    };
 
     const visibleGroups = sidebarGroups.filter(
         (g) => !g.roles || (user?.role && g.roles.includes(user.role as UserRole))
@@ -114,6 +93,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     )}
                     onClick={onClose}
+                    onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+                    role="button"
+                    tabIndex={isOpen ? 0 : -1}
+                    aria-label="Fechar menu"
                 />
 
                 {/* Sidebar */}
@@ -164,7 +147,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 aems-scroll">
                         {visibleGroups.map((group) => {
                             const visibleItems = group.items.filter(
-                                (item) => !item.roles || (user?.role && item.roles.includes(user.role as UserRole))
+                                (item) =>
+                                    (!item.roles || (user?.role && item.roles.includes(user.role as UserRole))) &&
+                                    canViewItem(item)
                             );
                             if (!visibleItems.length) return null;
 
@@ -179,7 +164,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                         {visibleItems.map((item) => {
                                             const Icon = item.icon;
                                             const active = isActive(item.href);
-                                            const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0;
 
                                             return (
                                                 <Tooltip key={item.href}>
@@ -211,12 +195,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                             </div>
 
                                                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                                {/* Badge de pendências */}
-                                                                {badgeCount > 0 && (
-                                                                    <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-aems-error text-white text-[10px] font-bold px-1 leading-none">
-                                                                        {badgeCount > 99 ? '99+' : badgeCount}
-                                                                    </span>
-                                                                )}
                                                                 {/* Chevron sutil no hover */}
                                                                 {!active && (
                                                                     <ChevronRight className="h-3 w-3 text-aems-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import type { Photo } from '@/types/photo.types';
 import { compressImage } from '@/utils/imageCompression';
 import { validateImageFile } from '@/utils/fileValidation';
+import { toast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface PhotoUploaderProps {
     photos: Photo[];
@@ -26,24 +28,29 @@ export function PhotoUploader({
     const onDrop = useCallback(
         async (acceptedFiles: File[]) => {
             if (photos.length + acceptedFiles.length > maxPhotos) {
-                alert(`Máximo de ${maxPhotos} fotos permitidas`);
+                toast({
+                    variant: 'destructive',
+                    title: 'Limite de fotos atingido',
+                    description: `Máximo de ${maxPhotos} fotos permitidas.`,
+                });
                 return;
             }
 
             const newPhotos: Photo[] = [];
 
             for (const file of acceptedFiles) {
-                // Validar arquivo
                 const validation = validateImageFile(file);
                 if (!validation.valid) {
-                    alert(validation.error);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Arquivo inválido',
+                        description: validation.error,
+                    });
                     continue;
                 }
 
-                // Criar preview
                 const preview = URL.createObjectURL(file);
 
-                // Comprimir imagem
                 try {
                     const compressed = await compressImage(file, {
                         maxWidth: 1920,
@@ -60,8 +67,12 @@ export function PhotoUploader({
                         uploadProgress: 0,
                     });
                 } catch (error) {
-                    console.error('Erro ao comprimir imagem:', error);
-                    alert('Erro ao processar imagem. Tente novamente.');
+                    logger.error('Erro ao comprimir imagem:', error);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro ao processar imagem',
+                        description: 'Não foi possível processar a imagem. Tente novamente.',
+                    });
                 }
             }
 
@@ -154,6 +165,7 @@ export function PhotoUploader({
                                     <button
                                         type="button"
                                         onClick={() => removePhoto(photo.id)}
+                                        aria-label={`Remover foto ${index + 1}`}
                                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         <X className="h-4 w-4" />
@@ -173,6 +185,7 @@ export function PhotoUploader({
                         <button
                             type="button"
                             {...getRootProps()}
+                            aria-label="Adicionar mais fotos"
                             className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-primary hover:bg-gray-50 transition-colors"
                         >
                             <ImagePlus className="h-8 w-8 text-gray-400 mb-2" />
@@ -184,10 +197,10 @@ export function PhotoUploader({
 
             {/* Validation Message */}
             {remainingPhotos > 0 && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4" role="alert">
                     <p className="text-sm text-orange-800">
-                        ⚠️ Adicione mais <strong>{remainingPhotos} foto(s)</strong> para
-                        continuar. Mínimo obrigatório: {minPhotos} fotos.
+                        Adicione mais <strong>{remainingPhotos} foto(s)</strong> para
+                        continuar. Minimo obrigatório: {minPhotos} fotos.
                     </p>
                 </div>
             )}

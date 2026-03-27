@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import type { WebSocketEvent, WebSocketConnection } from '@/types/websocket.types';
 import { useAuth } from '@/hooks/useAuth';
-import { ToastAction } from '@/components/ui/toast';
 import { useAuthStore } from '@/stores/auth.store';
 import { webSocketService } from '@/services/websocket/websocket.service';
 
@@ -20,15 +19,11 @@ export function useWebSocket(storeId?: number) {
     const { user } = useAuth();
 
     const handleEvent = useCallback((event: WebSocketEvent) => {
-        // console.log('WebSocket event:', event);
-
         switch (event.event) {
             case 'service_order_created':
             case 'service_order_updated':
             case 'service_order_status_changed':
-                // Invalidar cache de service orders e do painel do dia
                 queryClient.invalidateQueries({ queryKey: ['service-orders'] });
-                queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
 
                 if (event.event === 'service_order_created') {
                     toast({
@@ -39,55 +34,9 @@ export function useWebSocket(storeId?: number) {
                 break;
 
             case 'semaphore_updated':
-                // Atualizar apenas o semáforo específico (pode ser otimizado depois)
                 queryClient.invalidateQueries({ queryKey: ['service-orders'] });
-                queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
                 break;
 
-            case 'purchase_request_created':
-                queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
-
-                if (user?.role === 'supervisor' || user?.role === 'owner') {
-                    toast({
-                        title: 'Nova Solicitação de Compra',
-                        description: `${event.data.requester_name} criou uma solicitação.`,
-                        action: (
-                            <ToastAction
-                                altText="Ver"
-                                onClick={() => window.location.href = `/purchase-requests/${event.data.id}`}
-                            >
-                                Ver
-                            </ToastAction>
-                        )
-                    });
-                }
-                break;
-
-            case 'purchase_request_approved':
-            case 'purchase_request_rejected':
-                queryClient.invalidateQueries({ queryKey: ['purchase-requests'] });
-
-                if (event.data.requester_id === user?.id) {
-                    toast({
-                        title: event.event === 'purchase_request_approved'
-                            ? 'Solicitação Aprovada'
-                            : 'Solicitação Rejeitada',
-                        description: `Sua solicitação ${event.data.request_number} foi ${event.event === 'purchase_request_approved' ? 'aprovada' : 'rejeitada'
-                            }.`
-                    });
-                }
-                break;
-
-            case 'inventory_alert':
-            case 'bobbin_critical':
-                queryClient.invalidateQueries({ queryKey: ['film-bobbins'] });
-
-                toast({
-                    title: 'Alerta de Estoque',
-                    description: `Bobina ${event.data.smart_id} está com ${event.data.percentage}% restante.`,
-                    variant: event.data.alert_level === 'critical' ? 'destructive' : 'default'
-                });
-                break;
         }
     }, [queryClient, toast, user]);
 
@@ -117,7 +66,7 @@ export function useWebSocket(storeId?: number) {
         };
     }, [user, storeId, handleEvent]);
 
-    const send = useCallback((data: any) => {
+    const send = useCallback((data: Record<string, unknown>) => {
         webSocketService.send(data);
     }, []);
 

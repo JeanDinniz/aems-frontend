@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/api-error';
+import { logger } from '@/lib/logger';
 
 const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
@@ -29,7 +31,15 @@ export default function ChangePasswordPage() {
     const { user, isLoading: authLoading } = useAuthStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Efeito para redirecionamento para evitar render loops
+    const form = useForm<ChangePasswordFormData>({
+        resolver: zodResolver(changePasswordSchema),
+        defaultValues: {
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+        },
+    });
+
     if (authLoading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-gray-50">
@@ -39,27 +49,15 @@ export default function ChangePasswordPage() {
     }
 
     if (!user) {
-        // Se não tiver usuário, vai pro login
-        // Usamos Navigate componente ou navigate() aqui?
-        // Componente é mais seguro no render
         setTimeout(() => navigate('/login'), 0);
         return null;
     }
 
-    // Se usuário existe mas NÃO precisa trocar senha, manda pro dashboard
+    // Se usuário existe mas NÃO precisa trocar senha, manda para ordens de serviço
     if (!user.must_change_password) {
-        setTimeout(() => navigate('/dashboard'), 0);
+        setTimeout(() => navigate('/service-orders'), 0);
         return null;
     }
-
-    const form = useForm<ChangePasswordFormData>({
-        resolver: zodResolver(changePasswordSchema),
-        defaultValues: {
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: '',
-        },
-    });
 
     const onSubmit = async (data: ChangePasswordFormData) => {
         setIsSubmitting(true);
@@ -75,11 +73,11 @@ export default function ChangePasswordPage() {
             await authService.logout();
             navigate('/login');
 
-        } catch (err: any) {
-            console.error(err);
+        } catch (err) {
+            logger.error('Erro ao alterar senha:', err);
             toast({
                 title: 'Erro ao alterar senha',
-                description: err.response?.data?.message || 'Ocorreu um erro ao tentar alterar a senha.',
+                description: getApiErrorMessage(err as Error, 'Ocorreu um erro ao tentar alterar a senha.'),
                 variant: 'destructive',
             });
         } finally {

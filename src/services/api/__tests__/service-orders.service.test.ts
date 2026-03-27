@@ -14,44 +14,6 @@ describe('serviceOrdersService', () => {
         apiClient.defaults.headers.common['Authorization'] = 'Bearer mock-token';
     });
 
-    describe('getDayPanel', () => {
-        it('should fetch all service orders for day panel without filters', async () => {
-            const orders = await serviceOrdersService.getDayPanel();
-
-            expect(Array.isArray(orders)).toBe(true);
-            expect(orders.length).toBeGreaterThan(0);
-        });
-
-        it('should filter service orders by store ID', async () => {
-            const orders = await serviceOrdersService.getDayPanel(1);
-
-            expect(Array.isArray(orders)).toBe(true);
-            orders.forEach(order => {
-                expect(order.storeId).toBe(1);
-            });
-        });
-
-        it('should accept date parameter for historical data', async () => {
-            const date = '2026-02-11';
-            const orders = await serviceOrdersService.getDayPanel(1, date);
-
-            expect(Array.isArray(orders)).toBe(true);
-        });
-
-        it('should return service orders with required day panel fields', async () => {
-            const orders = await serviceOrdersService.getDayPanel(1);
-
-            if (orders.length > 0) {
-                const order = orders[0];
-                expect(order).toHaveProperty('id');
-                expect(order).toHaveProperty('plate');
-                expect(order).toHaveProperty('status');
-                expect(order).toHaveProperty('department');
-                expect(order).toHaveProperty('semaphoreColor');
-            }
-        });
-    });
-
     describe('getAll', () => {
         it('should fetch paginated service orders without filters', async () => {
             const response = await serviceOrdersService.getAll(undefined, 0, 20);
@@ -144,15 +106,12 @@ describe('serviceOrdersService', () => {
         it('should create a new service order', async () => {
             const newOrderData = {
                 plate: 'XYZ1A23',
-                client_name: 'Test Client',
-                client_phone: '11999999999',
                 vehicle_model: 'Civic EXL',
                 vehicle_color: 'Branco',
                 department: 'workshop' as const,
                 service_description: 'Instalação de película fumê',
                 location_id: 1,
                 dealership_id: 1,
-                total_value: 500,
                 items: [],
                 photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg', 'photo4.jpg'],
             };
@@ -161,22 +120,19 @@ describe('serviceOrdersService', () => {
 
             expect(createdOrder).toBeDefined();
             expect(createdOrder.plate).toBe('XYZ1A23');
-            expect(createdOrder.department).toBe('film');
+            expect(createdOrder.department).toBe('workshop');
             expect(createdOrder.status).toBe('waiting');
         });
 
         it('should validate minimum 4 photos requirement', async () => {
             const newOrderData = {
                 plate: 'XYZ1A23',
-                client_name: 'Test Client',
-                client_phone: '11999999999',
                 vehicle_model: 'Civic EXL',
                 vehicle_color: 'Branco',
                 department: 'workshop' as const,
                 service_description: 'Instalação de película',
                 location_id: 1,
                 dealership_id: 1,
-                total_value: 500,
                 items: [],
                 photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg', 'photo4.jpg'],
             };
@@ -188,8 +144,6 @@ describe('serviceOrdersService', () => {
         it('should set default status to waiting', async () => {
             const newOrderData = {
                 plate: 'NEW1B23',
-                client_name: 'New Client',
-                client_phone: '11888888888',
                 vehicle_model: 'Corolla XEi',
                 vehicle_color: 'Prata',
                 department: 'workshop' as const,
@@ -197,7 +151,6 @@ describe('serviceOrdersService', () => {
                 items: [],
                 location_id: 1,
                 dealership_id: 1,
-                total_value: 100,
                 photos: ['p1.jpg', 'p2.jpg', 'p3.jpg', 'p4.jpg'],
             };
 
@@ -239,41 +192,44 @@ describe('serviceOrdersService', () => {
 
     describe('updateStatus', () => {
         it('should update service order status', async () => {
+            // 'doing' is the frontend name; service converts to backend 'in_progress',
+            // then mapServiceOrder converts it back to 'doing'
             const updatedOrder = await serviceOrdersService.updateStatus(
                 1,
-                'in_progress'
+                'doing'
             );
 
             expect(updatedOrder).toBeDefined();
-            expect(updatedOrder.status).toBe('in_progress');
+            expect(updatedOrder.status).toBe('doing');
         });
 
         it('should update status with worker assignment', async () => {
             const updatedOrder = await serviceOrdersService.updateStatus(
                 1,
-                'in_progress',
+                'doing',
                 {
                     worker_ids: [1, 2],
                     primary_worker_id: 1,
                 }
             );
 
-            expect(updatedOrder.status).toBe('in_progress');
+            expect(updatedOrder.status).toBe('doing');
             expect(updatedOrder.workers).toBeDefined();
             expect(updatedOrder.workers?.length).toBe(2);
             expect(updatedOrder.workers?.[0].isPrimary).toBe(true);
         });
 
         it('should handle status transitions', async () => {
-            // waiting -> in_progress
-            let order = await serviceOrdersService.updateStatus(1, 'in_progress');
-            expect(order.status).toBe('in_progress');
+            // Frontend status names are used — service maps them to backend and back
+            // waiting -> doing (backend: in_progress)
+            let order = await serviceOrdersService.updateStatus(1, 'doing');
+            expect(order.status).toBe('doing');
 
-            // in_progress -> inspection
+            // doing -> inspection (backend: quality_check)
             order = await serviceOrdersService.updateStatus(1, 'inspection');
             expect(order.status).toBe('inspection');
 
-            // inspection -> ready
+            // inspection -> ready (backend: completed)
             order = await serviceOrdersService.updateStatus(1, 'ready');
             expect(order.status).toBe('ready');
 
@@ -303,15 +259,12 @@ describe('serviceOrdersService', () => {
         it('should validate Mercosul plate format', async () => {
             const newOrderData = {
                 plate: 'ABC1D23', // Valid Mercosul format
-                client_name: 'Test Client',
-                client_phone: '11999999999',
                 vehicle_model: 'Test Vehicle',
                 vehicle_color: 'Preto',
                 department: 'workshop' as const,
                 service_description: 'Test',
                 location_id: 1,
                 dealership_id: 1,
-                total_value: 100,
                 items: [],
                 photos: ['p1.jpg', 'p2.jpg', 'p3.jpg', 'p4.jpg'],
             };
@@ -325,7 +278,7 @@ describe('serviceOrdersService', () => {
             expect(response.items.length).toBeGreaterThan(0);
 
             const order = response.items[0];
-            expect(['film', 'aesthetic', 'bodywork']).toContain(order.department);
+            expect(['film', 'ppf', 'vn', 'vu', 'bodywork', 'workshop']).toContain(order.department);
         });
 
         it('should have valid status values', async () => {
@@ -343,29 +296,18 @@ describe('serviceOrdersService', () => {
             ]).toContain(order.status);
         });
 
-        it('should have valid semaphore colors', async () => {
-            const orders = await serviceOrdersService.getDayPanel(1);
-            orders.forEach(order => {
-                expect(['white', 'yellow', 'orange', 'red']).toContain(
-                    order.semaphoreColor
-                );
-            });
-        });
     });
 
     describe('data integrity', () => {
         it('should include timestamps in created orders', async () => {
             const newOrderData = {
                 plate: 'TST1C23',
-                client_name: 'Test Client',
-                client_phone: '11999999999',
                 vehicle_model: 'Test Vehicle',
                 vehicle_color: 'Preto',
                 department: 'film' as const,
                 service_description: 'Test service',
                 location_id: 1,
                 dealership_id: 1,
-                total_value: 100,
                 items: [],
                 photos: ['p1.jpg', 'p2.jpg', 'p3.jpg', 'p4.jpg'],
             };

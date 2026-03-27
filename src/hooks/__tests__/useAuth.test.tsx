@@ -136,7 +136,7 @@ describe('useAuth', () => {
             });
 
             await waitFor(() => {
-                expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+                expect(mockNavigate).toHaveBeenCalledWith('/service-orders');
             });
         });
 
@@ -454,7 +454,7 @@ describe('useAuth', () => {
                     email: 'invalid',
                     password: 'invalid',
                 });
-            } catch (error) {
+            } catch {
                 // Expected - authentication error
                 errorCaught = true;
             }

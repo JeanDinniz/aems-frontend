@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Key, Eye } from 'lucide-react';
+import { MoreHorizontal, Edit, Key, Eye, ShieldCheck } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -22,6 +22,7 @@ import { RoleBadge } from './RoleBadge';
 import { EditUserDialog } from './EditUserDialog';
 import { UserDetailsDialog } from './UserDetailsDialog';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
+import { UserPermissionsDialog } from './UserPermissionsDialog';
 import { useUsers } from '@/hooks/useUsers';
 import type { User } from '@/types/user.types';
 
@@ -39,6 +40,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+    const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
 
     const { deactivateUser, activateUser } = useUsers();
 
@@ -170,6 +172,10 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                     <Edit className="h-4 w-4 mr-2" />
                                                     Editar
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setPermissionsUser(user)}>
+                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                    Permissões
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                                                     <Key className="h-4 w-4 mr-2" />
                                                     Resetar Senha
@@ -237,6 +243,13 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                     />
                 </>
             )}
+
+            {/* Permissions Dialog */}
+            <UserPermissionsDialog
+                user={permissionsUser}
+                open={permissionsUser !== null}
+                onClose={() => setPermissionsUser(null)}
+            />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Loader2, PackageSearch } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, PackageSearch } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,21 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { servicesService } from '@/services/api/services.service';
 import type { ServiceItem } from '@/services/api/services.service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { DEPARTMENTS } from '@/constants/service-orders';
 
 const BRAND_LABELS: Record<string, string> = {
     byd: 'BYD',
@@ -34,37 +45,13 @@ const BRAND_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-    lavagem: 'Lavagem',
-    polimento: 'Polimento',
-    polimento_peca: 'Polimento/Peça',
-    higienizacao: 'Higienização',
-    hidratacao: 'Hidratação',
-    enceramento: 'Enceramento',
-    vitrificacao: 'Vitrificação',
-    cristalizacao: 'Cristalização',
-    pacote_estetica: 'Pacotes Estética',
-    estetica: 'Estética',
-    martelinho: 'Martelinho',
-    pelicula_tintada: 'Fumê',
-    pelicula_poliester: 'Poliéster',
-    pelicula_premium: 'Premium',
-    pelicula_seguranca: 'Segurança',
-    pelicula_3m: '3M',
-    ppf_avulso: 'PPF Avulso',
-    ppf_pacote: 'PPF Pacotes',
     vn: 'VN',
     vu: 'VU',
+    workshop: 'Oficina',
+    bodywork: 'Funilaria',
+    film: 'Película',
+    ppf: 'PPF',
 };
-
-const DEPARTMENTS = [
-    { value: 'aesthetics', label: 'Estética' },
-    { value: 'film', label: 'Película' },
-    { value: 'ppf', label: 'PPF' },
-    { value: 'vn', label: 'VN' },
-    { value: 'vu', label: 'VU' },
-    { value: 'bodywork', label: 'Funilaria' },
-    { value: 'workshop', label: 'Oficina' },
-];
 
 interface AddServiceForm {
     name: string;
@@ -80,7 +67,7 @@ const INITIAL_FORM: AddServiceForm = {
     code: '',
     category: '',
     brand: 'byd',
-    department: 'aesthetics',
+    department: 'film',
     base_price: '',
 };
 
@@ -91,12 +78,9 @@ export default function ServicesPage() {
 
     const [activeBrand, setActiveBrand] = useState<string>('byd');
     const [addDialogOpen, setAddDialogOpen] = useState(false);
+    const [editingService, setEditingService] = useState<ServiceItem | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [form, setForm] = useState<AddServiceForm>(INITIAL_FORM);
-
-    if (user?.role !== 'owner') {
-        return <Navigate to="/" replace />;
-    }
 
     // Carrega todos os serviços de uma vez (400+ itens, muito leve)
     const { data: allServices, isLoading } = useQuery({
@@ -147,6 +131,29 @@ export default function ServicesPage() {
         },
     });
 
+    const updateMutation = useMutation({
+        mutationFn: () => {
+            if (!editingService) throw new Error('No service selected');
+            return servicesService.update(editingService.id, {
+                name: form.name.trim(),
+                department: form.department,
+                base_price: parseFloat(form.base_price) || 0,
+                brand: form.brand || null,
+                code: form.code.trim() || null,
+                category: form.category || null,
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['services'] });
+            setEditingService(null);
+            setForm(INITIAL_FORM);
+            toast({ title: 'Serviço atualizado com sucesso.' });
+        },
+        onError: () => {
+            toast({ variant: 'destructive', title: 'Erro ao atualizar serviço.' });
+        },
+    });
+
     const createMutation = useMutation({
         mutationFn: () =>
             servicesService.create({
@@ -167,6 +174,34 @@ export default function ServicesPage() {
             toast({ variant: 'destructive', title: 'Erro ao adicionar serviço.' });
         },
     });
+
+    if (user?.role !== 'owner') {
+        return <Navigate to="/" replace />;
+    }
+
+    const handleEdit = (svc: ServiceItem) => {
+        setEditingService(svc);
+        setForm({
+            name: svc.name,
+            code: svc.code ?? '',
+            category: svc.category ?? '',
+            brand: svc.brand ?? 'byd',
+            department: svc.department,
+            base_price: String(svc.base_price),
+        });
+    };
+
+    const handleUpdate = () => {
+        if (!form.name.trim()) {
+            toast({ variant: 'destructive', title: 'Nome é obrigatório.' });
+            return;
+        }
+        if (!form.base_price || isNaN(parseFloat(form.base_price))) {
+            toast({ variant: 'destructive', title: 'Preço base é obrigatório.' });
+            return;
+        }
+        updateMutation.mutate();
+    };
 
     const handleCreate = () => {
         if (!form.name.trim()) {
@@ -191,7 +226,10 @@ export default function ServicesPage() {
                         {allServices?.length ? ` ${allServices.length} serviços cadastrados.` : ''}
                     </p>
                 </div>
-                <Button onClick={() => setAddDialogOpen(true)}>
+                <Button onClick={() => {
+                    setForm({ ...INITIAL_FORM, brand: activeBrand });
+                    setAddDialogOpen(true);
+                }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Serviço
                 </Button>
@@ -254,15 +292,26 @@ export default function ServicesPage() {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                                                        onClick={() => setConfirmDeleteId(svc.id)}
-                                                        aria-label="Remover serviço"
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                                            onClick={() => handleEdit(svc)}
+                                                            aria-label="Editar serviço"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                            onClick={() => setConfirmDeleteId(svc.id)}
+                                                            aria-label="Remover serviço"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -394,39 +443,162 @@ export default function ServicesPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog: Confirmar Remoção */}
+            {/* Dialog: Editar Serviço */}
             <Dialog
+                open={editingService !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setEditingService(null);
+                        setForm(INITIAL_FORM);
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Editar Serviço</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="col-span-2 space-y-1.5">
+                            <Label htmlFor="edit-svc-name">Nome do Serviço *</Label>
+                            <Input
+                                id="edit-svc-name"
+                                placeholder="Ex: Lavagem Simples"
+                                value={form.name}
+                                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit-svc-code">Código</Label>
+                                <Input
+                                    id="edit-svc-code"
+                                    placeholder="Ex: LAV-001"
+                                    value={form.code}
+                                    onChange={(e) => setForm({ ...form, code: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit-svc-price">Preço Base (R$) *</Label>
+                                <Input
+                                    id="edit-svc-price"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    value={form.base_price}
+                                    onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Marca</Label>
+                                <Select
+                                    value={form.brand}
+                                    onValueChange={(v) => setForm({ ...form, brand: v })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(BRAND_LABELS).map(([k, v]) => (
+                                            <SelectItem key={k} value={k}>
+                                                {v}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Departamento</Label>
+                                <Select
+                                    value={form.department}
+                                    onValueChange={(v) => setForm({ ...form, department: v })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {DEPARTMENTS.map((d) => (
+                                            <SelectItem key={d.value} value={d.value}>
+                                                {d.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="col-span-2 space-y-1.5">
+                                <Label>Categoria</Label>
+                                <Select
+                                    value={form.category}
+                                    onValueChange={(v) => setForm({ ...form, category: v })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione uma categoria" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                                            <SelectItem key={k} value={k}>
+                                                {v}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setEditingService(null);
+                                setForm(INITIAL_FORM);
+                            }}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+                            {updateMutation.isPending && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Salvar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog: Confirmar Remoção */}
+            <AlertDialog
                 open={confirmDeleteId !== null}
                 onOpenChange={(open) => !open && setConfirmDeleteId(null)}
             >
-                <DialogContent className="sm:max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle>Remover Serviço</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-sm text-muted-foreground">
-                        Tem certeza que deseja remover este serviço? Ele não aparecerá mais nas
-                        ordens de serviço.
-                    </p>
-                    <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            variant="destructive"
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remover Serviço</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem certeza que deseja remover{' '}
+                            <span className="font-medium text-foreground">
+                                {allServices?.find((s) => s.id === confirmDeleteId)?.name ?? 'este serviço'}
+                            </span>
+                            ? Ele não aparecerá mais nas ordens de serviço.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
                             onClick={() =>
                                 confirmDeleteId !== null &&
                                 deactivateMutation.mutate(confirmDeleteId)
                             }
                             disabled={deactivateMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white"
                         >
                             {deactivateMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
                             Remover
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

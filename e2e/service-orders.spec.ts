@@ -87,7 +87,7 @@ test.describe('Service Orders', () => {
 
     // Mock service orders list endpoint
     await page.route('**/api/v1/service-orders*', async (route) => {
-      const url = route.request().url()
+      const _url = route.request().url()
       // POST — creation
       if (route.request().method() === 'POST') {
         await route.fulfill({

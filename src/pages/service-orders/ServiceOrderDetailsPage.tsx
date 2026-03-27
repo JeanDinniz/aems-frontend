@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useServiceOrder, useUpdateServiceOrder, useUpdateServiceOrderStatus, useCancelServiceOrder } from '@/hooks/useServiceOrders';
-import { useStores } from '@/hooks/useStores';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkerAssignmentDialog } from '@/components/features/service-orders/WorkerAssignmentDialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrafficLightStatus } from '@/components/features/service-orders/TrafficLightStatus';
 import { ChevronLeft, Car, Tag, Loader2, Edit, CheckCircle2, AlertTriangle, Play, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ServiceOrderStatus, QualityChecklistItem } from '@/types/service-order.types';
+import type { ServiceOrderStatus, QualityChecklistItem, CreateServiceOrderData } from '@/types/service-order.types';
 import { QualityChecklistDialog } from '@/components/features/service-orders/QualityChecklistDialog';
 import { InvoiceRequiredDialog } from '@/components/features/service-orders/InvoiceRequiredDialog';
 import {
@@ -21,24 +20,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-
-const STATUS_LABELS: Record<string, string> = {
-    waiting: 'Aguardando',
-    doing: 'Fazendo',
-    inspection: 'Inspeção',
-    ready: 'Pronto',
-    delivered: 'Entregue',
-    cancelled: 'Cancelada',
-};
-
-const DEPARTMENTS: Record<string, string> = {
-    film: 'Película',
-    ppf: 'PPF',
-    vn: 'VN',
-    vu: 'VU',
-    bodywork: 'Funilaria',
-    workshop: 'Oficina',
-};
+import { STATUS_LABELS, DEPARTMENTS_MAP } from '@/constants/service-orders';
 
 export default function ServiceOrderDetailsPage() {
     const { id } = useParams();
@@ -47,7 +29,6 @@ export default function ServiceOrderDetailsPage() {
     const { data: os, isLoading, isError } = useServiceOrder(Number(id));
     const updateStatus = useUpdateServiceOrderStatus();
     const updateOrder = useUpdateServiceOrder();
-    const { allStores } = useStores();
 
     const { user } = useAuth();
     const cancelOrder = useCancelServiceOrder();
@@ -60,16 +41,7 @@ export default function ServiceOrderDetailsPage() {
     const [pendingQualityItems, setPendingQualityItems] = useState<QualityChecklistItem[]>([]);
 
     const canCancel = (user?.role === 'owner' || user?.role === 'supervisor')
-        && os?.status !== 'cancelled'
-        && os?.status !== 'delivered';
-
-    // Determine store type from the OS's location_id
-    const osStore = useMemo(() => {
-        if (!os || !allStores?.length) return null;
-        return allStores.find((s) => s.id === os.location_id) ?? null;
-    }, [os, allStores]);
-
-    const isDirectSales = osStore?.store_type === 'direct_sales';
+        && os?.status !== 'cancelled';
 
     const handleWorkerAssignment = (workerIds: number[], primaryWorkerId: number) => {
         // 1. Save selected employees to the OS
@@ -80,7 +52,7 @@ export default function ServiceOrderDetailsPage() {
                 .map(id => ({ employee_id: id })),
         ];
 
-        updateOrder.mutate({ id: Number(id), data: { workers } as any }, {
+        updateOrder.mutate({ id: Number(id), data: { workers } as Partial<CreateServiceOrderData> }, {
             onSuccess: () => {
                 // 2. Change status to 'doing'
                 updateStatus.mutate({ id: Number(id), status: 'doing' }, {
@@ -306,7 +278,7 @@ export default function ServiceOrderDetailsPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Departamento</span>
-                                    <p className="text-lg font-medium">{DEPARTMENTS[os.department] || os.department}</p>
+                                    <p className="text-lg font-medium">{DEPARTMENTS_MAP[os.department] || os.department}</p>
                                     {os.invoice_number && (
                                         <p className="text-sm text-green-600 flex items-center gap-1">
                                             <FileText className="h-3 w-3" /> NF: {os.invoice_number}
@@ -322,18 +294,6 @@ export default function ServiceOrderDetailsPage() {
                                 </div>
                             </div>
 
-                            {/* Damage Map — only for direct_sales */}
-                            {isDirectSales && os.damage_map && (
-                                <div className="space-y-1">
-                                    <span className="text-sm font-medium text-muted-foreground text-orange-600 flex items-center gap-1">
-                                        <AlertTriangle className="h-3 w-3" /> Mapa de Avarias
-                                    </span>
-                                    <div className="p-3 bg-orange-50 border border-orange-100 rounded-md text-sm whitespace-pre-wrap">
-                                        {os.damage_map}
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="space-y-1">
                                 <span className="text-sm font-medium text-muted-foreground">Observações Gerais</span>
                                 <div className="p-3 bg-muted rounded-md text-sm">
@@ -343,27 +303,6 @@ export default function ServiceOrderDetailsPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Photo Gallery — only for direct_sales */}
-                    {isDirectSales && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Galeria de Fotos ({os.photos?.length || 0})</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {!os.photos || os.photos.length === 0 ? (
-                                    <p className="text-muted-foreground text-sm">Nenhuma foto registrada.</p>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                        {os.photos.map((url, index) => (
-                                            <div key={index} className="relative aspect-video bg-gray-100 rounded-md overflow-hidden border">
-                                                <img src={url} alt={`Foto ${index}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
 
                 {/* Sidebar Info */}
@@ -426,22 +365,6 @@ export default function ServiceOrderDetailsPage() {
                         </Card>
                     )}
 
-                    {/* Financial card — only for direct_sales */}
-                    {isDirectSales && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Financeiro</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg dark:bg-green-900/10 border border-green-100 dark:border-green-900/20">
-                                    <span className="text-muted-foreground text-sm mb-1">Valor Total</span>
-                                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.total_value)}
-                                    </span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
             </div>
 
@@ -490,8 +413,9 @@ export default function ServiceOrderDetailsPage() {
                         operacional. O registro ficará disponível para auditoria.
                     </p>
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Motivo (opcional)</label>
+                        <label htmlFor="cancel-reason" className="text-sm font-medium">Motivo (opcional)</label>
                         <Textarea
+                            id="cancel-reason"
                             placeholder="Ex: OS lançada por engano, veículo não compareceu..."
                             className="min-h-[80px]"
                             value={cancelReason}

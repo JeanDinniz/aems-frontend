@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { consultantsService } from '@/services/api/consultants.service';
 import { toast } from '@/hooks/use-toast';
 import type { CreateConsultantPayload, UpdateConsultantPayload, ConsultantFilters } from '@/types/consultant.types';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 export function useConsultants(filters?: ConsultantFilters, page = 1) {
     const queryClient = useQueryClient();
@@ -20,14 +21,10 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
                 description: `${newConsultant.name} foi adicionado ao sistema.`,
             });
         },
-        onError: (error: any) => {
-            const detail = error.response?.data?.detail;
-            const description = Array.isArray(detail)
-                ? detail.map((e: any) => e.msg).join('; ')
-                : (typeof detail === 'string' ? detail : 'Tente novamente.');
+        onError: (error: Error) => {
             toast({
                 title: 'Erro ao criar consultor',
-                description,
+                description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
         },
@@ -43,10 +40,10 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
                 description: 'As alterações foram salvas.',
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast({
                 title: 'Erro ao atualizar',
-                description: error.response?.data?.detail || 'Tente novamente.',
+                description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
         },

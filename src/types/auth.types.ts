@@ -40,14 +40,3 @@ export interface AuthState {
     isLoading: boolean;
 }
 
-// Permissões por funcionalidade
-export interface Permissions {
-    canManageUsers: boolean;
-    canApprove: boolean;
-    canViewAllStores: boolean;
-    canAccessBI: boolean;
-    canCreateServiceOrders: boolean;
-    canManageInventory: boolean;
-    canRequestPurchases: boolean;
-    canViewIncidents: boolean;
-}

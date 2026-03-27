@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import apiClient from './client';
 
 export interface Store {
     id: number;
@@ -10,7 +10,7 @@ export interface Store {
     phone?: string;
     active: boolean;
     isActive?: boolean; // For compatibility if API returns different casing or for frontend logic
-    store_type: 'dealership' | 'direct_sales' | 'warehouse';
+    store_type: 'dealership' | 'warehouse';
     dealership_id?: number | null; // For dealership stores
     dealership_brand?: string | null; // 'byd' | 'fiat' | 'hyundai' | 'toyota' | null
 }
@@ -18,7 +18,7 @@ export interface Store {
 export interface CreateStorePayload {
     name: string;
     code: string;
-    store_type: 'dealership' | 'direct_sales' | 'warehouse';
+    store_type: 'dealership' | 'warehouse';
     dealership_brand?: string | null;
     address?: string | null;
     phone?: string | null;
@@ -26,7 +26,7 @@ export interface CreateStorePayload {
 
 export interface UpdateStorePayload {
     name?: string;
-    store_type?: 'dealership' | 'direct_sales' | 'warehouse';
+    store_type?: 'dealership' | 'warehouse';
     active?: boolean;
     city?: string;
     state?: string;
@@ -52,6 +52,11 @@ export const storesService = {
 
     async update(id: number, data: UpdateStorePayload): Promise<Store> {
         const response = await apiClient.patch<Store>(`/stores/${id}`, data);
+        return response.data;
+    },
+
+    async delete(id: number): Promise<Store> {
+        const response = await apiClient.delete<Store>(`/stores/${id}`);
         return response.data;
     },
 };

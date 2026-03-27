@@ -1,4 +1,5 @@
 import type { WebSocketEvent, WebSocketConnection } from '@/types/websocket.types';
+import { logger } from '@/lib/logger';
 
 type EventHandler = (event: WebSocketEvent) => void;
 type ConnectionHandler = (connection: WebSocketConnection) => void;
@@ -17,6 +18,8 @@ class WebSocketService {
         retryCount: 0
     };
 
+    private intentionalDisconnect = false;
+
     private static instance: WebSocketService;
     private readonly WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
     private readonly RECONNECT_DELAY = 3000;
@@ -31,15 +34,26 @@ class WebSocketService {
         return WebSocketService.instance;
     }
 
+    private currentStoreId?: number;
+
     public connect(token: string, storeId?: number): void {
-        if (this.ws?.readyState === WebSocket.OPEN) return;
+        // Se já conectado na mesma loja, não reconectar
+        if (this.ws?.readyState === WebSocket.OPEN && this.currentStoreId === storeId) return;
+
+        // Se mudou de loja, desconectar e reconectar
+        if (this.ws?.readyState === WebSocket.OPEN && this.currentStoreId !== storeId) {
+            this.intentionalDisconnect = true;
+            this.disconnect();
+        }
 
         try {
             const url = storeId
-                ? `${this.WS_URL}/${storeId}?token=${token}`
-                : `${this.WS_URL}/all?token=${token}`;
+                ? `${this.WS_URL}/${storeId}`
+                : `${this.WS_URL}/all`;
 
-            this.ws = new WebSocket(url);
+            this.currentStoreId = storeId;
+            // Pass token via subprotocol to avoid exposing it in server logs/URLs
+            this.ws = new WebSocket(url, [`Bearer-${token}`]);
 
             this.ws.onopen = () => {
                 this.updateConnectionState({
@@ -48,7 +62,6 @@ class WebSocketService {
                     lastConnected: new Date(),
                     retryCount: 0
                 });
-                // console.log('WebSocket connected');
                 this.startPing();
             };
 
@@ -57,28 +70,32 @@ class WebSocketService {
                     const message: WebSocketEvent = JSON.parse(event.data);
                     this.notifyEventHandlers(message);
                 } catch (error) {
-                    console.error('Failed to parse WebSocket message:', error);
+                    logger.error('Failed to parse WebSocket message:', error);
                 }
             };
 
             this.ws.onclose = () => {
                 this.stopPing();
                 this.updateConnectionState({ connected: false });
-                // console.log('WebSocket disconnected');
+                if (this.intentionalDisconnect) {
+                    this.intentionalDisconnect = false;
+                    return;
+                }
                 this.handleReconnection(token, storeId);
             };
 
             this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
+                logger.error('WebSocket error:', error);
             };
 
         } catch (error) {
-            console.error('Failed to connect WebSocket:', error);
+            logger.error('Failed to connect WebSocket:', error);
             this.handleReconnection(token, storeId);
         }
     }
 
     public disconnect(): void {
+        this.intentionalDisconnect = true;
         this.stopPing();
         if (this.reconnectTimeout) {
             clearTimeout(this.reconnectTimeout);
@@ -111,7 +128,7 @@ class WebSocketService {
         };
     }
 
-    public send(data: any): void {
+    public send(data: Record<string, unknown>): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(data));
         }
@@ -136,6 +153,12 @@ class WebSocketService {
             this.reconnectTimeout = setTimeout(() => {
                 this.connect(token, storeId);
             }, this.RECONNECT_DELAY);
+        } else {
+            // Tentativas esgotadas — marcar como offline (manter retryCount para impedir reconexão automática)
+            this.updateConnectionState({
+                reconnecting: false,
+                connected: false,
+            });
         }
     }
 

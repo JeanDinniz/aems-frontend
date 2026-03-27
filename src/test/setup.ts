@@ -44,7 +44,6 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock ResizeObserver (required for Radix UI components)
-// @ts-ignore
 globalThis.ResizeObserver = class ResizeObserver {
     observe() {
         // do nothing

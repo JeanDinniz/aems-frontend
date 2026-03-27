@@ -1,10 +1,12 @@
-import { apiClient } from './client';
+import apiClient from './client';
 import type {
     User,
     CreateUserPayload,
     UpdateUserPayload,
     UserFilters,
     UsersListResponse,
+    UserPermissionsResponse,
+    UserPermissionsUpdate,
 } from '@/types/user.types';
 
 export const usersService = {
@@ -57,6 +59,16 @@ export const usersService = {
 
     async resetPassword(id: number): Promise<{ temporary_password: string }> {
         const response = await apiClient.post<{ temporary_password: string }>(`/users/${id}/reset-password`);
+        return response.data;
+    },
+
+    async getPermissions(userId: number): Promise<UserPermissionsResponse> {
+        const response = await apiClient.get<UserPermissionsResponse>(`/users/${userId}/permissions`);
+        return response.data;
+    },
+
+    async updatePermissions(userId: number, data: UserPermissionsUpdate): Promise<UserPermissionsResponse> {
+        const response = await apiClient.put<UserPermissionsResponse>(`/users/${userId}/permissions`, data);
         return response.data;
     },
 

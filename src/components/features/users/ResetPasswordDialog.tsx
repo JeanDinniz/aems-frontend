@@ -1,12 +1,13 @@
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useUsers } from '@/hooks/useUsers';
 import type { User } from '@/types/user.types';
 
@@ -26,26 +27,24 @@ export function ResetPasswordDialog({ user, open, onOpenChange }: ResetPasswordD
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Resetar Senha</DialogTitle>
-                    <DialogDescription>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Resetar Senha</AlertDialogTitle>
+                    <AlertDialogDescription>
                         Deseja gerar uma nova senha temporária para <strong>{user.full_name}</strong>?
                         <br />
                         A nova senha será exibida na tela e <strong>não poderá ser recuperada depois</strong> se não for salva.
-                    </DialogDescription>
-                </DialogHeader>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button variant="destructive" onClick={handleConfirm}>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirm} className="bg-red-600 hover:bg-red-700 text-white">
                         Confirmar Reset
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

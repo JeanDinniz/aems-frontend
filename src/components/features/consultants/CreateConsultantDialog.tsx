@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +16,7 @@ import { useStores } from '@/hooks/useStores';
 
 const createConsultantSchema = z.object({
     name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    store_id: z.number({ required_error: 'Loja é obrigatória' }),
+    store_id: z.number({ error: 'Loja é obrigatória' }),
     phone: z.string().optional(),
     email: z.string().email('E-mail inválido').optional().or(z.literal('')),
 });
@@ -30,7 +29,6 @@ interface CreateConsultantDialogProps {
 }
 
 export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantDialogProps) {
-    const [selectedStoreId, setSelectedStoreId] = useState<number | undefined>();
     const { createConsultant, isCreating } = useConsultants();
     const { stores } = useStores();
 
@@ -55,7 +53,6 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
         createConsultant(payload, {
             onSuccess: () => {
                 reset();
-                setSelectedStoreId(undefined);
                 onOpenChange(false);
             },
         });
@@ -63,7 +60,6 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
 
     const handleStoreChange = (value: string) => {
         const storeId = parseInt(value);
-        setSelectedStoreId(storeId);
         setValue('store_id', storeId);
     };
 
@@ -76,10 +72,11 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">
+                        <label htmlFor="cc-name" className="text-sm font-medium">
                             Nome <span className="text-red-500">*</span>
                         </label>
                         <Input
+                            id="cc-name"
                             {...register('name')}
                             placeholder="Ex: João da Silva"
                         />
@@ -89,11 +86,11 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">
+                        <label htmlFor="cc-store" className="text-sm font-medium">
                             Loja <span className="text-red-500">*</span>
                         </label>
                         <Select onValueChange={handleStoreChange}>
-                            <SelectTrigger>
+                            <SelectTrigger id="cc-store">
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
                             <SelectContent>
@@ -111,8 +108,9 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Telefone</label>
+                            <label htmlFor="cc-phone" className="text-sm font-medium">Telefone</label>
                             <Input
+                                id="cc-phone"
                                 {...register('phone')}
                                 placeholder="(00) 00000-0000"
                                 type="tel"
@@ -123,8 +121,9 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail</label>
+                            <label htmlFor="cc-email" className="text-sm font-medium">E-mail</label>
                             <Input
+                                id="cc-email"
                                 type="email"
                                 {...register('email')}
                                 placeholder="email@exemplo.com"

@@ -1,6 +1,71 @@
 import apiClient from './client';
 import type { ServiceOrder, CreateServiceOrderData, ServiceOrderFilters, QualityChecklist, ServiceOrderStatus } from '@/types/service-order.types';
-import type { ServiceOrderCard } from '@/types/day-panel.types';
+// ─── Backend types ──────────────────────────────────────────────────────────
+interface BackendWorker {
+    id?: number;
+    employee_id?: number;
+    employee_name?: string;
+    name?: string;
+}
+
+interface BackendService {
+    id: number;
+    name?: string;
+    service_name?: string;
+}
+
+interface BackendServiceOrder {
+    id: number;
+    order_number?: string;
+    status: string;
+    vehicle_plate?: string;
+    plate?: string;
+    vehicle_model?: string;
+    vehicle_brand?: string;
+    vehicle_color?: string;
+    vehicle_year?: number | null;
+    department?: string;
+    internal_notes?: string | null;
+    store_id?: number;
+    location_id?: number;
+    location_name?: string;
+    store_name?: string;
+    start_time?: string;
+    started_at?: string;
+    completion_time?: string;
+    completed_at?: string;
+    delivery_time?: string;
+    delivered_at?: string;
+    entry_time?: string;
+    created_at?: string;
+    photos?: string | string[];
+    quality_checklist?: string | QualityChecklist;
+    workers?: BackendWorker[];
+    semaphore_color?: string;
+    elapsed_minutes?: number;
+    total_value?: number;
+    dealership_name?: string;
+    dealership_id?: number;
+    destination_store_name?: string;
+    destination_store_id?: number;
+    consultant_id?: number;
+    consultant_name?: string;
+    external_os_number?: string;
+    notes?: string;
+    damage_map?: string;
+    invoice_number?: string;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string }>;
+    services?: BackendService[];
+    service_date?: string | null;
+    is_verified?: boolean;
+    verified_at?: string | null;
+    [key: string]: unknown;
+}
+
+interface BackendPaginatedResponse {
+    items: BackendServiceOrder[];
+    pagination: { total: number };
+}
 
 // ─── Status mapping ──────────────────────────────────────────────────────────
 // Backend: 'waiting' | 'in_progress' | 'quality_check' | 'completed' | 'delivered'
@@ -38,34 +103,39 @@ function parseJson<T>(value: unknown, fallback: T): T {
 }
 
 // ─── Backend → Frontend mapper ────────────────────────────────────────────────
-function mapServiceOrder(raw: any): ServiceOrder {
+function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
     const photos = parseJson<string[]>(raw.photos, []);
     const qualityChecklist = raw.quality_checklist
-        ? parseJson<QualityChecklist>(raw.quality_checklist, undefined as any)
+        ? parseJson<QualityChecklist>(raw.quality_checklist, undefined as unknown as QualityChecklist)
         : undefined;
 
-    const workers = (raw.workers || []).map((w: any, idx: number) => ({
-        id: w.id,
+    const workers = (raw.workers || []).map((w: BackendWorker, idx: number) => ({
+        id: w.id ?? w.employee_id ?? 0,
         name: w.employee_name || `Funcionário ${w.employee_id}`,
         isPrimary: idx === 0,
+    }));
+
+    const items = (raw.items || []).map(item => ({
+        service_id: item.service_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price ?? 0,
+        notes: item.notes,
     }));
 
     return {
         ...raw,
         order_number: raw.order_number || `#${raw.id}`,
         status: toFrontendStatus(raw.status),
-        // field name mapping
         plate: raw.vehicle_plate || raw.plate || '',
         location_id: raw.store_id ?? raw.location_id ?? 0,
         location_name: raw.location_name || raw.store_name || '',
         started_at: raw.start_time ?? raw.started_at ?? null,
         completed_at: raw.completion_time ?? raw.completed_at ?? null,
         delivered_at: raw.delivery_time ?? raw.delivered_at ?? null,
-        // parsed JSON fields
         photos,
         quality_checklist: qualityChecklist,
         workers,
-        // technician = primary worker (first in list)
+        items,
         technician_id: raw.workers?.[0]?.employee_id ?? null,
         technician_name: raw.workers?.[0]?.employee_name ?? null,
         semaphore_color: raw.semaphore_color || 'white',
@@ -74,59 +144,33 @@ function mapServiceOrder(raw: any): ServiceOrder {
         total_value: raw.total_value ?? 0,
         dealership_name: raw.dealership_name || '',
         destination_store_name: raw.destination_store_name || null,
-    };
+        vehicle_brand: raw.vehicle_brand ?? undefined,
+        vehicle_year: raw.vehicle_year ?? null,
+        internal_notes: raw.internal_notes ?? null,
+        service_date: raw.service_date ?? null,
+        is_verified: raw.is_verified ?? false,
+        verified_at: raw.verified_at ?? null,
+    } as unknown as ServiceOrder;
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 export const serviceOrdersService = {
-    getDayPanel: async (storeId?: number, date?: string): Promise<ServiceOrderCard[]> => {
-        const { data } = await apiClient.get('/service-orders/day-panel', {
-            params: { store_id: storeId, date },
-        });
-        // Backend returns DayPanelResponse: { store_id, store_name, items, summary }
-        const items: any[] = data.items ?? [];
-
-        // Map backend status → day-panel frontend status
-        const dayPanelStatusMap: Record<string, ServiceOrderCard['status']> = {
-            waiting:      'waiting',
-            in_progress:  'in_progress',
-            quality_check:'inspection',
-            completed:    'ready',
-            delivered:    'delivered',
-        };
-
-        return items.map((item: any): ServiceOrderCard => ({
-            id: item.id,
-            orderNumber: item.order_number || `#${item.id}`,
-            plate: item.vehicle_plate || '',
-            model: [item.vehicle_brand, item.vehicle_model].filter(Boolean).join(' ') || '',
-            color: item.vehicle_color ?? undefined,
-            status: dayPanelStatusMap[item.status] ?? (item.status as ServiceOrderCard['status']),
-            department: (item.department as ServiceOrderCard['department']),
-            semaphoreColor: (item.semaphore_color as ServiceOrderCard['semaphoreColor']) || 'white',
-            elapsedMinutes: item.elapsed_minutes ?? 0,
-            entryTime: item.entry_time || item.created_at,
-            estimatedTime: undefined,
-            services: (item.services ?? []).map((s: any) => ({ id: s.id, name: s.name || s.service_name || '' })),
-            consultantName: item.consultant_name ?? undefined,
-            dealershipName: item.dealership_name || '',
-            assignedWorkers: (item.workers ?? []).map((w: any) => ({ id: w.id ?? w.employee_id, name: w.employee_name || w.name || '' })),
-            storeId: item.store_id ?? data.store_id,
-            storeName: item.store_name ?? data.store_name ?? '',
-        }));
-    },
-
     getAll: async (filters?: ServiceOrderFilters, skip = 0, limit = 20) => {
         const params = new URLSearchParams();
         if (filters?.status) params.append('status', toBackendStatus(filters.status));
         if (filters?.location_id) params.append('store_id', filters.location_id.toString());
+        if (filters?.store_id) params.append('store_id', filters.store_id.toString());
         if (filters?.start_date) params.append('date_from', filters.start_date);
         if (filters?.end_date) params.append('date_to', filters.end_date);
+        if (filters?.date_from) params.append('date_from', filters.date_from);
+        if (filters?.date_to) params.append('date_to', filters.date_to);
         if (filters?.search) params.append('plate', filters.search);
+        if (filters?.is_verified !== undefined) params.append('is_verified', String(filters.is_verified));
+        if (filters?.department) params.append('department', filters.department);
         params.append('page', (Math.floor(skip / limit) + 1).toString());
         params.append('limit', limit.toString());
 
-        const response = await apiClient.get<{ items: any[]; pagination: { total: number } }>(
+        const response = await apiClient.get<BackendPaginatedResponse>(
             `/service-orders?${params.toString()}`
         );
         const raw = response.data;
@@ -137,23 +181,23 @@ export const serviceOrdersService = {
     },
 
     getById: async (id: number): Promise<ServiceOrder> => {
-        const response = await apiClient.get<any>(`/service-orders/${id}`);
+        const response = await apiClient.get<BackendServiceOrder>(`/service-orders/${id}`);
         return mapServiceOrder(response.data);
     },
 
     create: async (data: CreateServiceOrderData) => {
-        const response = await apiClient.post<any>('/service-orders', data);
+        const response = await apiClient.post<BackendServiceOrder>('/service-orders', data);
         return mapServiceOrder(response.data);
     },
 
     update: async (id: number, data: Partial<CreateServiceOrderData>) => {
-        const response = await apiClient.patch<any>(`/service-orders/${id}`, data);
+        const response = await apiClient.patch<BackendServiceOrder>(`/service-orders/${id}`, data);
         return mapServiceOrder(response.data);
     },
 
-    updateStatus: async (id: number, status: string, extras?: any) => {
+    updateStatus: async (id: number, status: string, extras?: Record<string, unknown>) => {
         const backendStatus = toBackendStatus(status);
-        const response = await apiClient.patch<any>(
+        const response = await apiClient.patch<BackendServiceOrder>(
             `/service-orders/${id}/status`,
             { new_status: backendStatus, ...extras }
         );
@@ -162,11 +206,38 @@ export const serviceOrdersService = {
 
     cancel: async (id: number, reason?: string): Promise<ServiceOrder> => {
         const params = reason ? { reason } : undefined;
-        const response = await apiClient.delete<any>(`/service-orders/${id}`, { params });
+        const response = await apiClient.delete<BackendServiceOrder>(`/service-orders/${id}`, { params });
         return mapServiceOrder(response.data);
     },
 
     delete: async (id: number) => {
         await apiClient.delete(`/service-orders/${id}`);
-    }
+    },
+
+    verify: async (id: number): Promise<ServiceOrder> => {
+        const response = await apiClient.patch<BackendServiceOrder>(`/service-orders/${id}`, { is_verified: true });
+        return mapServiceOrder(response.data);
+    },
+
+    getFiltered: async (params: {
+        store_id?: number;
+        is_verified?: boolean;
+        department?: string;
+        date_from?: string;
+        date_to?: string;
+        plate?: string;
+        page?: number;
+        limit?: number;
+    }) => {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) searchParams.append(k, String(v));
+        });
+        const response = await apiClient.get<BackendPaginatedResponse>(`/service-orders?${searchParams.toString()}`);
+        const raw = response.data;
+        return {
+            items: (raw.items || []).map(mapServiceOrder),
+            total: raw.pagination?.total ?? 0,
+        };
+    },
 };

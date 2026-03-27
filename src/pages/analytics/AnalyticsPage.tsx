@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
     BarChart,
     Bar,
@@ -12,6 +11,7 @@ import {
     Cell,
     Legend,
 } from 'recharts';
+import type { PieLabelRenderProps } from 'recharts';
 import { Package, CheckCircle, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { formatCurrency } from '@/lib/utils';
+import { STATUS_LABELS } from '@/constants/service-orders';
+import { useDateRangeFilter } from '@/hooks/useDateRangeFilter';
 
 // ────────────────────────────────────────────────────────────────
 // Helpers
@@ -37,20 +39,8 @@ function getToday(): string {
     return new Date().toISOString().split('T')[0];
 }
 
-// ────────────────────────────────────────────────────────────────
-// Status label translations
-// ────────────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<string, string> = {
-    waiting: 'Aguardando',
-    doing: 'Em andamento',
-    inspection: 'Inspeção',
-    ready: 'Pronto',
-    delivered: 'Entregue',
-};
-
 function translateStatus(status: string): string {
-    return STATUS_LABELS[status] ?? status;
+    return STATUS_LABELS[status as keyof typeof STATUS_LABELS] ?? status;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -101,19 +91,13 @@ function ChartSkeletonRow() {
 // ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-    const [startDate, setStartDate] = useState<string>(getFirstDayOfMonth);
-    const [endDate, setEndDate] = useState<string>(getToday);
-
-    // Applied dates are only updated when the user clicks "Atualizar"
-    const [appliedStart, setAppliedStart] = useState<string>(startDate);
-    const [appliedEnd, setAppliedEnd] = useState<string>(endDate);
+    const { startDate, endDate, setStartDate, setEndDate, appliedStart, appliedEnd, apply } =
+        useDateRangeFilter({ defaultStart: getFirstDayOfMonth(), defaultEnd: getToday() });
 
     const { data, isLoading, isError, refetch } = useAnalytics(appliedStart, appliedEnd);
 
     const handleAtualizar = () => {
-        setAppliedStart(startDate);
-        setAppliedEnd(endDate);
-        // If the applied dates didn't change, we still want a fresh fetch
+        apply();
         refetch();
     };
 
@@ -349,8 +333,8 @@ export default function AnalyticsPage() {
                                                 cx="50%"
                                                 cy="50%"
                                                 outerRadius={100}
-                                                label={({ name, percent }) =>
-                                                    `${name} ${(percent * 100).toFixed(0)}%`
+                                                label={({ name, percent }: PieLabelRenderProps) =>
+                                                    `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
                                                 }
                                                 labelLine={false}
                                             >

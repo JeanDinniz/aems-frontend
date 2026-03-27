@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface WebSocketContextType {
     connection: WebSocketConnection;
-    send: (data: any) => void;
+    send: (data: Record<string, unknown>) => void;
     reconnect: () => void;
     disconnect: () => void;
 }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Store } from '@/services/api/stores.service';
 
 interface StoreState {
@@ -9,20 +10,36 @@ interface StoreState {
     selectStore: (storeId: number | null) => void;  // null = "Todas as Lojas"
 }
 
-export const useStoreStore = create<StoreState>()((set) => ({
-    availableStores: [],
-    selectedStoreId: null,
-    isMultiStore: false,
+export const useStoreStore = create<StoreState>()(
+    persist(
+        (set, get) => ({
+            availableStores: [],
+            selectedStoreId: null,
+            isMultiStore: false,
 
-    setAvailableStores: (stores) =>
-        set({
-            availableStores: stores,
-            isMultiStore: stores.length > 1,
-            // If only 1 store, auto-select it. If more, keep current selection or default to null ("All") if appropriate, 
-            // but usually we want to force selection or default to "All" for owners. 
-            // The prompt logic: selectedStoreId: stores.length === 1 ? stores[0].id : null
-            selectedStoreId: stores.length === 1 ? stores[0].id : null,
+            setAvailableStores: (stores) => {
+                const current = get().selectedStoreId;
+                // Manter a seleção persistida se a loja ainda existe na lista
+                const stillValid = current !== null && stores.some(s => s.id === current);
+
+                set({
+                    availableStores: stores,
+                    isMultiStore: stores.length > 1,
+                    selectedStoreId: stores.length === 1
+                        ? stores[0].id
+                        : stillValid
+                            ? current
+                            : null,
+                });
+            },
+
+            selectStore: (storeId) => set({ selectedStoreId: storeId }),
         }),
-
-    selectStore: (storeId) => set({ selectedStoreId: storeId }),
-}));
+        {
+            name: 'aems-store-selection',
+            partialize: (state) => ({
+                selectedStoreId: state.selectedStoreId,
+            }),
+        }
+    )
+);

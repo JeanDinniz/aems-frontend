@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { employeesService } from '@/services/api/employees.service';
 import { toast } from '@/hooks/use-toast';
 import type { CreateEmployeePayload, UpdateEmployeePayload, EmployeeFilters } from '@/types/employee.types';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 export function useEmployees(filters?: EmployeeFilters, page = 1) {
     const queryClient = useQueryClient();
@@ -20,12 +21,8 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
                 description: `${emp.name} foi adicionado ao sistema.`,
             });
         },
-        onError: (error: any) => {
-            const detail = error.response?.data?.detail;
-            const description = Array.isArray(detail)
-                ? detail.map((e: any) => e.msg).join('; ')
-                : (typeof detail === 'string' ? detail : 'Tente novamente.');
-            toast({ title: 'Erro ao cadastrar funcionário', description, variant: 'destructive' });
+        onError: (error: Error) => {
+            toast({ title: 'Erro ao cadastrar funcionário', description: getApiErrorMessage(error), variant: 'destructive' });
         },
     });
 
@@ -36,12 +33,8 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
             queryClient.invalidateQueries({ queryKey: ['employees'] });
             toast({ title: 'Funcionário atualizado', description: 'As alterações foram salvas.' });
         },
-        onError: (error: any) => {
-            const detail = error.response?.data?.detail;
-            const description = Array.isArray(detail)
-                ? detail.map((e: any) => e.msg).join('; ')
-                : (typeof detail === 'string' ? detail : 'Tente novamente.');
-            toast({ title: 'Erro ao atualizar', description, variant: 'destructive' });
+        onError: (error: Error) => {
+            toast({ title: 'Erro ao atualizar', description: getApiErrorMessage(error), variant: 'destructive' });
         },
     });
 
@@ -94,5 +87,13 @@ export function useEmployeesByDepartment(storeId: number | undefined, department
         queryKey: ['employees', 'by-department', storeId, department],
         queryFn: () => employeesService.listByStoreAndDepartment(storeId!, department),
         enabled: !!(storeId && department),
+    });
+}
+
+export function useFilmInstallers(department: 'film' | 'ppf') {
+    return useQuery({
+        queryKey: ['employees', 'film-installers', department],
+        queryFn: () => employeesService.listByDepartmentAllStores('film'),
+        staleTime: 5 * 60 * 1000,
     });
 }

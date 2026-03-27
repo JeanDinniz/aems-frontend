@@ -1,5 +1,22 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
+import type { User } from '@/types/auth.types';
+
+export function mapUser(userData: Record<string, unknown>, mustChangePassword: boolean): User {
+    return {
+        id: userData.id as number,
+        full_name: userData.full_name as string,
+        email: userData.email as string,
+        role: userData.role as User['role'],
+        is_active: userData.is_active as boolean,
+        must_change_password: mustChangePassword,
+        store_id: userData.store_id as number | null | undefined,
+        supervised_store_ids: (userData.supervised_store_ids as number[] | undefined) || [],
+        last_login: userData.last_login as string | null | undefined,
+        created_at: userData.created_at as string,
+        updated_at: userData.updated_at as string | null | undefined,
+    };
+}
 
 export const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : 'http://localhost:8000/api/v1',
@@ -82,19 +99,7 @@ apiClient.interceptors.response.use(
                     { headers: { Authorization: `Bearer ${access_token}` } }
                 );
 
-                const user = {
-                    id: userResponse.data.id,
-                    full_name: userResponse.data.full_name,
-                    email: userResponse.data.email,
-                    role: userResponse.data.role,
-                    is_active: userResponse.data.is_active,
-                    must_change_password: must_change_password,
-                    store_id: userResponse.data.store_id,
-                    supervised_store_ids: userResponse.data.supervised_store_ids || [],
-                    last_login: userResponse.data.last_login,
-                    created_at: userResponse.data.created_at,
-                    updated_at: userResponse.data.updated_at,
-                };
+                const user = mapUser(userResponse.data, must_change_password);
 
                 const newTokens = {
                     accessToken: access_token,

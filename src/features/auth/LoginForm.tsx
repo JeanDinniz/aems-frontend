@@ -40,9 +40,7 @@ export function LoginForm() {
             // - must_change_password: true -> /change-password
             // - must_change_password: false -> não faz nada aqui, deixa o usuário navegar
             // Não fazemos navigate aqui para evitar conflito
-        } catch (err: any) {
-            console.error("Login failed", err);
-            // Error handling is also done in useAuth with toast
+        } catch {
             setError('Falha no login. Verifique suas credenciais.');
         } finally {
             setIsLoading(false);

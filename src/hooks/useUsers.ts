@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersService } from '@/services/api/users.service';
 import { toast } from '@/hooks/use-toast';
 import type { CreateUserPayload, UpdateUserPayload, UserFilters } from '@/types/user.types';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 export function useUsers(filters?: UserFilters, page = 1) {
     const queryClient = useQueryClient();
@@ -20,10 +21,10 @@ export function useUsers(filters?: UserFilters, page = 1) {
                 description: `${newUser.full_name} foi adicionado ao sistema.`,
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast({
                 title: 'Erro ao criar usuário',
-                description: error.response?.data?.detail || 'Tente novamente.',
+                description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
         },
@@ -39,10 +40,10 @@ export function useUsers(filters?: UserFilters, page = 1) {
                 description: 'As alterações foram salvas.',
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast({
                 title: 'Erro ao atualizar',
-                description: error.response?.data?.detail || 'Tente novamente.',
+                description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
         },
@@ -72,10 +73,10 @@ export function useUsers(filters?: UserFilters, page = 1) {
                 description: `Nova senha temporária: ${data.temporary_password}`,
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast({
                 title: 'Erro ao resetar senha',
-                description: error.response?.data?.detail || 'Tente novamente.',
+                description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
         },

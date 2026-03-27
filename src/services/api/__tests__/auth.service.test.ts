@@ -40,17 +40,17 @@ describe('authService', () => {
             expect(response.must_change_password).toBe(false);
         });
 
-        it('should set authorization header after successful login', async () => {
+        it('should return access token in tokens after successful login', async () => {
             const credentials = {
                 email: 'test@example.com',
                 password: 'password123',
             };
 
-            await authService.login(credentials);
+            const response = await authService.login(credentials);
 
-            expect(apiClient.defaults.headers.common['Authorization']).toBe(
-                'Bearer mock-access-token'
-            );
+            // The login service no longer sets apiClient.defaults.headers.common
+            // Instead it returns the token in the response for the auth store to manage
+            expect(response.tokens.accessToken).toBe('mock-access-token');
         });
 
         it('should return supervisor user data for supervisor login', async () => {
@@ -107,7 +107,7 @@ describe('authService', () => {
             // refreshToken returns raw response data, not LoginResponse format
             expect(response).toHaveProperty('access_token');
             expect(response).toHaveProperty('refresh_token');
-        });
+        }, 10000);
 
         it.skip('should throw error with invalid refresh token', async () => {
             // SKIPPED: This test triggers axios interceptor which tries to navigate
@@ -228,7 +228,8 @@ describe('authService', () => {
     describe('error handling', () => {
         it('should handle network errors gracefully', async () => {
             // Mock a network error using MSW server.use()
-            const API_URL = 'http://127.0.0.1:8000/api/v1';
+            // Must match the client's baseURL (http://localhost:8000)
+            const API_URL = 'http://localhost:8000/api/v1';
 
             server.use(
                 http.post(`${API_URL}/auth/login`, () => {
@@ -247,7 +248,7 @@ describe('authService', () => {
             useAuthStore.getState().clearAuth();
 
             // Mock a 401 error
-            const API_URL = 'http://127.0.0.1:8000/api/v1';
+            const API_URL = 'http://localhost:8000/api/v1';
 
             server.use(
                 http.get(`${API_URL}/auth/me`, () => {

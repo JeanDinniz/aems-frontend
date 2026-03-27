@@ -76,16 +76,17 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Nome</label>
-                        <Input {...register('name')} />
+                        <label htmlFor="ec-name" className="text-sm font-medium">Nome</label>
+                        <Input id="ec-name" {...register('name')} />
                         {errors.name && (
                             <p className="text-sm text-red-500">{errors.name.message}</p>
                         )}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Loja</label>
+                        <label htmlFor="ec-store" className="text-sm font-medium">Loja</label>
                         <Input
+                            id="ec-store"
                             value={consultant.store_name || 'N/A'}
                             disabled
                             className="bg-gray-50"
@@ -97,8 +98,9 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Telefone</label>
+                            <label htmlFor="ec-phone" className="text-sm font-medium">Telefone</label>
                             <Input
+                                id="ec-phone"
                                 {...register('phone')}
                                 placeholder="(00) 00000-0000"
                                 type="tel"
@@ -109,8 +111,9 @@ export function EditConsultantDialog({ consultant, open, onOpenChange }: EditCon
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail</label>
+                            <label htmlFor="ec-email" className="text-sm font-medium">E-mail</label>
                             <Input
+                                id="ec-email"
                                 type="email"
                                 {...register('email')}
                                 placeholder="email@exemplo.com"

@@ -34,6 +34,15 @@ const CHECKLIST_FILM: string[] = [
     "Cura visual adequada (sem marcas de espátula)",
 ];
 
+const CHECKLIST_PPF: string[] = [
+    "Superfície limpa e seca antes da aplicação",
+    "Sem bolhas ou imperfeições visíveis",
+    "Bordas aderidas corretamente sem descolamento",
+    "Alinhamento correto em todas as peças",
+    "Sem riscos ou arranhões causados durante o processo",
+    "Acabamento nas bordas dentro do padrão",
+];
+
 const CHECKLIST_GERAL: string[] = [
     "Serviço executado conforme o solicitado",
     "Veículo entregue limpo e apresentável",
@@ -45,6 +54,7 @@ const CHECKLIST_GERAL: string[] = [
 
 const CHECKLISTS: Record<Department, string[]> = {
     film: CHECKLIST_FILM,
+    ppf: CHECKLIST_PPF,
     vn: CHECKLIST_GERAL,
     vu: CHECKLIST_GERAL,
     bodywork: CHECKLIST_GERAL,
@@ -65,12 +75,19 @@ export function QualityChecklistDialog({
     const [rejectionNotes, setRejectionNotes] = useState('');
     const [mode, setMode] = useState<'approve' | 'reject'>('approve');
 
+    // Reset checklist state whenever the dialog opens or department changes.
+    // setState inside useEffect is intentional here: we synchronize component
+    // state with the dialog open/department props (an external-driven reset),
+    // which is the recommended pattern per React docs for controlled dialogs.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (open) {
             setItems(defaultItems.map(label => ({ label, checked: false })));
             setRejectionNotes('');
             setMode('approve');
         }
+        // defaultItems is derived from department — including department covers both
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, department]);
 
     const handleToggle = (index: number) => {

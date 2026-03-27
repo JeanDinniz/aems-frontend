@@ -74,8 +74,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Nome Completo</label>
+                            <label htmlFor="cu-fullname" className="text-sm font-medium">Nome Completo</label>
                             <Input
+                                id="cu-fullname"
                                 {...register('full_name')}
                                 placeholder="Ex: João da Silva"
                             />
@@ -85,8 +86,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail</label>
+                            <label htmlFor="cu-email" className="text-sm font-medium">E-mail</label>
                             <Input
+                                id="cu-email"
                                 type="email"
                                 {...register('email')}
                                 placeholder="email@exemplo.com"
@@ -98,9 +100,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Cargo</label>
+                        <label htmlFor="cu-role" className="text-sm font-medium">Cargo</label>
                         <Select onValueChange={(value) => setValue('role', value as UserRole)}>
-                            <SelectTrigger>
+                            <SelectTrigger id="cu-role">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>
@@ -116,13 +118,13 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
                     {selectedRole === 'operator' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
+                            <label htmlFor="cu-store" className="text-sm font-medium">
                                 Loja <span className="text-red-500">*</span>
                             </label>
                             <Select
                                 onValueChange={(value) => setValue('store_id', parseInt(value))}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger id="cu-store">
                                     <SelectValue placeholder="Selecione a loja" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -141,13 +143,14 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
                     {selectedRole === 'supervisor' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
+                            <span className="text-sm font-medium">
                                 Lojas Supervisionadas <span className="text-red-500">*</span>
-                            </label>
+                            </span>
                             <div className="border rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
                                 {stores?.map((store) => (
-                                    <label key={store.id} className="flex items-center gap-2 cursor-pointer">
+                                    <label key={store.id} htmlFor={`cu-store-${store.id}`} className="flex items-center gap-2 cursor-pointer">
                                         <Checkbox
+                                            id={`cu-store-${store.id}`}
                                             onCheckedChange={(checked) => {
                                                 const current = watch('supervised_store_ids') || [];
                                                 if (checked) {

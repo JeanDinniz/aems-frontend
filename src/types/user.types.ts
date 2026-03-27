@@ -49,3 +49,20 @@ export interface UsersListResponse {
     page: number;
     pageSize: number;
 }
+
+export interface ModulePermissionItem {
+    module: string;
+    can_view: boolean;
+    can_edit: boolean;
+}
+
+export interface UserPermissionsResponse {
+    user_id: number;
+    module_permissions: ModulePermissionItem[];
+    accessible_store_ids: number[];
+}
+
+export interface UserPermissionsUpdate {
+    module_permissions: ModulePermissionItem[];
+    accessible_store_ids: number[];
+}

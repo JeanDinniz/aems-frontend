@@ -12,7 +12,12 @@ export function useServices(department?: string, brand?: string) {
                 is_active: true,
                 limit: 300,
             });
-            return result.items;
+            const seen = new Set<string>();
+            return result.items.filter((s) => {
+                if (seen.has(s.name)) return false;
+                seen.add(s.name);
+                return true;
+            });
         },
         staleTime: 1000 * 60 * 5,
     });

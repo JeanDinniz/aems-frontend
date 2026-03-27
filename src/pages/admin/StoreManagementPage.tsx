@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Store, Building2, Edit, Plus } from 'lucide-react';
+import { Store, Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,16 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Form,
     FormControl,
     FormField,
@@ -43,16 +53,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { storesService, type Store as StoreType, type UpdateStorePayload, type CreateStorePayload } from '@/services/api/stores.service';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 const STORE_TYPE_LABELS: Record<StoreType['store_type'], string> = {
     dealership: 'Concessionária',
-    direct_sales: 'Venda Direta',
     warehouse: 'Galpão',
 };
 
 const STORE_TYPE_VARIANTS: Record<StoreType['store_type'], 'default' | 'secondary' | 'outline'> = {
     dealership: 'default',
-    direct_sales: 'secondary',
     warehouse: 'outline',
 };
 
@@ -68,7 +77,7 @@ const createStoreSchema = z.object({
     code: z
         .string()
         .regex(/^LJ\d{2}$/, 'Código deve ser no formato LJ01 a LJ99'),
-    store_type: z.enum(['dealership', 'direct_sales', 'warehouse']),
+    store_type: z.enum(['dealership', 'warehouse']),
     dealership_brand: z.string().optional().nullable(),
     phone: z.string().optional(),
     address: z.string().optional(),
@@ -109,12 +118,11 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
             onOpenChange(false);
             form.reset();
         },
-        onError: (error: any) => {
-            const detail = error?.response?.data?.detail;
+        onError: (error: Error) => {
             toast({
                 variant: 'destructive',
                 title: 'Erro ao criar loja',
-                description: typeof detail === 'string' ? detail : 'Verifique os dados e tente novamente.',
+                description: getApiErrorMessage(error, 'Verifique os dados e tente novamente.'),
             });
         },
     });
@@ -194,7 +202,6 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="dealership">Concessionária</SelectItem>
-                                                <SelectItem value="direct_sales">Venda Direta</SelectItem>
                                                 <SelectItem value="warehouse">Galpão</SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -284,7 +291,7 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 
 const editStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-    store_type: z.enum(['dealership', 'direct_sales', 'warehouse']),
+    store_type: z.enum(['dealership', 'warehouse']),
     active: z.boolean(),
     city: z.string().optional(),
     state: z.string().optional(),
@@ -384,7 +391,6 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                                         </FormControl>
                                         <SelectContent>
                                             <SelectItem value="dealership">Concessionária</SelectItem>
-                                            <SelectItem value="direct_sales">Venda Direta</SelectItem>
                                             <SelectItem value="warehouse">Galpão</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -506,6 +512,26 @@ export function StoreManagementPage() {
     const [editStore, setEditStore] = useState<StoreType | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [storeToDelete, setStoreToDelete] = useState<StoreType | null>(null);
+
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => storesService.delete(id),
+        onSuccess: (deactivated) => {
+            queryClient.invalidateQueries({ queryKey: ['stores'] });
+            toast({ title: `Loja ${deactivated.code} desativada com sucesso.` });
+            setStoreToDelete(null);
+        },
+        onError: () => {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao desativar loja',
+                description: 'Verifique se a loja não possui vínculos ativos e tente novamente.',
+            });
+        },
+    });
 
     const { data: stores = [], isLoading } = useQuery({
         queryKey: ['stores'],
@@ -545,6 +571,10 @@ export function StoreManagementPage() {
     const handleEditClick = useCallback((store: StoreType) => {
         setEditStore(store);
         setEditDialogOpen(true);
+    }, []);
+
+    const handleDeleteClick = useCallback((store: StoreType) => {
+        setStoreToDelete(store);
     }, []);
 
     if (!isOwner) {
@@ -593,7 +623,6 @@ export function StoreManagementPage() {
                     <SelectContent>
                         <SelectItem value="all">Todos os tipos</SelectItem>
                         <SelectItem value="dealership">Concessionária</SelectItem>
-                        <SelectItem value="direct_sales">Venda Direta</SelectItem>
                         <SelectItem value="warehouse">Galpão</SelectItem>
                     </SelectContent>
                 </Select>
@@ -683,15 +712,26 @@ export function StoreManagementPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleEditClick(store)}
-                                            aria-label={`Editar loja ${store.name}`}
-                                        >
-                                            <Edit className="h-4 w-4 mr-1" />
-                                            Editar
-                                        </Button>
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleEditClick(store)}
+                                                aria-label={`Editar loja ${store.name}`}
+                                            >
+                                                <Edit className="h-4 w-4 mr-1" />
+                                                Editar
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDeleteClick(store)}
+                                                aria-label={`Desativar loja ${store.name}`}
+                                                className="hover:bg-red-50 hover:text-red-600 text-muted-foreground"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -713,6 +753,35 @@ export function StoreManagementPage() {
                 onOpenChange={setCreateDialogOpen}
                 nextCode={nextStoreCode}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                open={!!storeToDelete}
+                onOpenChange={(open) => { if (!open) setStoreToDelete(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Desativar loja?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            A loja{' '}
+                            <span className="font-semibold">
+                                {storeToDelete?.code} — {storeToDelete?.name}
+                            </span>{' '}
+                            será desativada. Esta ação pode ser desfeita editando a loja e reativando-a.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => storeToDelete && deleteMutation.mutate(storeToDelete.id)}
+                            disabled={deleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {deleteMutation.isPending ? 'Desativando...' : 'Desativar'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -15,7 +15,7 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
         queryFn: () => storesService.list(),
     });
 
-    const handleChange = (key: keyof Filters, value: any) => {
+    const handleChange = (key: keyof Filters, value: Filters[keyof Filters]) => {
         onFiltersChange({ ...filters, [key]: value !== 'all' ? value : undefined });
     };
 

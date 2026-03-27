@@ -11,7 +11,7 @@ interface Props {
 export function EmployeeFilters({ filters, onFiltersChange }: Props) {
     const { stores } = useStores();
 
-    const handleChange = (key: keyof Filters, value: any) => {
+    const handleChange = (key: keyof Filters, value: Filters[keyof Filters]) => {
         onFiltersChange({ ...filters, [key]: value !== 'all' ? value : undefined });
     };
 

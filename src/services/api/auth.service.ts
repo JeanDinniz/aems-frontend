@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { mapUser } from './client';
 import type { LoginCredentials, LoginResponse, User } from '@/types/auth.types';
 
 export const authService = {
@@ -18,25 +18,14 @@ export const authService = {
         // We need to fetch user data separately
         const { access_token, refresh_token, expires_in, must_change_password } = loginResponse.data;
 
-        // Set token temporarily to fetch user data
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-
-        const userResponse = await apiClient.get('/auth/me');
+        // Fetch user data using the new token directly in the request header
+        // (avoids mutating apiClient.defaults which persists even on login failure)
+        const userResponse = await apiClient.get('/auth/me', {
+            headers: { Authorization: `Bearer ${access_token}` },
+        });
 
         return {
-            user: {
-                id: userResponse.data.id,
-                full_name: userResponse.data.full_name,
-                email: userResponse.data.email,
-                role: userResponse.data.role,
-                is_active: userResponse.data.is_active,
-                must_change_password: must_change_password,
-                store_id: userResponse.data.store_id,
-                supervised_store_ids: userResponse.data.supervised_store_ids || [],
-                last_login: userResponse.data.last_login,
-                created_at: userResponse.data.created_at,
-                updated_at: userResponse.data.updated_at,
-            },
+            user: mapUser(userResponse.data, must_change_password),
             tokens: {
                 accessToken: access_token,
                 refreshToken: refresh_token,

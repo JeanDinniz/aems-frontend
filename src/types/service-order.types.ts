@@ -29,17 +29,17 @@ export interface ServiceOrder {
     external_os_number?: string | null;
 
     // Cliente e Veículo
-    client_name?: string;
-    client_phone?: string;
+    vehicle_brand?: string;
     vehicle_model?: string;
     vehicle_color?: string;
+    vehicle_year?: number | null;
     plate: string;
 
     // Departamento e Serviço
     department: Department;
     service_type: string;        // Mantendo compatibilidade se necessário, ou usar service_description
     service_description?: string;  // Descrição livre do serviço (LEGACY - use items)
-    items?: Array<{ service_id: number; quantity: number; notes?: string }>;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string }>;
     film_type?: string;          // Opcional agora, específico de film?
 
     // Workflow
@@ -69,9 +69,11 @@ export interface ServiceOrder {
     destination_store_id?: number; // For warehouse: the store where the service is billed
     destination_store_name?: string;
 
-    // Valores
-    total_value: number;
     notes: string | null;
+    internal_notes?: string | null;
+    service_date: string | null;
+    is_verified: boolean;
+    verified_at: string | null;
 
     // Semáforo
     semaphore_color: SemaphoreColor;
@@ -91,8 +93,11 @@ export interface CreateServiceOrderData {
     plate: string;
     vehicle_plate?: string;
     external_os_number?: string;
+    vehicle_brand?: string;
     vehicle_model?: string;
     vehicle_color?: string;
+    vehicle_year?: number;
+    internal_notes?: string;
     department: Department;
     items: Array<{ service_id: number; quantity: number; notes?: string }>;
     location_id: number;
@@ -103,12 +108,8 @@ export interface CreateServiceOrderData {
     photos?: string[];
     damage_map?: string;
     invoice_number?: string;
-    // Campos de venda direta
-    client_name?: string;
-    client_phone?: string;
-    total_value?: number;
-    // Campo de galpão
     destination_store_id?: number;
+    service_date?: string;
 }
 
 export interface UpdateServiceOrderData {
@@ -128,4 +129,9 @@ export interface ServiceOrderFilters {
     start_date?: string;
     end_date?: string;
     search?: string;
+    is_verified?: boolean;
+    store_id?: number;
+    date_from?: string;
+    date_to?: string;
+    department?: string;
 }

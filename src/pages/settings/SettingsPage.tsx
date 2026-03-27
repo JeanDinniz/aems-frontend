@@ -6,7 +6,6 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 
-const STORAGE_KEY_EMAIL = 'aems-notify-email';
 const STORAGE_KEY_PUSH = 'aems-notify-push';
 const STORAGE_KEY_DARK = 'aems-dark-mode';
 
@@ -24,9 +23,6 @@ export default function SettingsPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
-    const [notifyEmail, setNotifyEmail] = useState<boolean>(() =>
-        readBoolFromStorage(STORAGE_KEY_EMAIL, true)
-    );
     const [notifyPush, setNotifyPush] = useState<boolean>(() =>
         readBoolFromStorage(STORAGE_KEY_PUSH, false)
     );
@@ -36,14 +32,8 @@ export default function SettingsPage() {
 
     // Apply dark mode class on mount based on persisted value
     useEffect(() => {
-        applyDarkMode(darkMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        applyDarkMode(readBoolFromStorage(STORAGE_KEY_DARK, false));
     }, []);
-
-    const handleNotifyEmailChange = (checked: boolean) => {
-        setNotifyEmail(checked);
-        localStorage.setItem(STORAGE_KEY_EMAIL, String(checked));
-    };
 
     const handleNotifyPushChange = (checked: boolean) => {
         setNotifyPush(checked);
@@ -103,19 +93,6 @@ export default function SettingsPage() {
                     <CardTitle>Notificações</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="email-notifications">Notificações por Email</Label>
-                            <p className="text-sm text-muted-foreground">
-                                Receber alertas de ocorrências e aprovações
-                            </p>
-                        </div>
-                        <Switch
-                            id="email-notifications"
-                            checked={notifyEmail}
-                            onCheckedChange={handleNotifyEmailChange}
-                        />
-                    </div>
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label htmlFor="push-notifications">Notificações Push</Label>

@@ -57,7 +57,7 @@ export const useCancelServiceOrder = () => {
 export const useUpdateServiceOrderStatus = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, status, extras }: { id: number; status: string; extras?: any }) =>
+        mutationFn: ({ id, status, extras }: { id: number; status: string; extras?: Record<string, unknown> }) =>
             serviceOrdersService.updateStatus(id, status, extras),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });

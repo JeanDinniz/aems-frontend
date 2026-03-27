@@ -132,9 +132,8 @@ export function DamageMap({ damages, onDamagesChange, onChange, readOnly = false
                                 view={view}
                                 damages={damagesInCurrentView}
                                 onDiagramClick={handleDiagramClick}
-                                onMarkerClick={(id) => {
-                                    // Opcional: abrir dialog de edição ou apenas destacar
-                                    console.log('Marker clicked:', id);
+                                onMarkerClick={() => {
+                                    // TODO: abrir dialog de edição ou destacar avaria
                                 }}
                             />
 

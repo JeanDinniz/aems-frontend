@@ -23,9 +23,8 @@ export function ConsultantManagementPage() {
         return <Navigate to="/" replace />;
     }
 
-    const handleExport = async () => {
-        // TODO: Implement export
-        console.log('Exporting...', filters);
+    const handleExport = () => {
+        // TODO: Exportar lista de consultores para Excel
     };
 
     return (

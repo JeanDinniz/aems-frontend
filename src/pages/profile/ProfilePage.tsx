@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/api/auth.service';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/api-error';
 import type { User as UserType } from '@/types/auth.types';
 
 const profileSchema = z.object({
@@ -91,10 +92,10 @@ export function ProfilePage() {
             });
             resetPassword();
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast({
                 title: 'Erro',
-                description: error.response?.data?.message || 'Não foi possível alterar a senha.',
+                description: getApiErrorMessage(error, 'Não foi possível alterar a senha.'),
                 variant: 'destructive',
             });
         },
@@ -160,10 +161,11 @@ export function ProfilePage() {
                                     className="space-y-4"
                                 >
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Nome Completo</label>
+                                        <label htmlFor="pp-name" className="text-sm font-medium">Nome Completo</label>
                                         <div className="relative">
                                             <UserIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-name"
                                                 className="pl-9"
                                                 {...registerProfile('name')}
                                             />
@@ -172,10 +174,11 @@ export function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">E-mail</label>
+                                        <label htmlFor="pp-email" className="text-sm font-medium">E-mail</label>
                                         <div className="relative">
                                             <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-email"
                                                 className="pl-9"
                                                 value={user.email}
                                                 disabled
@@ -184,10 +187,11 @@ export function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Telefone</label>
+                                        <label htmlFor="pp-phone" className="text-sm font-medium">Telefone</label>
                                         <div className="relative">
                                             <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-phone"
                                                 className="pl-9"
                                                 placeholder="(00) 00000-0000"
                                                 {...registerProfile('phone')}
@@ -215,10 +219,11 @@ export function ProfilePage() {
                                     className="space-y-4"
                                 >
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Senha Atual</label>
+                                        <label htmlFor="pp-current-pw" className="text-sm font-medium">Senha Atual</label>
                                         <div className="relative">
                                             <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-current-pw"
                                                 className="pl-9"
                                                 type="password"
                                                 {...registerPassword('currentPassword')}
@@ -228,10 +233,11 @@ export function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Nova Senha</label>
+                                        <label htmlFor="pp-new-pw" className="text-sm font-medium">Nova Senha</label>
                                         <div className="relative">
                                             <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-new-pw"
                                                 className="pl-9"
                                                 type="password"
                                                 {...registerPassword('newPassword')}
@@ -241,10 +247,11 @@ export function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Confirmar Nova Senha</label>
+                                        <label htmlFor="pp-confirm-pw" className="text-sm font-medium">Confirmar Nova Senha</label>
                                         <div className="relative">
                                             <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                                             <Input
+                                                id="pp-confirm-pw"
                                                 className="pl-9"
                                                 type="password"
                                                 {...registerPassword('confirmPassword')}

@@ -87,16 +87,16 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Nome Completo</label>
-                            <Input {...register('full_name')} />
+                            <label htmlFor="eu-fullname" className="text-sm font-medium">Nome Completo</label>
+                            <Input id="eu-fullname" {...register('full_name')} />
                             {errors.full_name && (
                                 <p className="text-sm text-red-500">{errors.full_name.message}</p>
                             )}
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">E-mail</label>
-                            <Input {...register('email')} />
+                            <label htmlFor="eu-email" className="text-sm font-medium">E-mail</label>
+                            <Input id="eu-email" {...register('email')} />
                             {errors.email && (
                                 <p className="text-sm text-red-500">{errors.email.message}</p>
                             )}
@@ -104,12 +104,12 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Cargo</label>
+                        <label htmlFor="eu-role" className="text-sm font-medium">Cargo</label>
                         <Select
                             value={selectedRole}
                             onValueChange={(value) => setValue('role', value as UserRole)}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger id="eu-role">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>
@@ -122,14 +122,14 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
                     {selectedRole === 'operator' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
+                            <label htmlFor="eu-store" className="text-sm font-medium">
                                 Loja <span className="text-red-500">*</span>
                             </label>
                             <Select
                                 value={watch('store_id')?.toString()}
                                 onValueChange={(value) => setValue('store_id', parseInt(value))}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger id="eu-store">
                                     <SelectValue placeholder="Selecione a loja" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -145,13 +145,14 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
                     {selectedRole === 'supervisor' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">
+                            <span className="text-sm font-medium">
                                 Lojas Supervisionadas <span className="text-red-500">*</span>
-                            </label>
+                            </span>
                             <div className="border rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
                                 {stores?.map((store) => (
-                                    <label key={store.id} className="flex items-center gap-2 cursor-pointer">
+                                    <label key={store.id} htmlFor={`eu-store-${store.id}`} className="flex items-center gap-2 cursor-pointer">
                                         <Checkbox
+                                            id={`eu-store-${store.id}`}
                                             checked={watch('supervised_store_ids')?.includes(store.id)}
                                             onCheckedChange={(checked) => {
                                                 const current = watch('supervised_store_ids') || [];

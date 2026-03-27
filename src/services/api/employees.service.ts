@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import apiClient from './client';
 import type {
     Employee,
     CreateEmployeePayload,
@@ -43,6 +43,13 @@ export const employeesService = {
         if (department) params.append('department', department);
         const response = await apiClient.get<{ items: Employee[]; pagination: { total: number } }>(
             `/employees?${params.toString()}`
+        );
+        return response.data.items;
+    },
+
+    async listByDepartmentAllStores(department: string): Promise<Employee[]> {
+        const response = await apiClient.get<{ items: Employee[]; pagination: { total: number } }>(
+            `/employees?department=${department}&is_active=true&limit=500`
         );
         return response.data.items;
     },
