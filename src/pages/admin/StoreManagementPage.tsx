@@ -55,16 +55,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { storesService, type Store as StoreType, type UpdateStorePayload, type CreateStorePayload } from '@/services/api/stores.service';
 import { getApiErrorMessage } from '@/lib/api-error';
 
-const STORE_TYPE_LABELS: Record<StoreType['store_type'], string> = {
-    dealership: 'Concessionária',
-    warehouse: 'Galpão',
-};
-
-const STORE_TYPE_VARIANTS: Record<StoreType['store_type'], 'default' | 'secondary' | 'outline'> = {
-    dealership: 'default',
-    warehouse: 'outline',
-};
-
 const DEALERSHIP_BRANDS = [
     { value: 'byd', label: 'BYD' },
     { value: 'fiat', label: 'FIAT' },
@@ -77,7 +67,6 @@ const createStoreSchema = z.object({
     code: z
         .string()
         .regex(/^LJ\d{2}$/, 'Código deve ser no formato LJ01 a LJ99'),
-    store_type: z.enum(['dealership', 'warehouse']),
     dealership_brand: z.string().optional().nullable(),
     phone: z.string().optional(),
     address: z.string().optional(),
@@ -100,15 +89,11 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
         defaultValues: {
             name: '',
             code: nextCode,
-            store_type: 'dealership',
             dealership_brand: null,
             phone: '',
             address: '',
         },
     });
-
-    // Atualiza o código sugerido quando o dialog abre
-    const storeType = form.watch('store_type');
 
     const createMutation = useMutation({
         mutationFn: (data: CreateStorePayload) => storesService.create(data),
@@ -132,8 +117,8 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
             createMutation.mutate({
                 name: data.name,
                 code: data.code,
-                store_type: data.store_type,
-                dealership_brand: data.store_type === 'dealership' ? (data.dealership_brand || null) : null,
+                store_type: 'dealership',
+                dealership_brand: data.dealership_brand || null,
                 phone: data.phone || null,
                 address: data.address || null,
             });
@@ -167,79 +152,53 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Código *</FormLabel>
+                        <FormField
+                            control={form.control}
+                            name="code"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Código *</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Ex: LJ13"
+                                            maxLength={4}
+                                            className="uppercase font-mono"
+                                            {...field}
+                                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="dealership_brand"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Marca da Concessionária</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value ?? ''}
+                                    >
                                         <FormControl>
-                                            <Input
-                                                placeholder="Ex: LJ13"
-                                                maxLength={4}
-                                                className="uppercase font-mono"
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                            />
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione a marca" />
+                                            </SelectTrigger>
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="store_type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tipo *</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="dealership">Concessionária</SelectItem>
-                                                <SelectItem value="warehouse">Galpão</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        {storeType === 'dealership' && (
-                            <FormField
-                                control={form.control}
-                                name="dealership_brand"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Marca da Concessionária</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value ?? ''}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione a marca" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {DEALERSHIP_BRANDS.map((b) => (
-                                                    <SelectItem key={b.value} value={b.value}>
-                                                        {b.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
+                                        <SelectContent>
+                                            {DEALERSHIP_BRANDS.map((b) => (
+                                                <SelectItem key={b.value} value={b.value}>
+                                                    {b.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
@@ -291,7 +250,6 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 
 const editStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-    store_type: z.enum(['dealership', 'warehouse']),
     is_active: z.boolean(),
     city: z.string().optional(),
     state: z.string().optional(),
@@ -316,7 +274,6 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
         values: store
             ? {
                   name: store.name,
-                  store_type: store.store_type,
                   is_active: store.is_active,
                   city: store.city ?? '',
                   state: store.state ?? '',
@@ -372,28 +329,6 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                                     <FormControl>
                                         <Input placeholder="Ex: AEMS Toyota - Centro" {...field} />
                                     </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="store_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tipo de Loja</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione o tipo" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="dealership">Concessionária</SelectItem>
-                                            <SelectItem value="warehouse">Galpão</SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -507,7 +442,6 @@ export function StoreManagementPage() {
     const isOwner = user?.role === 'owner';
 
     const [search, setSearch] = useState('');
-    const [typeFilter, setTypeFilter] = useState<StoreType['store_type'] | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [editStore, setEditStore] = useState<StoreType | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -549,16 +483,14 @@ export function StoreManagementPage() {
                 store.name.toLowerCase().includes(search.toLowerCase()) ||
                 store.code.toLowerCase().includes(search.toLowerCase());
 
-            const matchesType = typeFilter === 'all' || store.store_type === typeFilter;
-
             const matchesStatus =
                 statusFilter === 'all' ||
                 (statusFilter === 'active' && store.is_active) ||
                 (statusFilter === 'inactive' && !store.is_active);
 
-            return matchesSearch && matchesType && matchesStatus;
+            return matchesSearch && matchesStatus;
         });
-    }, [stores, search, typeFilter, statusFilter]);
+    }, [stores, search, statusFilter]);
 
     // Calcula o próximo código de loja disponível (LJ01, LJ02, ...)
     const nextStoreCode = useMemo(() => {
@@ -616,20 +548,6 @@ export function StoreManagementPage() {
                 </div>
 
                 <Select
-                    value={typeFilter}
-                    onValueChange={(val) => setTypeFilter(val as typeof typeFilter)}
-                >
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Tipo de loja" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os tipos</SelectItem>
-                        <SelectItem value="dealership">Concessionária</SelectItem>
-                        <SelectItem value="warehouse">Galpão</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <Select
                     value={statusFilter}
                     onValueChange={(val) => setStatusFilter(val as typeof statusFilter)}
                 >
@@ -657,7 +575,6 @@ export function StoreManagementPage() {
                             <TableHead className="w-24">Código</TableHead>
                             <TableHead>Nome</TableHead>
                             <TableHead>Cidade / Estado</TableHead>
-                            <TableHead>Tipo</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
@@ -666,7 +583,7 @@ export function StoreManagementPage() {
                         {isLoading ? (
                             Array.from({ length: 6 }).map((_, i) => (
                                 <TableRow key={i}>
-                                    {Array.from({ length: 6 }).map((__, j) => (
+                                    {Array.from({ length: 5 }).map((__, j) => (
                                         <TableCell key={j}>
                                             <Skeleton className="h-5 w-full" />
                                         </TableCell>
@@ -676,7 +593,7 @@ export function StoreManagementPage() {
                         ) : filteredStores.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
+                                    colSpan={5}
                                     className="text-center py-12 text-muted-foreground"
                                 >
                                     Nenhuma loja encontrada com os filtros aplicados.
@@ -695,11 +612,6 @@ export function StoreManagementPage() {
                                         {store.city && store.state
                                             ? `${store.city} / ${store.state}`
                                             : store.city || store.state || '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={STORE_TYPE_VARIANTS[store.store_type]}>
-                                            {STORE_TYPE_LABELS[store.store_type]}
-                                        </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <Badge

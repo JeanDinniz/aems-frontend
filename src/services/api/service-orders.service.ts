@@ -46,15 +46,14 @@ interface BackendServiceOrder {
     total_value?: number;
     dealership_name?: string;
     dealership_id?: number;
-    destination_store_name?: string;
-    destination_store_id?: number;
+    is_galpon?: boolean;
     consultant_id?: number;
     consultant_name?: string;
     external_os_number?: string;
     notes?: string;
     damage_map?: string;
     invoice_number?: string;
-    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string }>;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string }>;
     services?: BackendService[];
     service_date?: string | null;
     is_verified?: boolean;
@@ -111,6 +110,7 @@ function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
 
     const workers = (raw.workers || []).map((w: BackendWorker, idx: number) => ({
         id: w.id ?? w.employee_id ?? 0,
+        employee_id: w.employee_id ?? w.id ?? 0,
         name: w.employee_name || `Funcionário ${w.employee_id}`,
         isPrimary: idx === 0,
     }));
@@ -120,6 +120,8 @@ function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
         quantity: item.quantity,
         unit_price: item.unit_price ?? 0,
         notes: item.notes,
+        tonality: item.tonality,
+        roll_code: item.roll_code,
     }));
 
     return {
@@ -143,7 +145,7 @@ function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
         service_type: raw.department || '',
         total_value: raw.total_value ?? 0,
         dealership_name: raw.dealership_name || '',
-        destination_store_name: raw.destination_store_name || null,
+        is_galpon: raw.is_galpon ?? false,
         vehicle_brand: raw.vehicle_brand ?? undefined,
         vehicle_year: raw.vehicle_year ?? null,
         internal_notes: raw.internal_notes ?? null,

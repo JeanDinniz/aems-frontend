@@ -39,7 +39,7 @@ export interface ServiceOrder {
     department: Department;
     service_type: string;        // Mantendo compatibilidade se necessário, ou usar service_description
     service_description?: string;  // Descrição livre do serviço (LEGACY - use items)
-    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string }>;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string }>;
     film_type?: string;          // Opcional agora, específico de film?
 
     // Workflow
@@ -54,7 +54,7 @@ export interface ServiceOrder {
     technician_name: string | null;
     consultant_id: number | null;
     consultant_name: string | null;
-    workers?: Array<{ id: number; name: string; isPrimary: boolean }>;
+    workers?: Array<{ id: number; employee_id: number; name: string; isPrimary: boolean }>;
 
     // Documentação
     photos: string[];              // URLs das fotos
@@ -66,8 +66,7 @@ export interface ServiceOrder {
     location_name: string;
     dealership_id?: number;
     dealership_name?: string;
-    destination_store_id?: number; // For warehouse: the store where the service is billed
-    destination_store_name?: string;
+    is_galpon: boolean;
 
     notes: string | null;
     internal_notes?: string | null;
@@ -99,7 +98,7 @@ export interface CreateServiceOrderData {
     vehicle_year?: number;
     internal_notes?: string;
     department: Department;
-    items: Array<{ service_id: number; quantity: number; notes?: string }>;
+    items: Array<{ service_id: number; quantity: number; notes?: string; tonality?: string; roll_code?: string }>;
     location_id: number;
     dealership_id?: number;
     consultant_id?: number;
@@ -108,7 +107,7 @@ export interface CreateServiceOrderData {
     photos?: string[];
     damage_map?: string;
     invoice_number?: string;
-    destination_store_id?: number;
+    is_galpon?: boolean;
     service_date?: string;
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useServiceOrders } from '@/hooks/useServiceOrders';
+import { useStoreStore } from '@/stores/store.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,8 +34,11 @@ export default function ServiceOrdersPage() {
     const [departmentFilter, setDepartmentFilter] = useState<Department | 'all'>('all');
     const [search, setSearch] = useState('');
 
+    const { selectedStoreId } = useStoreStore();
+
     const { data, isLoading, isError } = useServiceOrders(
         {
+            store_id: selectedStoreId ?? undefined,
             search: search || undefined,
         },
         page * pageSize,

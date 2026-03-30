@@ -9,7 +9,7 @@ export interface Store {
     address?: string;
     phone?: string;
     is_active: boolean;
-    store_type: 'dealership' | 'warehouse';
+    store_type: 'dealership';
     dealership_id?: number | null;
     dealership_brand?: string | null;
 }
@@ -17,7 +17,7 @@ export interface Store {
 export interface CreateStorePayload {
     name: string;
     code: string;
-    store_type: 'dealership' | 'warehouse';
+    store_type: 'dealership';
     dealership_brand?: string | null;
     address?: string | null;
     phone?: string | null;
@@ -25,7 +25,6 @@ export interface CreateStorePayload {
 
 export interface UpdateStorePayload {
     name?: string;
-    store_type?: 'dealership' | 'warehouse';
     is_active?: boolean;
     city?: string;
     state?: string;

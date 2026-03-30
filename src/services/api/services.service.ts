@@ -46,7 +46,7 @@ export interface ServiceListResponse {
 export const servicesService = {
     getAll: async (): Promise<ServiceItem[]> => {
         const response = await apiClient.get('/services', {
-            params: { limit: 100 },
+            params: { limit: 500 },
         });
         const items: ServiceItem[] = response.data.items;
         return items.sort((a, b) => {

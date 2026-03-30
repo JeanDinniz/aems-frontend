@@ -82,6 +82,7 @@ const schema = z.object({
     selected_services: z.array(z.number()).default([]),
     is_return: z.boolean().default(false),
     is_courtesy: z.boolean().default(false),
+    is_galpon: z.boolean().default(false),
     notes: z.string().optional(),
     service_date: z.string().min(1, 'Data do serviço obrigatória'),
     film_entries: z.array(z.object({
@@ -90,7 +91,7 @@ const schema = z.object({
         roll_code:  z.string().optional(),
     })).optional(),
     installers: z.array(z.number()).optional(),
-    destination_store_id: z.number().optional(),
+    form_store_id: z.number().optional(),
 }).superRefine((data, ctx) => {
     if (data.department === 'film' || data.department === 'ppf') {
         if (!data.film_entries || data.film_entries.length === 0) {
@@ -138,13 +139,13 @@ const DEPT_OPTIONS: DeptOption[] = [
 ];
 
 // ─── Sub-component: department toggle buttons ─────────────────────────────────
-interface DeptToggleProps {
+export interface DeptToggleProps {
     value: Department | undefined;
     onChange: (v: Department) => void;
     error?: string;
 }
 
-function DeptToggle({ value, onChange, error }: DeptToggleProps) {
+export function DeptToggle({ value, onChange, error }: DeptToggleProps) {
     return (
         <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -173,7 +174,7 @@ function DeptToggle({ value, onChange, error }: DeptToggleProps) {
 }
 
 // ─── Sub-component: inline service picker (no prices) ─────────────────────────
-interface ServicePickerProps {
+export interface ServicePickerProps {
     department: Department | undefined;
     brand?: string;
     selectedIds: number[];
@@ -181,7 +182,7 @@ interface ServicePickerProps {
     error?: string;
 }
 
-function ServicePicker({ department, brand, selectedIds, onChange, error }: ServicePickerProps) {
+export function ServicePicker({ department, brand, selectedIds, onChange, error }: ServicePickerProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -318,13 +319,13 @@ function ServicePicker({ department, brand, selectedIds, onChange, error }: Serv
 }
 
 // ─── Sub-component: FilmPicker ────────────────────────────────────────────────
-interface FilmEntry {
+export interface FilmEntry {
     service_id: number;
     tonality: string;
     roll_code?: string;
 }
 
-interface FilmPickerProps {
+export interface FilmPickerProps {
     storeId: number;
     brand?: string;
     department: 'film' | 'ppf';
@@ -335,7 +336,7 @@ interface FilmPickerProps {
     error?: string;
 }
 
-function FilmPicker({
+export function FilmPicker({
     storeId: _storeId,
     brand,
     department,
@@ -504,12 +505,12 @@ function FilmPicker({
 }
 
 // ─── Sub-component: camera photo capture ──────────────────────────────────────
-interface CompactPhotoUploaderProps {
+export interface CompactPhotoUploaderProps {
     photos: Photo[];
     onChange: (photos: Photo[]) => void;
 }
 
-function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderProps) {
+export function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderProps) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleCapture = useCallback(
@@ -633,11 +634,12 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             selected_services: [],
             is_return: false,
             is_courtesy: false,
+            is_galpon: false,
             notes: '',
             service_date: new Date().toISOString().split('T')[0],
             film_entries: [],
             installers: [],
-            destination_store_id: undefined,
+            form_store_id: undefined,
         },
     });
 
@@ -645,12 +647,22 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const selectedSvcs = watch('selected_services');
     const isReturn     = watch('is_return');
     const isCourtesy   = watch('is_courtesy');
+    const isGalpon     = watch('is_galpon');
+    const formStoreId  = watch('form_store_id');
 
-    // Resolve loja e marca atuais
-    const storeId = selectedStoreId ?? user?.store_id ?? undefined;
+    // Resolve loja: form_store_id (multi-store) or selectedStoreId/user's store
+    const storeId = formStoreId ?? selectedStoreId ?? user?.store_id ?? undefined;
     const currentStore = availableStores.find((s) => s.id === storeId);
-    const isWarehouse = currentStore?.store_type === 'warehouse';
     const storeBrand = currentStore?.dealership_brand ?? undefined;
+
+    // On open: pre-fill form_store_id from global selectedStoreId
+    useEffect(() => {
+        if (open && formStoreId === undefined) {
+            const defaultId = selectedStoreId ?? user?.store_id ?? availableStores[0]?.id;
+            if (defaultId) setValue('form_store_id', defaultId);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
     const { consultants, isLoading: consultantsLoading } = useConsultants(
         storeId ? { store_id: storeId, is_active: true } : undefined
     );
@@ -676,6 +688,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
     // Full reset: clear form and stay open for next OS
     const fullReset = useCallback(() => {
+        const currentFormStoreId = formStoreId ?? selectedStoreId ?? user?.store_id ?? availableStores[0]?.id;
         reset({
             department: undefined,
             plate: '',
@@ -686,19 +699,20 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             selected_services: [],
             is_return: false,
             is_courtesy: false,
+            is_galpon: false,
             notes: '',
             service_date: new Date().toISOString().split('T')[0],
             film_entries: [],
             installers: [],
-            destination_store_id: undefined,
+            form_store_id: currentFormStoreId,
         });
         setPhotos([]);
         setTimeout(() => plateInputRef.current?.focus(), 50);
-    }, [reset]);
+    }, [reset, formStoreId, selectedStoreId, user, availableStores]);
 
     // Partial reset: keep dept, consultant, os_number — for "Salvar e Próxima"
     const partialReset = useCallback(
-        (savedDept: Department | undefined, savedConsultant: number | undefined, savedOsNumber: string | undefined, savedDestStore: number | undefined) => {
+        (savedDept: Department | undefined, savedConsultant: number | undefined, savedOsNumber: string | undefined, savedFormStoreId: number | undefined) => {
             reset({
                 department: savedDept,
                 plate: '',
@@ -709,11 +723,12 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 selected_services: [],
                 is_return: false,
                 is_courtesy: false,
+                is_galpon: false,
                 notes: '',
                 service_date: new Date().toISOString().split('T')[0],
                 film_entries: (savedDept === 'film' || savedDept === 'ppf') ? [{ service_id: 0, tonality: '', roll_code: '' }] : [],
                 installers: [],
-                destination_store_id: savedDestStore,
+                form_store_id: savedFormStoreId,
             });
             setPhotos([]);
             setTimeout(() => plateInputRef.current?.focus(), 50);
@@ -723,6 +738,9 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
     const buildPayload = useCallback(
         (data: QuickCreateFormData, uploadedPhotoUrls: string[]) => {
+            const resolvedStoreId = data.form_store_id ?? storeId ?? 0;
+            const resolvedStore = availableStores.find((s) => s.id === resolvedStoreId);
+
             const notesText = [
                 data.notes || '',
                 data.is_courtesy ? '[CORTESIA]' : '',
@@ -746,16 +764,15 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 : undefined;
 
             return {
-                plate: data.plate.toUpperCase(),
                 vehicle_plate: data.plate.toUpperCase(),
                 vehicle_model: data.vehicle_model,
                 vehicle_color: data.vehicle_color || undefined,
                 department: data.department,
-                location_id: storeId ?? 0,
-                dealership_id: currentStore?.dealership_id || undefined,
+                store_id: resolvedStoreId,
+                dealership_id: resolvedStore?.dealership_id || undefined,
                 consultant_id: data.consultant_id || undefined,
                 external_os_number: data.external_os_number || undefined,
-                destination_store_id: data.destination_store_id || undefined,
+                is_galpon: data.is_galpon,
                 items,
                 workers,
                 notes: notesText || undefined,
@@ -763,7 +780,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 service_date: data.service_date,
             };
         },
-        [storeId, currentStore]
+        [storeId, availableStores]
     );
 
     const uploadPhotos = useCallback(async (): Promise<string[]> => {
@@ -782,10 +799,6 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
     const onSave = handleSubmit(async (rawData) => {
         const data = rawData as QuickCreateFormData;
-        if (isWarehouse && !data.destination_store_id) {
-            toast({ variant: 'destructive', title: 'Selecione a loja de destino' });
-            return;
-        }
         try {
             const uploadedUrls = await uploadPhotos();
             await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls));
@@ -808,20 +821,16 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
     const onSaveAndNext = handleSubmit(async (rawData) => {
         const data = rawData as QuickCreateFormData;
-        if (isWarehouse && !data.destination_store_id) {
-            toast({ variant: 'destructive', title: 'Selecione a loja de destino' });
-            return;
-        }
-        const savedDept      = data.department;
+        const savedDept       = data.department;
         const savedConsultant = data.consultant_id;
-        const savedOsNumber  = data.external_os_number;
-        const savedDestStore = data.destination_store_id;
+        const savedOsNumber   = data.external_os_number;
+        const savedFormStore  = data.form_store_id;
 
         try {
             const uploadedUrls = await uploadPhotos();
             await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls));
             toast({ title: 'OS lançada! Próxima OS...' });
-            partialReset(savedDept, savedConsultant, savedOsNumber, savedDestStore);
+            partialReset(savedDept, savedConsultant, savedOsNumber, savedFormStore);
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Verifique os dados e tente novamente.';
             toast({ variant: 'destructive', title: 'Erro ao lançar OS', description: msg });
@@ -841,6 +850,66 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 </DialogHeader>
 
                 <form className="px-6 py-4 space-y-5" onSubmit={(e) => e.preventDefault()}>
+
+                    {/* Row 1: Loja + Galpão + Retorno / Cortesia */}
+                    <div className="flex flex-wrap items-end gap-3">
+                        {/* Loja */}
+                        <div className="flex-1 min-w-[160px] space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Loja
+                            </Label>
+                            {availableStores.length === 1 ? (
+                                <div className="h-10 flex items-center px-3 rounded-md border border-input bg-muted/40 text-sm font-medium text-foreground">
+                                    {availableStores[0].name}
+                                </div>
+                            ) : (
+                                <Select
+                                    value={formStoreId?.toString() ?? ''}
+                                    onValueChange={(v) => setValue('form_store_id', v ? Number(v) : undefined)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecionar loja..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableStores.map((s) => (
+                                            <SelectItem key={s.id} value={s.id.toString()}>
+                                                {s.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+
+                        {/* Checkboxes: Galpão / Retorno / Cortesia */}
+                        <div className="flex items-center gap-4 pb-0.5">
+                            <label htmlFor="is_galpon" className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                    checked={isGalpon}
+                                    onCheckedChange={(v) => setValue('is_galpon', Boolean(v))}
+                                    id="is_galpon"
+                                />
+                                <span className="text-sm font-medium">Galpão</span>
+                            </label>
+                            <label htmlFor="is_return" className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                    checked={isReturn}
+                                    onCheckedChange={(v) => setValue('is_return', Boolean(v))}
+                                    id="is_return"
+                                />
+                                <span className="text-sm font-medium">Retorno</span>
+                            </label>
+                            <label htmlFor="is_courtesy" className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                    checked={isCourtesy}
+                                    onCheckedChange={(v) => setValue('is_courtesy', Boolean(v))}
+                                    id="is_courtesy"
+                                />
+                                <span className="text-sm font-medium">Cortesia</span>
+                            </label>
+                        </div>
+                    </div>
+
                     {/* Departamento */}
                     <DeptToggle
                         value={department}
@@ -853,20 +922,35 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         error={errors.department?.message}
                     />
 
-                    {/* Data do Serviço */}
-                    <div className="space-y-1.5">
-                        <Label htmlFor="service_date" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Data do Serviço <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                            id="service_date"
-                            type="date"
-                            {...register('service_date')}
-                            max={new Date().toISOString().split('T')[0]}
-                            className={cn(errors.service_date && 'border-destructive')}
-                        />
-                        {errors.service_date && (
-                            <p className="text-xs text-destructive">{errors.service_date.message}</p>
+                    {/* Row: Data do Serviço + Nº OS Concessionária */}
+                    <div className="grid grid-cols-5 gap-3">
+                        <div className="col-span-3 space-y-1.5">
+                            <Label htmlFor="service_date" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Data do Serviço <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                                id="service_date"
+                                type="date"
+                                {...register('service_date')}
+                                max={new Date().toISOString().split('T')[0]}
+                                className={cn(errors.service_date && 'border-destructive')}
+                            />
+                            {errors.service_date && (
+                                <p className="text-xs text-destructive">{errors.service_date.message}</p>
+                            )}
+                        </div>
+
+                        {(department !== 'vn' && department !== 'vu') && (
+                            <div className="col-span-2 space-y-1.5">
+                                <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Nº OS Concessionária
+                                </Label>
+                                <Input
+                                    id="external_os_number"
+                                    {...register('external_os_number')}
+                                    placeholder="Ex: 12345"
+                                />
+                            </div>
                         )}
                     </div>
 
@@ -946,78 +1030,34 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         </div>
                     </div>
 
-                    {/* Loja de Destino (apenas Galpão) */}
-                    {isWarehouse && (
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Loja de Destino <span className="text-destructive">*</span>
-                            </Label>
+                    {/* Consultor */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="consultant_id" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Consultor
+                        </Label>
+                        {consultantsLoading ? (
+                            <Skeleton className="h-10 w-full" />
+                        ) : (
                             <Select
-                                value={watch('destination_store_id')?.toString() ?? ''}
+                                value={watch('consultant_id')?.toString() ?? ''}
                                 onValueChange={(v) =>
-                                    setValue('destination_store_id', v ? Number(v) : undefined, { shouldValidate: true })
+                                    setValue('consultant_id', v ? Number(v) : undefined, {
+                                        shouldValidate: true,
+                                    })
                                 }
                             >
-                                <SelectTrigger className={cn(!watch('destination_store_id') && errors.destination_store_id && 'border-destructive')}>
-                                    <SelectValue placeholder="Selecionar loja de destino..." />
+                                <SelectTrigger id="consultant_id">
+                                    <SelectValue placeholder="Selecionar..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {availableStores
-                                        .filter((s) => s.id !== storeId)
-                                        .map((s) => (
-                                            <SelectItem key={s.id} value={s.id.toString()}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
+                                    {consultants.map((c) => (
+                                        <SelectItem key={c.id} value={c.id.toString()}>
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
-                            {errors.destination_store_id && (
-                                <p className="text-xs text-destructive">{errors.destination_store_id.message}</p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Row: Consultor / Nº OS Concessionária */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="consultant_id" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Consultor
-                            </Label>
-                            {consultantsLoading ? (
-                                <Skeleton className="h-10 w-full" />
-                            ) : (
-                                <Select
-                                    value={watch('consultant_id')?.toString() ?? ''}
-                                    onValueChange={(v) =>
-                                        setValue('consultant_id', v ? Number(v) : undefined, {
-                                            shouldValidate: true,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger id="consultant_id">
-                                        <SelectValue placeholder="Selecionar..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {consultants.map((c) => (
-                                            <SelectItem key={c.id} value={c.id.toString()}>
-                                                {c.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Nº OS Concessionária
-                            </Label>
-                            <Input
-                                id="external_os_number"
-                                {...register('external_os_number')}
-                                placeholder="Ex: 12345"
-                            />
-                        </div>
+                        )}
                     </div>
 
                     {/* Serviços / Películas */}
@@ -1048,39 +1088,18 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     {/* Fotos */}
                     <CompactPhotoUploader photos={photos} onChange={setPhotos} />
 
-                    {/* Checkboxes + OBS */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-6">
-                            <label htmlFor="is_return" className="flex items-center gap-2 cursor-pointer select-none">
-                                <Checkbox
-                                    checked={isReturn}
-                                    onCheckedChange={(v) => setValue('is_return', Boolean(v))}
-                                    id="is_return"
-                                />
-                                <span className="text-sm font-medium">Retorno</span>
-                            </label>
-                            <label htmlFor="is_courtesy" className="flex items-center gap-2 cursor-pointer select-none">
-                                <Checkbox
-                                    checked={isCourtesy}
-                                    onCheckedChange={(v) => setValue('is_courtesy', Boolean(v))}
-                                    id="is_courtesy"
-                                />
-                                <span className="text-sm font-medium">Cortesia</span>
-                            </label>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Observações
-                            </Label>
-                            <Textarea
-                                id="notes"
-                                {...register('notes')}
-                                placeholder="Informações adicionais..."
-                                rows={2}
-                                className="resize-none"
-                            />
-                        </div>
+                    {/* Observações */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Observações
+                        </Label>
+                        <Textarea
+                            id="notes"
+                            {...register('notes')}
+                            placeholder="Informações adicionais..."
+                            rows={2}
+                            className="resize-none"
+                        />
                     </div>
                 </form>
 

@@ -4,13 +4,17 @@ import { serviceOrdersService } from '@/services/api/service-orders.service';
 import { servicesService } from '@/services/api/services.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { useStoreStore } from '@/stores/store.store';
-import type { ServiceOrder } from '@/types/service-order.types';
+import { useConsultants } from '@/hooks/useConsultants';
+import { useVehicleModels } from '@/hooks/useVehicleModels';
+import type { ServiceOrder, Department } from '@/types/service-order.types';
+import type { Photo } from '@/types/photo.types';
 import { DEPARTMENTS_MAP } from '@/constants/service-orders';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
     SelectContent,
@@ -34,7 +38,15 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X } from 'lucide-react';
+import { uploadService } from '@/services/api/upload.service';
+import {
+    DeptToggle,
+    ServicePicker,
+    FilmPicker,
+    CompactPhotoUploader,
+    type FilmEntry,
+} from '@/components/features/service-orders/QuickCreateModal';
 
 // Badge de departamento colorido
 const DEPT_COLORS: Record<string, string> = {
@@ -107,52 +119,129 @@ interface EditDialogProps {
 }
 
 function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
+    const [department, setDepartment] = useState<Department | undefined>();
+    const [serviceDate, setServiceDate] = useState('');
     const [externalOs, setExternalOs] = useState('');
-    const [vehicleBrand, setVehicleBrand] = useState('');
+    const [plate, setPlate] = useState('');
     const [vehicleModel, setVehicleModel] = useState('');
     const [vehicleColor, setVehicleColor] = useState('');
-    const [vehicleYear, setVehicleYear] = useState('');
-    const [serviceDate, setServiceDate] = useState('');
+    const [consultantId, setConsultantId] = useState<number | undefined>();
+    const [isGalpon, setIsGalpon] = useState(false);
+    const [isReturn, setIsReturn] = useState(false);
+    const [isCourtesy, setIsCourtesy] = useState(false);
+    const [selectedServices, setSelectedServices] = useState<number[]>([]);
+    const [filmEntries, setFilmEntries] = useState<FilmEntry[]>([]);
+    const [installers, setInstallers] = useState<number[]>([]);
+    const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+    const [newPhoto, setNewPhoto] = useState<Photo[]>([]);
     const [invoiceNumber, setInvoiceNumber] = useState('');
     const [notes, setNotes] = useState('');
     const [internalNotes, setInternalNotes] = useState('');
     const [saving, setSaving] = useState(false);
 
-    // Sincroniza estado quando a OS muda
+    const storeId = order?.location_id;
+    const { consultants, isLoading: consultantsLoading } = useConsultants(
+        storeId ? { store_id: storeId, is_active: true } : undefined
+    );
+    const { data: vehicleModels, isLoading: modelsLoading } = useVehicleModels(
+        storeId ? { store_id: storeId, active_only: true } : {}
+    );
+
     useEffect(() => {
         if (order) {
+            setDepartment(order.department);
+            setServiceDate(order.service_date ?? '');
             setExternalOs(order.external_os_number ?? '');
-            setVehicleBrand(order.vehicle_brand ?? '');
+            setPlate(order.plate ?? '');
             setVehicleModel(order.vehicle_model ?? '');
             setVehicleColor(order.vehicle_color ?? '');
-            setVehicleYear(order.vehicle_year != null ? String(order.vehicle_year) : '');
-            setServiceDate(order.service_date ?? '');
-            setInvoiceNumber(order.invoice_number ?? '');
-            setNotes(order.notes ?? '');
+            setConsultantId(order.consultant_id ?? undefined);
+            setIsGalpon(order.is_galpon ?? false);
+            const rawNotes = order.notes ?? '';
+            setIsCourtesy(rawNotes.includes('[CORTESIA]'));
+            setIsReturn(rawNotes.includes('[RETORNO]'));
+            setNotes(rawNotes.replace(/\s*\|\s*\[CORTESIA\]|\[CORTESIA\]\s*\|\s*/g, '').replace(/\s*\|\s*\[RETORNO\]|\[RETORNO\]\s*\|\s*/g, '').trim());
             setInternalNotes(order.internal_notes ?? '');
+            setInvoiceNumber(order.invoice_number ?? '');
+            setExistingPhotoUrl(order.photos?.[0] ?? null);
+            setNewPhoto([]);
+
+            const isFilm = order.department === 'film' || order.department === 'ppf';
+            if (isFilm) {
+                setFilmEntries((order.items ?? []).map(item => ({
+                    service_id: item.service_id,
+                    tonality: item.tonality ?? '',
+                    roll_code: item.roll_code ?? '',
+                })));
+                setSelectedServices([]);
+            } else {
+                setSelectedServices((order.items ?? []).map(item => item.service_id));
+                setFilmEntries([]);
+            }
+            setInstallers((order.workers ?? []).map(w => w.employee_id).filter(Boolean));
         }
     }, [order?.id]);
+
+    const handleDeptChange = (v: Department) => {
+        setDepartment(v);
+        setSelectedServices([]);
+        setFilmEntries((v === 'film' || v === 'ppf') ? [{ service_id: 0, tonality: '', roll_code: '' }] : []);
+        setInstallers([]);
+    };
 
     const handleSave = async () => {
         if (!order) return;
         setSaving(true);
         try {
+            let photosPayload: string[] | undefined;
+            if (newPhoto.length > 0) {
+                const results = await uploadService.uploadPhotos(newPhoto);
+                photosPayload = results.map(r => r.url);
+            } else if (!existingPhotoUrl) {
+                photosPayload = [];
+            }
+
+            const notesWithTags = [
+                notes || '',
+                isCourtesy ? '[CORTESIA]' : '',
+                isReturn ? '[RETORNO]' : '',
+            ].filter(Boolean).join(' | ');
+
+            const isFilm = department === 'film' || department === 'ppf';
+            const itemsPayload = isFilm
+                ? filmEntries
+                    .filter(e => e.service_id > 0 && e.tonality)
+                    .map(e => ({ service_id: e.service_id, quantity: 1, tonality: e.tonality, roll_code: e.roll_code || undefined }))
+                : selectedServices.map(id => ({ service_id: id, quantity: 1 }));
+
             await serviceOrdersService.update(order.id, {
-                external_os_number: externalOs || undefined,
-                vehicle_brand: vehicleBrand || undefined,
+                department: department,
+                vehicle_plate: plate || undefined,
                 vehicle_model: vehicleModel || undefined,
                 vehicle_color: vehicleColor || undefined,
-                vehicle_year: vehicleYear ? parseInt(vehicleYear, 10) : undefined,
+                external_os_number: externalOs || undefined,
                 service_date: serviceDate || undefined,
-                invoice_number: invoiceNumber || undefined,
-                notes: notes || undefined,
+                consultant_id: consultantId ?? null,
+                is_galpon: isGalpon,
+                items: itemsPayload.length > 0 ? itemsPayload : undefined,
+                workers: isFilm && installers.length > 0 ? installers.map(id => ({ employee_id: id })) : undefined,
+                invoice_number: isFilm ? (invoiceNumber || undefined) : undefined,
+                notes: notesWithTags || undefined,
                 internal_notes: internalNotes || undefined,
+                ...(photosPayload !== undefined && { photos: photosPayload }),
             });
             toast({ title: 'OS atualizada com sucesso!' });
             onSaved();
             onClose();
-        } catch {
-            toast({ variant: 'destructive', title: 'Erro ao salvar alterações' });
+        } catch (err: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const detail = (err as any)?.response?.data?.detail;
+            const msg = typeof detail === 'string'
+                ? detail
+                : Array.isArray(detail)
+                    ? detail.map((d: { msg?: string }) => d.msg).join('; ')
+                    : 'Verifique os dados e tente novamente.';
+            toast({ variant: 'destructive', title: 'Erro ao salvar alterações', description: msg });
         } finally {
             setSaving(false);
         }
@@ -160,104 +249,193 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
 
     if (!order) return null;
 
+    const isFilmDept = department === 'film' || department === 'ppf';
+    const showExistingPhoto = !!existingPhotoUrl && newPhoto.length === 0;
+
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>Editar OS — {order.order_number}</DialogTitle>
+            <DialogContent
+                className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 [&>button:last-child]:hidden"
+                aria-describedby={undefined}
+            >
+                <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                    <DialogTitle className="text-lg font-bold">Editar OS — {order.order_number}</DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-4 py-2">
-                    {/* Identificação */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Identificação</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                                <Label>Nº OS Concessionária</Label>
+                <div className="px-6 py-4 space-y-5">
+
+                    {/* Galpão / Retorno / Cortesia */}
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Checkbox checked={isGalpon} onCheckedChange={(v) => setIsGalpon(!!v)} />
+                            <span className="text-sm font-medium">Galpão</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Checkbox checked={isReturn} onCheckedChange={(v) => setIsReturn(!!v)} />
+                            <span className="text-sm font-medium">Retorno</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Checkbox checked={isCourtesy} onCheckedChange={(v) => setIsCourtesy(!!v)} />
+                            <span className="text-sm font-medium">Cortesia</span>
+                        </label>
+                    </div>
+
+                    {/* Departamento */}
+                    <DeptToggle value={department} onChange={handleDeptChange} />
+
+                    {/* Data + Nº OS */}
+                    <div className="grid grid-cols-5 gap-3">
+                        <div className="col-span-3 space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Data do Serviço
+                            </Label>
+                            <Input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} />
+                        </div>
+                        {department !== 'vn' && department !== 'vu' && (
+                            <div className="col-span-2 space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Nº OS Concessionária
+                                </Label>
                                 <Input value={externalOs} onChange={(e) => setExternalOs(e.target.value)} placeholder="Ex: 12345" />
                             </div>
-                            <div className="space-y-1">
-                                <Label>Data de Serviço</Label>
-                                <Input
-                                    type="date"
-                                    value={serviceDate}
-                                    onChange={(e) => setServiceDate(e.target.value)}
-                                />
-                            </div>
+                        )}
+                    </div>
+
+                    {/* Placa / Modelo / Cor */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Placa / Chassi
+                            </Label>
+                            <Input
+                                value={plate}
+                                onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                                placeholder="ABC1D23"
+                                className="font-mono tracking-widest uppercase"
+                                maxLength={17}
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Modelo
+                            </Label>
+                            {modelsLoading ? (
+                                <Skeleton className="h-10 w-full" />
+                            ) : (
+                                <Select value={vehicleModel} onValueChange={setVehicleModel}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecionar..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(vehicleModels ?? []).map((m) => (
+                                            <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cor</Label>
+                            <Input value={vehicleColor} onChange={(e) => setVehicleColor(e.target.value)} placeholder="Branco" />
                         </div>
                     </div>
 
-                    {/* Veículo */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Veículo</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                                <Label>Marca</Label>
-                                <Input value={vehicleBrand} onChange={(e) => setVehicleBrand(e.target.value)} placeholder="Ex: Toyota" />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Modelo</Label>
-                                <Input value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} placeholder="Ex: Corolla" />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Cor</Label>
-                                <Input value={vehicleColor} onChange={(e) => setVehicleColor(e.target.value)} placeholder="Ex: Branco" />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Ano</Label>
-                                <Input
-                                    type="number"
-                                    value={vehicleYear}
-                                    onChange={(e) => setVehicleYear(e.target.value)}
-                                    placeholder="Ex: 2024"
-                                    min={1900}
-                                    max={2100}
-                                />
-                            </div>
-                        </div>
+                    {/* Consultor */}
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Consultor</Label>
+                        {consultantsLoading ? (
+                            <Skeleton className="h-10 w-full" />
+                        ) : (
+                            <Select
+                                value={consultantId?.toString() ?? 'none'}
+                                onValueChange={(v) => setConsultantId(v === 'none' ? undefined : Number(v))}
+                            >
+                                <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">— Nenhum —</SelectItem>
+                                    {consultants.map((c) => (
+                                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
 
-                    {/* Financeiro */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Financeiro</p>
-                        <div className="space-y-1">
-                            <Label>Número da NF</Label>
+                    {/* Serviços */}
+                    {isFilmDept ? (
+                        <FilmPicker
+                            storeId={storeId ?? 0}
+                            department={department as 'film' | 'ppf'}
+                            selectedEntries={filmEntries}
+                            onChange={setFilmEntries}
+                            installers={installers}
+                            onInstallersChange={setInstallers}
+                        />
+                    ) : (
+                        <ServicePicker
+                            department={department}
+                            selectedIds={selectedServices}
+                            onChange={setSelectedServices}
+                        />
+                    )}
+
+                    {/* Foto */}
+                    {showExistingPhoto ? (
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Foto da OS</Label>
+                            <div className="relative w-20 h-20 shrink-0">
+                                <img src={existingPhotoUrl!} alt="Foto da OS" className="w-full h-full object-cover rounded-lg border" />
+                                <button
+                                    type="button"
+                                    onClick={() => setExistingPhotoUrl(null)}
+                                    aria-label="Remover foto"
+                                    className="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full p-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <CompactPhotoUploader photos={newPhoto} onChange={setNewPhoto} />
+                    )}
+
+                    {/* NF — apenas película/ppf */}
+                    {isFilmDept && (
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Número da NF
+                            </Label>
                             <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="Ex: NF-001234" />
                         </div>
-                    </div>
+                    )}
 
                     {/* Observações */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Observações</p>
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label>Observações</Label>
-                                <Textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Observações visíveis para todos..."
-                                    rows={3}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Observações Internas</Label>
-                                <Textarea
-                                    value={internalNotes}
-                                    onChange={(e) => setInternalNotes(e.target.value)}
-                                    placeholder="Notas internas (não visível ao cliente)..."
-                                    rows={3}
-                                />
-                            </div>
-                        </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações</Label>
+                        <Textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Informações adicionais..."
+                            rows={3}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações Internas</Label>
+                        <Textarea
+                            value={internalNotes}
+                            onChange={(e) => setInternalNotes(e.target.value)}
+                            placeholder="Notas internas..."
+                            rows={3}
+                        />
                     </div>
                 </div>
 
-                <DialogFooter>
+                <div className="px-6 pb-6 pt-4 border-t flex justify-end gap-2">
                     <Button variant="outline" onClick={onClose}>Cancelar</Button>
                     <Button onClick={handleSave} disabled={saving}>
                         {saving ? 'Salvando...' : 'Salvar'}
                     </Button>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );

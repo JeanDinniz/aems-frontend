@@ -49,7 +49,7 @@ export function VehicleModelsPage() {
     const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
     const [form, setForm] = useState<ModelForm>(INITIAL_FORM);
 
-    const stores = (allStores ?? []).filter((s) => s.store_type === 'dealership');
+    const stores = allStores ?? [];
     const resolvedStoreId = activeStoreId ?? stores[0]?.id ?? null;
 
     const { data: models, isLoading } = useQuery({
