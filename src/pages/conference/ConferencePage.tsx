@@ -35,7 +35,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X } from 'lucide-react';
@@ -221,7 +220,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                 vehicle_color: vehicleColor || undefined,
                 external_os_number: externalOs || undefined,
                 service_date: serviceDate || undefined,
-                consultant_id: consultantId ?? null,
+                consultant_id: consultantId ?? undefined,
                 is_galpon: isGalpon,
                 items: itemsPayload.length > 0 ? itemsPayload : undefined,
                 workers: isFilm && installers.length > 0 ? installers.map(id => ({ employee_id: id })) : undefined,

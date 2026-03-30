@@ -118,8 +118,8 @@ export const mockServiceOrders: ServiceOrder[] = [
         consultant_id: 2,
         consultant_name: 'Ana Vendedora',
         workers: [
-            { id: 1, name: 'José Técnico', isPrimary: true },
-            { id: 2, name: 'Pedro Auxiliar', isPrimary: false },
+            { id: 1, employee_id: 1, name: 'José Técnico', isPrimary: true },
+            { id: 2, employee_id: 2, name: 'Pedro Auxiliar', isPrimary: false },
         ],
         photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg', 'photo4.jpg'],
         damage_map: null,
@@ -359,6 +359,7 @@ export const handlers = [
         // Convert worker_ids to workers array if provided
         const workers = body.worker_ids?.map(workerId => ({
             id: workerId,
+            employee_id: workerId,
             name: `Worker ${workerId}`,
             isPrimary: workerId === body.primary_worker_id,
         }));

@@ -764,10 +764,12 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 : undefined;
 
             return {
+                plate: data.plate.toUpperCase(),
                 vehicle_plate: data.plate.toUpperCase(),
                 vehicle_model: data.vehicle_model,
                 vehicle_color: data.vehicle_color || undefined,
                 department: data.department,
+                location_id: resolvedStoreId,
                 store_id: resolvedStoreId,
                 dealership_id: resolvedStore?.dealership_id || undefined,
                 consultant_id: data.consultant_id || undefined,

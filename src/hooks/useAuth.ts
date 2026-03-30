@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/api/auth.service';
 import type { LoginCredentials } from '@/types/auth.types';
 import { useToast } from '@/hooks/use-toast';
-import { getApiErrorMessage } from '@/lib/api-error';
 
 export function useAuth() {
     const navigate = useNavigate();
@@ -32,13 +31,6 @@ export function useAuth() {
                 description: `Bem-vindo, ${data.user.full_name}!`,
             });
             navigate('/service-orders');
-        },
-        onError: (error: Error) => {
-            toast({
-                title: 'Erro no login',
-                description: getApiErrorMessage(error, 'Credenciais inválidas'),
-                variant: 'destructive',
-            });
         },
     });
 
