@@ -3,11 +3,16 @@ import { LoginForm } from '@/features/auth/LoginForm';
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen flex bg-zinc-950 overflow-hidden">
+        <div className="min-h-screen flex overflow-hidden" style={{ backgroundColor: '#1A1A1A' }}>
             {/* Left side — branding panel (desktop only) */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative flex-col items-center justify-center p-12 overflow-hidden">
                 {/* Background gradient layers */}
-                <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black" />
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        background: 'linear-gradient(135deg, #1A1A1A 0%, #111111 100%)',
+                    }}
+                />
                 <div
                     className="absolute inset-0 opacity-10"
                     style={{
@@ -41,8 +46,11 @@ export default function LoginPage() {
                         className="w-64 xl:w-72 object-contain drop-shadow-2xl mb-10"
                     />
 
+                    {/* Amber divider line — brand graphic element */}
+                    <div className="w-24 h-0.5 mb-8" style={{ backgroundColor: '#FCAF16' }} />
+
                     {/* Feature highlights */}
-                    <div className="mt-2 grid grid-cols-1 gap-4 w-full max-w-xs">
+                    <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
                         {[
                             { icon: Shield, label: 'Seguro e confiável' },
                             { icon: Zap, label: 'Rápido e eficiente' },
@@ -58,7 +66,12 @@ export default function LoginPage() {
                                 >
                                     <Icon className="w-4 h-4" style={{ color: '#FCAF16' }} />
                                 </div>
-                                <span className="text-zinc-300 text-sm font-medium">{label}</span>
+                                <span
+                                    className="text-zinc-300 text-sm font-medium"
+                                    style={{ fontFamily: 'Josefin Sans, sans-serif' }}
+                                >
+                                    {label}
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -71,15 +84,19 @@ export default function LoginPage() {
             </div>
 
             {/* Right side — form panel */}
-            <div className="flex w-full lg:w-1/2 xl:w-2/5 items-center justify-center p-6 sm:p-10 bg-zinc-950">
+            <div
+                className="flex w-full lg:w-1/2 xl:w-2/5 items-center justify-center p-6 sm:p-10"
+                style={{ backgroundColor: '#1A1A1A' }}
+            >
                 <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Mobile logo (only visible below lg) */}
                     <div className="flex flex-col items-center mb-8 lg:hidden">
                         <img
                             src="/brand/logo-white.png"
                             alt="Wash Center"
-                            className="w-48 object-contain mb-2"
+                            className="w-48 object-contain mb-3"
                         />
+                        <div className="w-16 h-0.5" style={{ backgroundColor: '#FCAF16' }} />
                     </div>
 
                     <LoginForm />

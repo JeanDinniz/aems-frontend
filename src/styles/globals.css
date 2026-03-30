@@ -211,15 +211,15 @@
 
   /* Animated entrance for cards/items */
   .aems-fade-in {
-    animation: aemsF adeIn 0.3s ease-out forwards;
+    animation: aemsFadeIn 0.3s ease-out forwards;
   }
   .aems-slide-up {
-    animation: aemsSli deUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: aemsSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   /* Status dot pulse */
   .aems-dot-pulse {
-    animation: aemsDo tPulse 2s infinite;
+    animation: aemsDotPulse 2s infinite;
   }
 
   /* Scrollbar styling */

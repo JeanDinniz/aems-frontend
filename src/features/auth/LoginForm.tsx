@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
-    email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
+    email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
     password: z.string().min(1, 'Senha é obrigatória'),
 });
 
@@ -48,8 +48,16 @@ export function LoginForm() {
         <div className="w-full">
             {/* Header */}
             <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-1">Bem-vindo de volta</h2>
-                <p className="text-zinc-400 text-sm">
+                <h2
+                    className="text-2xl font-semibold text-white mb-1"
+                    style={{ fontFamily: 'Josefin Sans, sans-serif' }}
+                >
+                    Bem-vindo de volta
+                </h2>
+                <p
+                    className="text-zinc-400 text-sm"
+                    style={{ fontFamily: 'Josefin Sans, sans-serif' }}
+                >
                     Entre com suas credenciais para acessar o sistema.
                 </p>
             </div>
@@ -61,31 +69,36 @@ export function LoginForm() {
                         <label
                             htmlFor="email"
                             className="text-sm font-medium text-zinc-300"
+                            style={{ fontFamily: 'Josefin Sans, sans-serif' }}
                         >
                             Email
                         </label>
                         <div className="relative">
                             <Mail
-                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none"
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                                style={{ color: '#555555' }}
                             />
                             <input
                                 id="email"
                                 type="email"
                                 placeholder="admin@aems.com.br"
                                 autoComplete="email"
+                                aria-invalid={!!form.formState.errors.email}
+                                aria-describedby={form.formState.errors.email ? 'email-error' : undefined}
                                 className={[
                                     'w-full h-11 pl-10 pr-4 rounded-lg text-sm text-white placeholder:text-zinc-600',
-                                    'bg-zinc-800 border transition-all duration-150 outline-none',
+                                    'border transition-all duration-150 outline-none',
                                     'focus:ring-2 focus:ring-[#FCAF16] focus:border-[#FCAF16]',
                                     form.formState.errors.email
                                         ? 'border-red-500/70 focus:ring-red-500/50 focus:border-red-500'
-                                        : 'border-zinc-700 hover:border-zinc-600',
+                                        : 'border-[#333333] hover:border-[#444444]',
                                 ].join(' ')}
+                                style={{ backgroundColor: '#252525', fontFamily: 'Josefin Sans, sans-serif' }}
                                 {...form.register('email')}
                             />
                         </div>
                         {form.formState.errors.email && (
-                            <p className="flex items-center gap-1.5 text-xs text-red-400 mt-0.5">
+                            <p id="email-error" className="flex items-center gap-1.5 text-xs text-red-400 mt-0.5">
                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                 {form.formState.errors.email.message}
                             </p>
@@ -98,6 +111,7 @@ export function LoginForm() {
                             <label
                                 htmlFor="password"
                                 className="text-sm font-medium text-zinc-300"
+                                style={{ fontFamily: 'Josefin Sans, sans-serif' }}
                             >
                                 Senha
                             </label>
@@ -111,20 +125,24 @@ export function LoginForm() {
                         </div>
                         <div className="relative">
                             <Lock
-                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none"
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                                style={{ color: '#555555' }}
                             />
                             <input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
                                 autoComplete="current-password"
+                                aria-invalid={!!form.formState.errors.password}
+                                aria-describedby={form.formState.errors.password ? 'password-error' : undefined}
                                 className={[
                                     'w-full h-11 pl-10 pr-11 rounded-lg text-sm text-white placeholder:text-zinc-600',
-                                    'bg-zinc-800 border transition-all duration-150 outline-none',
+                                    'border transition-all duration-150 outline-none',
                                     'focus:ring-2 focus:ring-[#FCAF16] focus:border-[#FCAF16]',
                                     form.formState.errors.password
                                         ? 'border-red-500/70 focus:ring-red-500/50 focus:border-red-500'
-                                        : 'border-zinc-700 hover:border-zinc-600',
+                                        : 'border-[#333333] hover:border-[#444444]',
                                 ].join(' ')}
+                                style={{ backgroundColor: '#252525', fontFamily: 'Josefin Sans, sans-serif' }}
                                 {...form.register('password')}
                             />
                             <button
@@ -141,7 +159,7 @@ export function LoginForm() {
                             </button>
                         </div>
                         {form.formState.errors.password && (
-                            <p className="flex items-center gap-1.5 text-xs text-red-400 mt-0.5">
+                            <p id="password-error" className="flex items-center gap-1.5 text-xs text-red-400 mt-0.5">
                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                 {form.formState.errors.password.message}
                             </p>
@@ -160,8 +178,8 @@ export function LoginForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full h-11 rounded-lg font-semibold text-sm text-zinc-900 transition-all duration-150 flex items-center justify-center gap-2 mt-1 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FCAF16] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-                        style={{ backgroundColor: '#FCAF16' }}
+                        className="w-full h-11 rounded-lg font-semibold tracking-wide text-sm text-zinc-900 transition-all duration-150 flex items-center justify-center gap-2 mt-1 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FCAF16] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1A1A]"
+                        style={{ backgroundColor: '#FCAF16', fontFamily: 'Josefin Sans, sans-serif' }}
                     >
                         {isLoading ? (
                             <>
