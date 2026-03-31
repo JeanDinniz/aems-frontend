@@ -109,11 +109,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
             {/* Center: store selector */}
             <div className="hidden md:flex flex-1 mx-6 max-w-xs">
-                <div
-                    className="w-full rounded-lg border border-[#D1D1D1] dark:border-[#2A2A2A] bg-[#F5F5F5] dark:bg-[#111]"
-                >
-                    <StoreSelector />
-                </div>
+                <StoreSelector />
             </div>
 
             {/* Right: role badge + connection + notifications + avatar */}

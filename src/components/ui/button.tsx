@@ -13,10 +13,10 @@ const buttonVariants = cva(
         destructive:
           "bg-aems-error text-white hover:bg-[#D92D20]",
         outline:
-          "border border-aems-neutral-200 bg-transparent text-aems-neutral-600 hover:bg-aems-neutral-100",
+          "border border-[#D1D1D1] dark:border-[#333333] bg-transparent text-[#444444] dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800",
         secondary:
-          "border border-aems-neutral-200 bg-transparent text-aems-neutral-600 hover:bg-aems-neutral-100",
-        ghost: "hover:bg-[rgba(252,175,22,0.08)] text-aems-primary-400 hover:text-aems-primary-600",
+          "border border-[#D1D1D1] dark:border-[#333333] bg-transparent text-[#444444] dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800",
+        ghost: "hover:bg-[rgba(245,168,0,0.08)] text-[#F5A800] hover:text-[#E89200]",
         link: "text-aems-primary-400 underline-offset-4 hover:underline",
       },
       size: {

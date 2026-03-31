@@ -201,6 +201,31 @@
 @layer base {
   * {
     @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: #D1D1D1 transparent;
+  }
+  .dark * {
+    scrollbar-color: #333333 transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #D1D1D1;
+    border-radius: 99px;
+  }
+  .dark *::-webkit-scrollbar-thumb {
+    background: #333333;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #BDBDBD;
+  }
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: #444444;
   }
   html, body {
     height: 100%;
@@ -310,8 +335,15 @@
 .stagger-children > *:nth-child(6) { animation-delay: 300ms; }
 .stagger-children > *:nth-child(n+7) { animation-delay: 360ms; }
 
-/* Better focus ring using AEMS primary */
-*:focus-visible {
+/* Better focus ring using AEMS primary — only for keyboard-navigable elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[role="option"]:focus-visible,
+[role="tab"]:focus-visible {
   outline: 2px solid var(--aems-primary-400);
   outline-offset: 2px;
   border-radius: var(--aems-radius-sm);

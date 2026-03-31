@@ -251,11 +251,11 @@ export default function ServicesPage() {
                         <TabsTrigger
                             key={key}
                             value={key}
-                            className="gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold rounded"
+                            className="group gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
                         >
                             {label}
                             {(brandCounts[key] ?? 0) > 0 && (
-                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 data-[state=active]:bg-[#1A1A1A]/20 data-[state=active]:text-[#1A1A1A]">
+                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 group-data-[state=active]:bg-black/20 group-data-[state=active]:text-[#111111]">
                                     {brandCounts[key]}
                                 </span>
                             )}

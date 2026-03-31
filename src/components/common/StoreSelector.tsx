@@ -29,9 +29,9 @@ export function StoreSelector() {
     const currentValue = selectedStoreId === null ? "all" : selectedStoreId.toString();
 
     return (
-        <div className="flex items-center">
+        <div className="flex items-center w-full">
             <Select value={currentValue} onValueChange={handleValueChange}>
-                <SelectTrigger className="w-[180px] h-9 border-dashed">
+                <SelectTrigger className="w-full h-9 border-[#D1D1D1] dark:border-[#2A2A2A]">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span className="truncate text-foreground font-medium">

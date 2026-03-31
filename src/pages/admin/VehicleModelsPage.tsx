@@ -194,7 +194,7 @@ export function VehicleModelsPage() {
                             <TabsTrigger
                                 key={store.id}
                                 value={String(store.id)}
-                                className="text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold rounded"
+                                className="text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] dark:data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
                             >
                                 {store.name}
                             </TabsTrigger>

@@ -160,8 +160,8 @@ export function DeptToggle({ value, onChange, error }: DeptToggleProps) {
                         className={cn(
                             'px-3 py-1.5 rounded-md text-sm font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             value === opt.value
-                                ? 'bg-aems-primary-400 border-aems-primary-400 text-aems-neutral-900'
-                                : 'border-aems-neutral-200 text-aems-neutral-600 hover:bg-aems-neutral-50 hover:border-aems-neutral-300'
+                                ? 'bg-[#F5A800] border-[#F5A800] text-[#111111]'
+                                : 'border-[#D1D1D1] dark:border-[#333333] text-[#444444] dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:border-[#BDBDBD] dark:hover:border-zinc-600'
                         )}
                     >
                         {opt.label}
@@ -395,7 +395,7 @@ export function FilmPicker({
                 {selectedEntries.map((entry, index) => (
                     <div
                         key={index}
-                        className="border border-aems-neutral-200 rounded-lg p-3 space-y-2 bg-aems-neutral-50/30"
+                        className="border border-[#D1D1D1] dark:border-[#333333] rounded-lg p-3 space-y-2 bg-gray-50/50 dark:bg-zinc-800/30"
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -464,7 +464,7 @@ export function FilmPicker({
             <button
                 type="button"
                 onClick={addEntry}
-                className="text-sm font-medium text-aems-primary-600 hover:text-aems-primary-700 transition-colors"
+                className="text-sm font-medium text-[#E89200] hover:text-[#D47F00] transition-colors"
             >
                 + Adicionar Película
             </button>
@@ -567,7 +567,7 @@ export function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderP
                 <button
                     type="button"
                     onClick={() => inputRef.current?.click()}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-aems-neutral-200 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#D1D1D1] dark:border-[#333333] text-sm text-[#666666] dark:text-zinc-400 hover:border-[#F5A800] hover:text-[#F5A800] transition-colors"
                 >
                     <Camera className="h-4 w-4" />
                     Tirar foto
@@ -1106,13 +1106,13 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 </form>
 
                 {/* Footer actions */}
-                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-aems-neutral-50/50">
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-gray-50/80 dark:bg-zinc-900/50">
                     <Button
                         type="button"
                         variant="outline"
                         onClick={onSave}
                         disabled={isBusy}
-                        className="border-aems-primary-400 text-aems-primary-600 hover:bg-aems-primary-50"
+                        className="border-[#F5A800] text-[#E89200] hover:bg-[#F5A800]/10"
                     >
                         {isBusy ? 'Salvando...' : 'Salvar'}
                     </Button>
@@ -1120,7 +1120,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         type="button"
                         onClick={onSaveAndNext}
                         disabled={isBusy}
-                        className="bg-aems-primary-400 hover:bg-aems-primary-500 text-aems-neutral-900 font-semibold gap-1.5"
+                        className="bg-[#F5A800] hover:bg-[#E89200] text-[#111111] font-semibold gap-1.5"
                     >
                         {isBusy ? 'Salvando...' : (
                             <>
