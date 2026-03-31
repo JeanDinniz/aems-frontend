@@ -28,11 +28,6 @@ const roleLabels: Record<string, string> = {
     operator: 'Operador',
 };
 
-const roleColors: Record<string, string> = {
-    owner:      'border',
-    supervisor: 'border',
-    operator:   'border',
-};
 
 function RoleBadge({ role }: { role: string }) {
     if (role === 'owner') {
@@ -90,7 +85,6 @@ export function Header({ onMenuClick }: HeaderProps) {
     };
 
     const userInitials = user?.full_name ? getInitials(user.full_name) : 'U';
-    const roleLabel = user?.role ? roleLabels[user.role] ?? user.role : '';
 
     return (
         <header
