@@ -47,18 +47,18 @@ import {
     type FilmEntry,
 } from '@/components/features/service-orders/QuickCreateModal';
 
-// Badge de departamento colorido
+// Badge de departamento — dark theme
 const DEPT_COLORS: Record<string, string> = {
-    film: 'bg-purple-100 text-purple-800 border-purple-200',
-    ppf: 'bg-blue-100 text-blue-800 border-blue-200',
-    vn: 'bg-green-100 text-green-800 border-green-200',
-    vu: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    bodywork: 'bg-orange-100 text-orange-800 border-orange-200',
-    workshop: 'bg-gray-100 text-gray-800 border-gray-200',
+    film: 'bg-purple-900/40 text-purple-300 border-purple-700/50',
+    ppf: 'bg-blue-900/40 text-blue-300 border-blue-700/50',
+    vn: 'bg-green-900/40 text-green-300 border-green-700/50',
+    vu: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50',
+    bodywork: 'bg-orange-900/40 text-orange-300 border-orange-700/50',
+    workshop: 'bg-zinc-800 text-zinc-300 border-zinc-700',
 };
 
 function DeptBadge({ dept }: { dept: string }) {
-    const colors = DEPT_COLORS[dept] ?? 'bg-gray-100 text-gray-800';
+    const colors = DEPT_COLORS[dept] ?? 'bg-zinc-800 text-zinc-300 border-zinc-700';
     const label = DEPARTMENTS_MAP[dept as keyof typeof DEPARTMENTS_MAP] ?? dept;
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colors}`}>
@@ -102,7 +102,7 @@ function getServiceNames(order: ServiceOrder, services?: Array<{ id: number; nam
 function PhotoDialog({ url, open, onClose }: { url: string; open: boolean; onClose: () => void }) {
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-            <DialogContent className="max-w-2xl p-2">
+            <DialogContent className="max-w-2xl p-2 bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333]">
                 <img src={url} alt="Foto da OS" className="w-full rounded-lg object-contain max-h-[80vh]" />
             </DialogContent>
         </Dialog>
@@ -254,11 +254,13 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
     return (
         <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
             <DialogContent
-                className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 [&>button:last-child]:hidden"
+                className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 [&>button:last-child]:hidden bg-white dark:bg-[#1E1E1E] border-[#D1D1D1] dark:border-[#333333]"
                 aria-describedby={undefined}
             >
-                <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitle className="text-lg font-bold">Editar OS — {order.order_number}</DialogTitle>
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#E8E8E8] dark:border-[#333333]">
+                    <DialogTitle className="text-lg font-bold text-[#111111] dark:text-white">
+                        Editar OS — {order.order_number}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <div className="px-6 py-4 space-y-5">
@@ -267,15 +269,15 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <Checkbox checked={isGalpon} onCheckedChange={(v) => setIsGalpon(!!v)} />
-                            <span className="text-sm font-medium">Galpão</span>
+                            <span className="text-sm font-medium text-zinc-300">Galpão</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <Checkbox checked={isReturn} onCheckedChange={(v) => setIsReturn(!!v)} />
-                            <span className="text-sm font-medium">Retorno</span>
+                            <span className="text-sm font-medium text-zinc-300">Retorno</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <Checkbox checked={isCourtesy} onCheckedChange={(v) => setIsCourtesy(!!v)} />
-                            <span className="text-sm font-medium">Cortesia</span>
+                            <span className="text-sm font-medium text-zinc-300">Cortesia</span>
                         </label>
                     </div>
 
@@ -285,17 +287,27 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     {/* Data + Nº OS */}
                     <div className="grid grid-cols-5 gap-3">
                         <div className="col-span-3 space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                 Data do Serviço
                             </Label>
-                            <Input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} />
+                            <Input
+                                type="date"
+                                value={serviceDate}
+                                onChange={(e) => setServiceDate(e.target.value)}
+                                className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]"
+                            />
                         </div>
                         {department !== 'vn' && department !== 'vu' && (
                             <div className="col-span-2 space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                     Nº OS Concessionária
                                 </Label>
-                                <Input value={externalOs} onChange={(e) => setExternalOs(e.target.value)} placeholder="Ex: 12345" />
+                                <Input
+                                    value={externalOs}
+                                    onChange={(e) => setExternalOs(e.target.value)}
+                                    placeholder="Ex: 12345"
+                                    className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
+                                />
                             </div>
                         )}
                     </div>
@@ -303,26 +315,26 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     {/* Placa / Modelo / Cor */}
                     <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                 Placa / Chassi
                             </Label>
                             <Input
                                 value={plate}
                                 onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
                                 placeholder="ABC1D23"
-                                className="font-mono tracking-widest uppercase"
+                                className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600 font-mono tracking-widest uppercase"
                                 maxLength={17}
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                 Modelo
                             </Label>
                             {modelsLoading ? (
-                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-9 w-full bg-zinc-800" />
                             ) : (
                                 <Select value={vehicleModel} onValueChange={setVehicleModel}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
                                         <SelectValue placeholder="Selecionar..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -334,22 +346,29 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                             )}
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cor</Label>
-                            <Input value={vehicleColor} onChange={(e) => setVehicleColor(e.target.value)} placeholder="Branco" />
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">Cor</Label>
+                            <Input
+                                value={vehicleColor}
+                                onChange={(e) => setVehicleColor(e.target.value)}
+                                placeholder="Branco"
+                                className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
+                            />
                         </div>
                     </div>
 
                     {/* Consultor */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Consultor</Label>
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">Consultor</Label>
                         {consultantsLoading ? (
-                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-9 w-full bg-zinc-800" />
                         ) : (
                             <Select
                                 value={consultantId?.toString() ?? 'none'}
                                 onValueChange={(v) => setConsultantId(v === 'none' ? undefined : Number(v))}
                             >
-                                <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                                <SelectTrigger className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
+                                    <SelectValue placeholder="Selecionar..." />
+                                </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none">— Nenhum —</SelectItem>
                                     {consultants.map((c) => (
@@ -381,9 +400,9 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     {/* Foto */}
                     {showExistingPhoto ? (
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Foto da OS</Label>
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">Foto da OS</Label>
                             <div className="relative w-20 h-20 shrink-0">
-                                <img src={existingPhotoUrl!} alt="Foto da OS" className="w-full h-full object-cover rounded-lg border" />
+                                <img src={existingPhotoUrl!} alt="Foto da OS" className="w-full h-full object-cover rounded-lg border border-[#333333]" />
                                 <button
                                     type="button"
                                     onClick={() => setExistingPhotoUrl(null)}
@@ -401,37 +420,51 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     {/* NF — apenas película/ppf */}
                     {isFilmDept && (
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                 Número da NF
                             </Label>
-                            <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="Ex: NF-001234" />
+                            <Input
+                                value={invoiceNumber}
+                                onChange={(e) => setInvoiceNumber(e.target.value)}
+                                placeholder="Ex: NF-001234"
+                                className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
+                            />
                         </div>
                     )}
 
                     {/* Observações */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações</Label>
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">Observações</Label>
                         <Textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Informações adicionais..."
                             rows={3}
+                            className="rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600 resize-none"
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações Internas</Label>
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">Observações Internas</Label>
                         <Textarea
                             value={internalNotes}
                             onChange={(e) => setInternalNotes(e.target.value)}
                             placeholder="Notas internas..."
                             rows={3}
+                            className="rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600 resize-none"
                         />
                     </div>
                 </div>
 
-                <div className="px-6 pb-6 pt-4 border-t flex justify-end gap-2">
-                    <Button variant="outline" onClick={onClose}>Cancelar</Button>
-                    <Button onClick={handleSave} disabled={saving}>
+                <div className="px-6 pb-6 pt-4 border-t border-[#E8E8E8] dark:border-[#333333] flex justify-end gap-2">
+                    <Button variant="outline" onClick={onClose} className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700/50 hover:text-[#111111] dark:hover:text-white bg-transparent">
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={saving}
+                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        className="font-semibold hover:opacity-90"
+                    >
                         {saving ? 'Salvando...' : 'Salvar'}
                     </Button>
                 </div>
@@ -514,39 +547,44 @@ export function ConferencePage() {
         <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3">
-                <ClipboardCheck className="h-6 w-6 text-aems-primary-400" />
+                <ClipboardCheck className="h-6 w-6" style={{ color: '#F5A800' }} />
                 <div>
-                    <h1 className="text-2xl font-bold">Conferência de OS</h1>
-                    <p className="text-sm text-muted-foreground">
+                    <h1
+                        className="text-2xl font-bold text-[#111111] dark:text-white"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        Conferência de OS
+                    </h1>
+                    <p className="text-sm text-[#666666] dark:text-zinc-400">
                         OS aguardando verificação
                     </p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 p-4 bg-card rounded-lg border">
+            <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-4 flex flex-wrap gap-3">
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Data início</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data início</Label>
                     <Input
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-40"
+                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
                     />
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Data fim</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data fim</Label>
                     <Input
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="w-40"
+                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
                     />
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Departamento</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Departamento</Label>
                     <Select value={department || 'all'} onValueChange={(v) => setDepartment(v === 'all' ? '' : v)}>
-                        <SelectTrigger className="w-40">
+                        <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
                             <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -558,74 +596,76 @@ export function ConferencePage() {
                     </Select>
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Busca (placa/OS)</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Busca (placa/OS)</Label>
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#999999] dark:text-zinc-500" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Placa ou Nº OS..."
-                            className="pl-8 w-48"
+                            className="pl-8 w-48 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
                         />
                     </div>
                 </div>
             </div>
 
             {/* Count */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-[#666666] dark:text-zinc-400">
                 {isLoading ? '...' : `${orders.length} OS aguardando verificação`}
             </div>
 
             {/* Table */}
-            <div className="rounded-lg border overflow-hidden">
+            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nº OS Conc.</TableHead>
-                            <TableHead>Data Serv.</TableHead>
-                            <TableHead>Placa</TableHead>
-                            <TableHead>Modelo</TableHead>
-                            <TableHead>Depto</TableHead>
-                            <TableHead>Foto</TableHead>
-                            <TableHead>Serviços</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                            <TableHead className="text-center">Ações</TableHead>
+                    <TableHeader className="bg-gray-100 dark:bg-zinc-800/60">
+                        <TableRow className="border-b border-[#E8E8E8] dark:border-[#333333] hover:bg-transparent">
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Data Serv.</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Placa</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Modelo</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Depto</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Foto</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Serviços</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-right">Valor</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
-                                <TableRow key={i}>
+                                <TableRow key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
                                     {Array.from({ length: 9 }).map((_, j) => (
-                                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                                        <TableCell key={j} className="px-4 py-3">
+                                            <div className="bg-gray-200 dark:bg-zinc-800 animate-pulse rounded h-4 w-full" />
+                                        </TableCell>
                                     ))}
                                 </TableRow>
                             ))
                         ) : orders.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                            <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
+                                <TableCell colSpan={9} className="text-center py-12 text-[#999999] dark:text-zinc-500">
                                     Nenhuma OS aguardando verificação
                                 </TableCell>
                             </TableRow>
                         ) : (
                             orders.map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell className="font-mono text-sm">
+                                <TableRow key={order.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
                                         {order.external_os_number || order.order_number || `#${order.id}`}
                                     </TableCell>
-                                    <TableCell className="text-sm">
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         {formatDate(order.service_date)}
                                     </TableCell>
-                                    <TableCell className="font-mono font-medium">
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono font-medium">
                                         {order.plate}
                                     </TableCell>
-                                    <TableCell className="text-sm">
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         {order.vehicle_model || '—'}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="px-4 py-3">
                                         <DeptBadge dept={order.department} />
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="px-4 py-3">
                                         {order.photos?.[0] ? (
                                             <button
                                                 onClick={() => setPhotoUrl(order.photos![0])}
@@ -639,35 +679,32 @@ export function ConferencePage() {
                                                 />
                                             </button>
                                         ) : (
-                                            <ImageOff className="h-5 w-5 text-muted-foreground/40" />
+                                            <ImageOff className="h-5 w-5 text-zinc-600" />
                                         )}
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                    <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 max-w-[200px] truncate">
                                         {getServiceNames(order, services)}
                                     </TableCell>
-                                    <TableCell className="text-right font-medium">
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 text-right font-medium">
                                         {formatCurrency(calcTotal(order))}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="px-4 py-3">
                                         <div className="flex items-center justify-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
+                                            <button
                                                 onClick={() => handleEdit(order)}
                                                 title="Editar"
+                                                className="h-8 w-8 rounded-lg text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center"
                                             >
                                                 <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
+                                            </button>
+                                            <button
                                                 onClick={() => handleVerify(order)}
                                                 disabled={verifyMutation.isPending}
                                                 title="Verificar"
-                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 <CheckCircle className="h-4 w-4" />
-                                            </Button>
+                                            </button>
                                         </div>
                                     </TableCell>
                                 </TableRow>

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { EmployeesTable } from '@/components/features/employees/EmployeesTable';
 import { EmployeeFilters } from '@/components/features/employees/EmployeeFilters';
 import { CreateEmployeeDialog } from '@/components/features/employees/CreateEmployeeDialog';
@@ -23,18 +22,27 @@ export function EmployeeManagementPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="p-6 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Funcionários</h1>
-                    <p className="text-muted-foreground">
+                    <h1
+                        className="text-2xl font-bold text-[#111111] dark:text-white"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        Funcionários
+                    </h1>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">
                         Gerencie os funcionários das lojas. Apenas funcionários ativos aparecem nas ordens de serviço.
                     </p>
                 </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
+                <button
+                    onClick={() => setCreateDialogOpen(true)}
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-60"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                >
+                    <Plus className="h-4 w-4" />
                     Novo Funcionário
-                </Button>
+                </button>
             </div>
 
             <EmployeeFilters filters={filters} onFiltersChange={(f) => { setFilters(f); setPage(1); }} />

@@ -5,10 +5,6 @@ import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/api/auth.service';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -42,8 +38,11 @@ export default function ChangePasswordPage() {
 
     if (authLoading) {
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div
+                className="flex h-screen w-full items-center justify-center"
+                style={{ backgroundColor: '#1A1A1A' }}
+            >
+                <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#F5A800' }} />
             </div>
         );
     }
@@ -86,60 +85,159 @@ export default function ChangePasswordPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Troca de Senha Obrigatória</CardTitle>
-                    <CardDescription>
-                        Por segurança, você deve alterar sua senha antes de continuar.
-                    </CardDescription>
-                </CardHeader>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="currentPassword">Senha Atual</Label>
-                            <Input
+        <div
+            className="flex min-h-screen items-center justify-center p-4"
+            style={{ backgroundColor: '#1A1A1A' }}
+        >
+            <div className="w-full max-w-md">
+                {/* Logo + accent line */}
+                <div className="flex flex-col items-center mb-8">
+                    <img
+                        src="/brand/logo-white.png"
+                        alt="AEMS Wash Center"
+                        className="h-12 w-auto mb-4 object-contain"
+                    />
+                    <div className="w-16 h-0.5 bg-[#F5A800]" />
+                </div>
+
+                {/* Card */}
+                <div
+                    className="rounded-2xl border border-[#333333] p-8 shadow-2xl"
+                    style={{ backgroundColor: '#252525' }}
+                >
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h1
+                            className="text-xl font-bold text-white mb-1"
+                            style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                        >
+                            Troca de Senha Obrigatória
+                        </h1>
+                        <p className="text-sm text-zinc-400">
+                            Por segurança, você deve alterar sua senha antes de continuar.
+                        </p>
+                    </div>
+
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                        {/* Senha Atual */}
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="currentPassword"
+                                className="text-sm font-medium text-zinc-300"
+                                style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                            >
+                                Senha Atual
+                            </label>
+                            <input
                                 id="currentPassword"
                                 type="password"
                                 {...form.register('currentPassword')}
+                                className={[
+                                    'w-full h-11 px-3 rounded-lg text-sm text-white',
+                                    'border hover:border-[#444444]',
+                                    'focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] focus:outline-none',
+                                    'transition-colors duration-150',
+                                    form.formState.errors.currentPassword
+                                        ? 'border-red-500/70'
+                                        : 'border-[#333333]',
+                                ].join(' ')}
+                                style={{
+                                    backgroundColor: '#1A1A1A',
+                                    fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif',
+                                }}
                             />
                             {form.formState.errors.currentPassword && (
-                                <p className="text-sm text-red-500">{form.formState.errors.currentPassword.message}</p>
+                                <p className="text-sm text-red-400">
+                                    {form.formState.errors.currentPassword.message}
+                                </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="newPassword">Nova Senha</Label>
-                            <Input
+                        {/* Nova Senha */}
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="newPassword"
+                                className="text-sm font-medium text-zinc-300"
+                                style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                            >
+                                Nova Senha
+                            </label>
+                            <input
                                 id="newPassword"
                                 type="password"
                                 {...form.register('newPassword')}
+                                className={[
+                                    'w-full h-11 px-3 rounded-lg text-sm text-white',
+                                    'border hover:border-[#444444]',
+                                    'focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] focus:outline-none',
+                                    'transition-colors duration-150',
+                                    form.formState.errors.newPassword
+                                        ? 'border-red-500/70'
+                                        : 'border-[#333333]',
+                                ].join(' ')}
+                                style={{
+                                    backgroundColor: '#1A1A1A',
+                                    fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif',
+                                }}
                             />
                             {form.formState.errors.newPassword && (
-                                <p className="text-sm text-red-500">{form.formState.errors.newPassword.message}</p>
+                                <p className="text-sm text-red-400">
+                                    {form.formState.errors.newPassword.message}
+                                </p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                            <Input
+                        {/* Confirmar Nova Senha */}
+                        <div className="space-y-1.5">
+                            <label
+                                htmlFor="confirmPassword"
+                                className="text-sm font-medium text-zinc-300"
+                                style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                            >
+                                Confirmar Nova Senha
+                            </label>
+                            <input
                                 id="confirmPassword"
                                 type="password"
                                 {...form.register('confirmPassword')}
+                                className={[
+                                    'w-full h-11 px-3 rounded-lg text-sm text-white',
+                                    'border hover:border-[#444444]',
+                                    'focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] focus:outline-none',
+                                    'transition-colors duration-150',
+                                    form.formState.errors.confirmPassword
+                                        ? 'border-red-500/70'
+                                        : 'border-[#333333]',
+                                ].join(' ')}
+                                style={{
+                                    backgroundColor: '#1A1A1A',
+                                    fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif',
+                                }}
                             />
                             {form.formState.errors.confirmPassword && (
-                                <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</p>
+                                <p className="text-sm text-red-400">
+                                    {form.formState.errors.confirmPassword.message}
+                                </p>
                             )}
                         </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" type="submit" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 transition-all duration-150 mt-2"
+                            style={{
+                                backgroundColor: '#F5A800',
+                                color: '#1A1A1A',
+                                fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif',
+                            }}
+                        >
+                            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                             Alterar Senha
-                        </Button>
-                    </CardFooter>
-                </form>
-            </Card>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }

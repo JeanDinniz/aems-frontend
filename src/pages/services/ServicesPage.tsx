@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Pencil, Loader2, PackageSearch } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -216,20 +215,30 @@ export default function ServicesPage() {
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="p-6 space-y-6">
             {/* Cabeçalho */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Serviços</h1>
-                    <p className="text-muted-foreground">
+                    <h1
+                        className="text-[#111111] dark:text-white text-2xl font-bold flex items-center gap-2"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        <PackageSearch className="h-6 w-6" style={{ color: '#F5A800' }} />
+                        Serviços
+                    </h1>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">
                         Catálogo de serviços por concessionária.
                         {allServices?.length ? ` ${allServices.length} serviços cadastrados.` : ''}
                     </p>
                 </div>
-                <Button onClick={() => {
-                    setForm({ ...INITIAL_FORM, brand: activeBrand });
-                    setAddDialogOpen(true);
-                }}>
+                <Button
+                    onClick={() => {
+                        setForm({ ...INITIAL_FORM, brand: activeBrand });
+                        setAddDialogOpen(true);
+                    }}
+                    className="font-semibold"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                >
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Serviço
                 </Button>
@@ -237,17 +246,18 @@ export default function ServicesPage() {
 
             {/* Tabs por Marca */}
             <Tabs value={activeBrand} onValueChange={setActiveBrand}>
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                     {Object.entries(BRAND_LABELS).map(([key, label]) => (
-                        <TabsTrigger key={key} value={key} className="gap-2">
+                        <TabsTrigger
+                            key={key}
+                            value={key}
+                            className="gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold rounded"
+                        >
                             {label}
                             {(brandCounts[key] ?? 0) > 0 && (
-                                <Badge
-                                    variant="secondary"
-                                    className="h-5 px-1.5 text-xs font-normal"
-                                >
+                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 data-[state=active]:bg-[#1A1A1A]/20 data-[state=active]:text-[#1A1A1A]">
                                     {brandCounts[key]}
-                                </Badge>
+                                </span>
                             )}
                         </TabsTrigger>
                     ))}
@@ -257,37 +267,37 @@ export default function ServicesPage() {
                     <TabsContent key={brand} value={brand} className="mt-4">
                         {isLoading ? (
                             <div className="flex items-center justify-center h-40">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
                             </div>
                         ) : !groupedByCategory.length ? (
-                            <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                                <PackageSearch className="h-10 w-10 opacity-40" />
-                                <p className="text-sm">
+                            <div className="flex flex-col items-center justify-center h-40 gap-2">
+                                <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
+                                <p className="text-sm text-[#999999] dark:text-zinc-500">
                                     Nenhum serviço cadastrado para {BRAND_LABELS[brand]}.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-4">
                                 {groupedByCategory.map(([cat, catServices]) => (
-                                    <div key={cat} className="border rounded-lg overflow-hidden">
-                                        <div className="bg-muted/60 px-4 py-2.5 flex items-center gap-2 border-b">
-                                            <h3 className="font-semibold text-sm">
+                                    <div key={cat} className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                                        <div className="bg-gray-100 dark:bg-zinc-800/60 px-4 py-2.5 flex items-center gap-2 border-b border-[#D1D1D1] dark:border-[#333333]">
+                                            <h3 className="font-semibold text-sm text-[#111111] dark:text-zinc-200">
                                                 {CATEGORY_LABELS[cat] ?? cat}
                                             </h3>
-                                            <Badge variant="outline" className="text-xs h-5 px-1.5">
+                                            <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 bg-transparent">
                                                 {catServices.length}
-                                            </Badge>
+                                            </span>
                                         </div>
-                                        <div className="divide-y">
+                                        <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
                                             {catServices.map((svc) => (
                                                 <div
                                                     key={svc.id}
-                                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/20"
+                                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
                                                 >
                                                     <div className="flex-1 min-w-0">
-                                                        <span className="text-sm">{svc.name}</span>
+                                                        <span className="text-sm text-[#111111] dark:text-zinc-200">{svc.name}</span>
                                                         {svc.code && (
-                                                            <span className="ml-2 text-xs text-muted-foreground">
+                                                            <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
                                                                 [{svc.code}]
                                                             </span>
                                                         )}
@@ -296,7 +306,7 @@ export default function ServicesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
                                                             onClick={() => handleEdit(svc)}
                                                             aria-label="Editar serviço"
                                                         >
@@ -305,7 +315,7 @@ export default function ServicesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                            className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
                                                             onClick={() => setConfirmDeleteId(svc.id)}
                                                             aria-label="Remover serviço"
                                                         >
@@ -331,32 +341,34 @@ export default function ServicesPage() {
                     if (!open) setForm(INITIAL_FORM);
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle>Novo Serviço</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Novo Serviço</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="col-span-2 space-y-1.5">
-                            <Label htmlFor="svc-name">Nome do Serviço *</Label>
+                            <Label htmlFor="svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Serviço *</Label>
                             <Input
                                 id="svc-name"
                                 placeholder="Ex: Lavagem Simples"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="svc-code">Código</Label>
+                                <Label htmlFor="svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
                                 <Input
                                     id="svc-code"
                                     placeholder="Ex: LAV-001"
                                     value={form.code}
                                     onChange={(e) => setForm({ ...form, code: e.target.value })}
+                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="svc-price">Preço Base (R$) *</Label>
+                                <Label htmlFor="svc-price" className="text-[#666666] dark:text-zinc-300">Preço Base (R$) *</Label>
                                 <Input
                                     id="svc-price"
                                     type="number"
@@ -365,20 +377,21 @@ export default function ServicesPage() {
                                     placeholder="0.00"
                                     value={form.base_price}
                                     onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Marca</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Marca</Label>
                                 <Select
                                     value={form.brand}
                                     onValueChange={(v) => setForm({ ...form, brand: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {Object.entries(BRAND_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k}>
+                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {v}
                                             </SelectItem>
                                         ))}
@@ -386,17 +399,17 @@ export default function ServicesPage() {
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Departamento</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
                                 <Select
                                     value={form.department}
                                     onValueChange={(v) => setForm({ ...form, department: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {DEPARTMENTS.map((d) => (
-                                            <SelectItem key={d.value} value={d.value}>
+                                            <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {d.label}
                                             </SelectItem>
                                         ))}
@@ -404,17 +417,17 @@ export default function ServicesPage() {
                                 </Select>
                             </div>
                             <div className="col-span-2 space-y-1.5">
-                                <Label>Categoria</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Categoria</Label>
                                 <Select
                                     value={form.category}
                                     onValueChange={(v) => setForm({ ...form, category: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione uma categoria" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k}>
+                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {v}
                                             </SelectItem>
                                         ))}
@@ -425,15 +438,20 @@ export default function ServicesPage() {
                     </div>
                     <DialogFooter>
                         <Button
-                            variant="outline"
                             onClick={() => {
                                 setAddDialogOpen(false);
                                 setForm(INITIAL_FORM);
                             }}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
                             Cancelar
                         </Button>
-                        <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                        <Button
+                            onClick={handleCreate}
+                            disabled={createMutation.isPending}
+                            className="font-semibold"
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        >
                             {createMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
@@ -453,32 +471,34 @@ export default function ServicesPage() {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle>Editar Serviço</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Editar Serviço</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="col-span-2 space-y-1.5">
-                            <Label htmlFor="edit-svc-name">Nome do Serviço *</Label>
+                            <Label htmlFor="edit-svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Serviço *</Label>
                             <Input
                                 id="edit-svc-name"
                                 placeholder="Ex: Lavagem Simples"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit-svc-code">Código</Label>
+                                <Label htmlFor="edit-svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
                                 <Input
                                     id="edit-svc-code"
                                     placeholder="Ex: LAV-001"
                                     value={form.code}
                                     onChange={(e) => setForm({ ...form, code: e.target.value })}
+                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit-svc-price">Preço Base (R$) *</Label>
+                                <Label htmlFor="edit-svc-price" className="text-[#666666] dark:text-zinc-300">Preço Base (R$) *</Label>
                                 <Input
                                     id="edit-svc-price"
                                     type="number"
@@ -487,20 +507,21 @@ export default function ServicesPage() {
                                     placeholder="0.00"
                                     value={form.base_price}
                                     onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Marca</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Marca</Label>
                                 <Select
                                     value={form.brand}
                                     onValueChange={(v) => setForm({ ...form, brand: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {Object.entries(BRAND_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k}>
+                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {v}
                                             </SelectItem>
                                         ))}
@@ -508,17 +529,17 @@ export default function ServicesPage() {
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Departamento</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
                                 <Select
                                     value={form.department}
                                     onValueChange={(v) => setForm({ ...form, department: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {DEPARTMENTS.map((d) => (
-                                            <SelectItem key={d.value} value={d.value}>
+                                            <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {d.label}
                                             </SelectItem>
                                         ))}
@@ -526,17 +547,17 @@ export default function ServicesPage() {
                                 </Select>
                             </div>
                             <div className="col-span-2 space-y-1.5">
-                                <Label>Categoria</Label>
+                                <Label className="text-[#666666] dark:text-zinc-300">Categoria</Label>
                                 <Select
                                     value={form.category}
                                     onValueChange={(v) => setForm({ ...form, category: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                         <SelectValue placeholder="Selecione uma categoria" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                         {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k}>
+                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                 {v}
                                             </SelectItem>
                                         ))}
@@ -547,15 +568,20 @@ export default function ServicesPage() {
                     </div>
                     <DialogFooter>
                         <Button
-                            variant="outline"
                             onClick={() => {
                                 setEditingService(null);
                                 setForm(INITIAL_FORM);
                             }}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
                             Cancelar
                         </Button>
-                        <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+                        <Button
+                            onClick={handleUpdate}
+                            disabled={updateMutation.isPending}
+                            className="font-semibold"
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        >
                             {updateMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
@@ -570,19 +596,21 @@ export default function ServicesPage() {
                 open={confirmDeleteId !== null}
                 onOpenChange={(open) => !open && setConfirmDeleteId(null)}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Remover Serviço</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Remover Serviço</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
                             Tem certeza que deseja remover{' '}
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-[#111111] dark:text-zinc-200">
                                 {allServices?.find((s) => s.id === confirmDeleteId)?.name ?? 'este serviço'}
                             </span>
                             ? Ele não aparecerá mais nas ordens de serviço.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent">
+                            Cancelar
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() =>
                                 confirmDeleteId !== null &&

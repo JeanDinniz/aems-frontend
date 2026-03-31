@@ -16,6 +16,7 @@ import { StoreSelector } from '@/components/common/StoreSelector';
 import { useNavigate } from "react-router-dom";
 import { useNotifications, useUnreadNotificationCount, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
+import { WashCenterIcon } from "@/components/brand/WashCenterIcon";
 
 interface HeaderProps {
     onMenuClick: () => void;
@@ -28,10 +29,39 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleColors: Record<string, string> = {
-    owner:      'bg-aems-primary-400/15 text-aems-primary-600 border-aems-primary-400/30',
-    supervisor: 'bg-blue-50 text-blue-700 border-blue-200',
-    operator:   'bg-aems-neutral-100 text-aems-neutral-600 border-aems-neutral-200',
+    owner:      'border',
+    supervisor: 'border',
+    operator:   'border',
 };
+
+function RoleBadge({ role }: { role: string }) {
+    if (role === 'owner') {
+        return (
+            <span
+                className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                style={{
+                    backgroundColor: 'rgba(245,168,0,0.15)',
+                    color: '#F5A800',
+                    borderColor: 'rgba(245,168,0,0.30)',
+                }}
+            >
+                {roleLabels[role]}
+            </span>
+        );
+    }
+    if (role === 'supervisor') {
+        return (
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-500/15 text-blue-400 border-blue-500/30">
+                {roleLabels[role]}
+            </span>
+        );
+    }
+    return (
+        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+            {roleLabels[role] ?? role}
+        </span>
+    );
+}
 
 export function Header({ onMenuClick }: HeaderProps) {
     const { user, logout } = useAuth();
@@ -60,52 +90,41 @@ export function Header({ onMenuClick }: HeaderProps) {
     };
 
     const userInitials = user?.full_name ? getInitials(user.full_name) : 'U';
-    const roleColor = user?.role ? roleColors[user.role] ?? roleColors.operator : roleColors.operator;
     const roleLabel = user?.role ? roleLabels[user.role] ?? user.role : '';
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background px-4 shadow-sm md:px-6">
-            {/* Left: menu + brand */}
+        <header
+            className="sticky top-0 z-30 flex h-[60px] w-full items-center justify-between px-4 md:px-6 bg-white dark:bg-[#1A1A1A] border-b border-[#E8E8E8] dark:border-[#222]"
+        >
+            {/* Left: menu + brand icon */}
             <div className="flex items-center gap-3">
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden text-aems-neutral-500 hover:text-aems-neutral-700"
+                    className="md:hidden h-8 w-8 text-[#666666] dark:text-[#666] hover:bg-gray-100 dark:hover:bg-[#222]"
                     onClick={onMenuClick}
                     aria-label="Abrir menu"
                 >
                     <Menu className="h-5 w-5" />
                 </Button>
 
-                <div className="hidden md:flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-aems-primary-400 to-aems-primary-600 flex items-center justify-center shadow-[0_0_10px_rgba(252,175,22,0.25)]">
-                        <span className="font-black text-white text-[10px]">AE</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="font-bold text-sm text-foreground leading-tight">AEMS</span>
-                        <span className="text-[10px] text-muted-foreground leading-none hidden sm:block">
-                            Auto Estética Management
-                        </span>
-                    </div>
+                <div className="hidden md:flex items-center">
+                    <WashCenterIcon size={24} color="#F5A800" />
                 </div>
             </div>
 
             {/* Center: store selector */}
             <div className="hidden md:flex flex-1 mx-6 max-w-xs">
-                <StoreSelector />
+                <div
+                    className="w-full rounded-lg border border-[#D1D1D1] dark:border-[#2A2A2A] bg-[#F5F5F5] dark:bg-[#111]"
+                >
+                    <StoreSelector />
+                </div>
             </div>
 
-            {/* Right: indicators + notifications + avatar */}
+            {/* Right: role badge + connection + notifications + avatar */}
             <div className="flex items-center gap-2">
-                {/* Role badge */}
-                {user?.role && (
-                    <span className={cn(
-                        'hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border',
-                        roleColor
-                    )}>
-                        {roleLabel}
-                    </span>
-                )}
+                {user?.role && <RoleBadge role={user.role} />}
 
                 <ConnectionIndicator />
 
@@ -115,24 +134,27 @@ export function Header({ onMenuClick }: HeaderProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="relative text-aems-neutral-500 hover:text-aems-neutral-700 hover:bg-aems-neutral-100"
+                            className="relative h-9 w-9 text-[#666666] dark:text-[#666] hover:bg-gray-100 dark:hover:bg-[#222]"
                             aria-label={`Notificações${unreadCount > 0 ? ` (${unreadCount} não lidas)` : ''}`}
                         >
                             <Bell className="h-5 w-5" />
                             {unreadCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-aems-error text-white text-[10px] font-bold px-1 leading-none animate-pulse">
+                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none animate-pulse">
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-80 shadow-lg border-aems-neutral-150" align="end">
+                    <DropdownMenuContent
+                        className="w-80 shadow-lg bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#2A2A2A]"
+                        align="end"
+                    >
                         <DropdownMenuLabel className="flex items-center justify-between py-3">
                             <div className="flex items-center gap-2">
-                                <Bell className="h-4 w-4 text-aems-neutral-500" />
-                                <span className="font-semibold text-sm">Notificações</span>
+                                <Bell className="h-4 w-4 text-[#666666] dark:text-[#666]" />
+                                <span className="font-semibold text-sm text-[#111111] dark:text-white">Notificações</span>
                                 {unreadCount > 0 && (
-                                    <Badge className="h-5 text-[10px] bg-aems-error text-white border-0 px-1.5">
+                                    <Badge className="h-5 text-[10px] bg-red-500 text-white border-0 px-1.5">
                                         {unreadCount}
                                     </Badge>
                                 )}
@@ -141,7 +163,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-7 text-xs gap-1 px-2 text-aems-primary-600 hover:text-aems-primary-700 hover:bg-aems-primary-400/10"
+                                    className="h-7 text-xs gap-1 px-2 text-[#F5A800] hover:bg-gray-100 dark:hover:bg-[#222]"
                                     onClick={() => markAllRead.mutate()}
                                     disabled={markAllRead.isPending}
                                 >
@@ -150,12 +172,12 @@ export function Header({ onMenuClick }: HeaderProps) {
                                 </Button>
                             )}
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-[#E8E8E8] dark:bg-[#2A2A2A]" />
 
                         {notifications.length === 0 ? (
                             <div className="py-8 text-center">
-                                <Bell className="h-8 w-8 text-aems-neutral-200 mx-auto mb-2" />
-                                <p className="text-sm text-aems-neutral-400">Sem notificações</p>
+                                <Bell className="h-8 w-8 mx-auto mb-2 text-[#BDBDBD] dark:text-[#333]" />
+                                <p className="text-sm text-[#999999] dark:text-[#555]">Sem notificações</p>
                             </div>
                         ) : (
                             <div className="max-h-80 overflow-y-auto aems-scroll">
@@ -163,8 +185,8 @@ export function Header({ onMenuClick }: HeaderProps) {
                                     <DropdownMenuItem
                                         key={notification.id}
                                         className={cn(
-                                            'flex flex-col items-start gap-1 p-3 cursor-pointer rounded-none border-b border-aems-neutral-100 last:border-0',
-                                            !notification.read && 'bg-aems-primary-400/5'
+                                            'flex flex-col items-start gap-1 p-3 cursor-pointer rounded-none border-b border-[#E8E8E8] dark:border-[#2A2A2A] last:border-0 hover:bg-gray-50 dark:hover:bg-[#222]',
+                                            !notification.read && 'bg-[#F5A800]/5'
                                         )}
                                         onClick={() => {
                                             if (notification.related_url) navigate(notification.related_url);
@@ -173,18 +195,23 @@ export function Header({ onMenuClick }: HeaderProps) {
                                         <div className="flex w-full items-start justify-between gap-2">
                                             <span className={cn(
                                                 'text-sm leading-tight',
-                                                !notification.read && 'font-semibold text-aems-neutral-700'
+                                                !notification.read
+                                                    ? 'font-semibold text-[#111111] dark:text-white'
+                                                    : 'text-[#666666] dark:text-white/70'
                                             )}>
                                                 {notification.title}
                                             </span>
                                             {!notification.read && (
-                                                <span className="w-2 h-2 rounded-full bg-aems-primary-400 shrink-0 mt-1 aems-dot-pulse" aria-hidden="true" />
+                                                <span
+                                                    className="w-2 h-2 rounded-full shrink-0 mt-1 aems-dot-pulse bg-[#F5A800]"
+                                                    aria-hidden="true"
+                                                />
                                             )}
                                         </div>
-                                        <p className="text-xs text-aems-neutral-400 line-clamp-2 leading-relaxed">
+                                        <p className="text-xs line-clamp-2 leading-relaxed text-[#666666] dark:text-[#666]">
                                             {notification.message}
                                         </p>
-                                        <span className="text-[10px] text-aems-neutral-300">
+                                        <span className="text-[10px] text-[#999999] dark:text-[#444]">
                                             {formatRelativeTime(notification.created_at)}
                                         </span>
                                     </DropdownMenuItem>
@@ -199,54 +226,64 @@ export function Header({ onMenuClick }: HeaderProps) {
                     <DropdownMenuTrigger asChild>
                         <Button
                             variant="ghost"
-                            className="relative h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-aems-primary-400/30 transition-all"
+                            className="relative h-9 w-9 rounded-full p-0 hover:ring-2 transition-all"
+                            style={{ ['--tw-ring-color' as string]: 'rgba(245,168,0,0.30)' }}
                         >
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={undefined} alt={user?.full_name} />
-                                <AvatarFallback className="bg-gradient-to-br from-aems-primary-400 to-aems-primary-600 text-white text-xs font-bold">
+                                <AvatarFallback
+                                    className="text-xs font-bold"
+                                    style={{ backgroundColor: 'rgba(245,168,0,0.20)', color: '#F5A800' }}
+                                >
                                     {userInitials}
                                 </AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-60 shadow-lg border-aems-neutral-150" align="end" forceMount>
+                    <DropdownMenuContent
+                        className="w-60 shadow-lg bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#2A2A2A]"
+                        align="end"
+                        forceMount
+                    >
                         <DropdownMenuLabel className="font-normal p-3">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-gradient-to-br from-aems-primary-400 to-aems-primary-600 text-white text-sm font-bold">
+                                    <AvatarFallback
+                                        className="text-sm font-bold"
+                                        style={{ backgroundColor: 'rgba(245,168,0,0.20)', color: '#F5A800' }}
+                                    >
                                         {userInitials}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col min-w-0">
-                                    <p className="text-sm font-semibold text-aems-neutral-700 truncate">{user?.full_name}</p>
-                                    <p className="text-xs text-aems-neutral-400 truncate">{user?.email}</p>
-                                    <span className={cn(
-                                        'inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border mt-1',
-                                        roleColor
-                                    )}>
-                                        {roleLabel}
-                                    </span>
+                                    <p className="text-sm font-semibold text-[#111111] dark:text-white truncate">{user?.full_name}</p>
+                                    <p className="text-xs truncate text-[#999999] dark:text-[#555]">{user?.email}</p>
+                                    {user?.role && (
+                                        <div className="mt-1">
+                                            <RoleBadge role={user.role} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-[#E8E8E8] dark:bg-[#2A2A2A]" />
                         <DropdownMenuItem
-                            className="gap-2 cursor-pointer text-aems-neutral-600 hover:text-aems-neutral-800"
+                            className="gap-2 cursor-pointer text-[#666666] dark:text-[#999] hover:bg-gray-50 dark:hover:bg-[#222]"
                             onClick={() => navigate('/profile')}
                         >
                             <User className="h-4 w-4" />
                             Meu Perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            className="gap-2 cursor-pointer text-aems-neutral-600 hover:text-aems-neutral-800"
+                            className="gap-2 cursor-pointer text-[#666666] dark:text-[#999] hover:bg-gray-50 dark:hover:bg-[#222]"
                             onClick={() => navigate('/settings')}
                         >
                             <Settings className="h-4 w-4" />
                             Configurações
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuSeparator className="bg-[#E8E8E8] dark:bg-[#2A2A2A]" />
                         <DropdownMenuItem
-                            className="gap-2 cursor-pointer text-aems-error focus:text-aems-error focus:bg-aems-error/5"
+                            className="gap-2 cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10"
                             onClick={handleLogout}
                         >
                             <LogOut className="h-4 w-4" />

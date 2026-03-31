@@ -19,6 +19,12 @@ module.exports = {
         },
         extend: {
             colors: {
+                brand: {
+                    amber: '#F5A800',
+                    'amber-hover': '#FFB800',
+                    'amber-dim': 'rgba(245, 168, 0, 0.12)',
+                    black: '#1A1A1A',
+                },
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
@@ -101,6 +107,7 @@ module.exports = {
             fontFamily: {
                 sans: ["var(--aems-font)", "sans-serif"],
                 mono: ["var(--aems-font-mono)", "monospace"],
+                display: ['Barlow', 'Barlow Semi Condensed', 'sans-serif'],
             },
             borderRadius: {
                 lg: "var(--radius)",

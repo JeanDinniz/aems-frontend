@@ -70,80 +70,118 @@
     --aems-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     --aems-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Shadcn mappings to AEMS */
-    --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 215 28% 17%; /* #1D2939 (neutral-700 approx) */
- 
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 17%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 28% 17%;
- 
-    --primary: 38 96% 54%; /* #FCAF16 */
-    --primary-foreground: 222 47% 11%; /* #0C111D (neutral-900) */
- 
-    --secondary: 210 40% 96%; /* #F0F2F5 (neutral-100) */
-    --secondary-foreground: 215 16% 47%; /* #667085 (neutral-400) */
- 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
- 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
- 
-    --destructive: 0 84% 60%; /* #EF4444 (default red) -> #F04438 (AEMS Error) */
-    --destructive-foreground: 210 40% 98%;
+    /* Design tokens v2 — TEMA CLARO (light is default) */
+    --brand:          #F5A800;
+    --brand-hover:    #FFB800;
+    --brand-dim:      rgba(245, 168, 0, 0.10);
+    --brand-border:   rgba(245, 168, 0, 0.25);
 
-    --border: 214 32% 91%; /* #E4E7EC (neutral-150 approx or neutral-200) */
-    --input: 214 32% 91%;
-    --ring: 38 96% 54%; /* Primary color */
- 
+    --bg-base:        #F5F5F5;
+    --bg-surface:     #FFFFFF;
+    --bg-elevated:    #FAFAFA;
+    --bg-input:       #FFFFFF;
+
+    --border-subtle:  #E8E8E8;
+    --border:         #D1D1D1;
+    --border-strong:  #BDBDBD;
+
+    --text-1: #111111;
+    --text-2: #666666;
+    --text-3: #999999;
+
+    --r-sm:  6px;
+    --r-md:  8px;
+    --r-lg:  12px;
+    --r-xl:  16px;
+    --r-2xl: 20px;
+
+    /* Shadcn light theme */
+    --background: 0 0% 96.1%;       /* #F5F5F5 */
+    --foreground: 0 0% 6.7%;        /* #111111 */
+
+    --card: 0 0% 100%;              /* #FFFFFF */
+    --card-foreground: 0 0% 6.7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 6.7%;
+
+    --primary: 42 100% 48%;         /* #F5A800 */
+    --primary-foreground: 0 0% 6.7%;
+
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 40%;
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 6.7%;
+
+    --destructive: 0 65% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 82%;             /* #D1D1D1 */
+    --input:  0 0% 100%;            /* #FFFFFF */
+    --ring:   42 100% 48%;
+
     --radius: 0.5rem;
   }
  
   .dark {
-    /* ── Shadcn semantic tokens ────────────────────────────── */
-    --background: 222 20% 7%;          /* #0D1018 - fundo da página */
-    --foreground: 210 35% 93%;         /* #DDE8F4 - texto principal */
+    /* ── Design tokens v2 — TEMA ESCURO ───────────────────── */
+    --bg-base:        #111111;
+    --bg-surface:     #1A1A1A;
+    --bg-elevated:    #222222;
+    --bg-input:       #0D0D0D;
 
-    --card: 222 24% 12%;               /* #16202E - superfície de card */
-    --card-foreground: 210 35% 93%;
+    --border-subtle:  #1E1E1E;
+    --border:         #2A2A2A;
+    --border-strong:  #333333;
 
-    --popover: 222 24% 12%;
-    --popover-foreground: 210 35% 93%;
+    --text-1: #FFFFFF;
+    --text-2: #999999;
+    --text-3: #555555;
 
-    --primary: 38 96% 54%;             /* #FCAF16 - dourado permanece */
-    --primary-foreground: 222 47% 11%;
+    /* ── Shadcn dark theme ─────────────────────────────────── */
+    --background: 0 0% 6.7%;          /* #111111 */
+    --foreground: 0 0% 100%;
 
-    --secondary: 220 24% 17%;          /* #1E2A3C */
-    --secondary-foreground: 210 35% 93%;
+    --card: 0 0% 10.2%;               /* #1A1A1A */
+    --card-foreground: 0 0% 100%;
 
-    --muted: 220 24% 14%;              /* #181F2E */
-    --muted-foreground: 212 18% 52%;   /* #6F87A4 */
+    --popover: 0 0% 10.2%;
+    --popover-foreground: 0 0% 100%;
 
-    --accent: 220 24% 17%;
-    --accent-foreground: 210 35% 93%;
+    --primary: 42 100% 48%;           /* #F5A800 */
+    --primary-foreground: 0 0% 6.7%;
+
+    --secondary: 0 0% 13.3%;          /* #222 */
+    --secondary-foreground: 0 0% 60%;
+
+    --muted: 0 0% 13.3%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 13.3%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 65% 42%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 22% 19%;             /* #222D3F - bordas */
-    --input:  220 22% 15%;             /* #191F2D - fundo de inputs */
-    --ring:   38 96% 54%;
+    --border: 0 0% 16.5%;             /* #2A2A2A */
+    --input:  0 0% 5.1%;              /* #0D0D0D */
+    --ring:   42 100% 48%;
 
     /* ── AEMS Neutros — invertidos para dark ──────────────── */
-    --aems-white:       #16202E;   /* superfícies (cards, modais) */
-    --aems-neutral-50:  #0D1018;   /* fundo da página */
-    --aems-neutral-100: #131926;   /* hover sutil */
-    --aems-neutral-150: #1A2234;   /* bordas leves, fundo de seções */
-    --aems-neutral-200: #222D3F;   /* bordas, divisores */
-    --aems-neutral-300: #3A4D64;   /* placeholder, desabilitado */
-    --aems-neutral-400: #6B82A0;   /* ícones, texto terciário */
-    --aems-neutral-500: #90A8C5;   /* texto secundário */
-    --aems-neutral-600: #B8CEDE;   /* subtítulo */
-    --aems-neutral-700: #DDE8F4;   /* texto principal, headings */
-    /* 800/900/950 permanecem escuros (sidebar não muda) */
+    --aems-white:       #16202E;
+    --aems-neutral-50:  #0D1018;
+    --aems-neutral-100: #131926;
+    --aems-neutral-150: #1A2234;
+    --aems-neutral-200: #222D3F;
+    --aems-neutral-300: #3A4D64;
+    --aems-neutral-400: #6B82A0;
+    --aems-neutral-500: #90A8C5;
+    --aems-neutral-600: #B8CEDE;
+    --aems-neutral-700: #DDE8F4;
 
     /* ── Semânticas — versão escura ───────────────────────── */
     --aems-success:       #34D399;

@@ -21,20 +21,20 @@ export function EmployeeFilters({ filters, onFiltersChange }: Props) {
                 placeholder="Buscar por nome"
                 value={filters.search || ''}
                 onChange={(e) => handleChange('search', e.target.value || undefined)}
-                className="max-w-xs"
+                className="max-w-xs bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
             />
 
             <Select
                 value={filters.store_id?.toString() || 'all'}
                 onValueChange={(v) => handleChange('store_id', v === 'all' ? undefined : Number(v))}
             >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                     <SelectValue placeholder="Loja" />
                 </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todas as lojas</SelectItem>
+                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                    <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todas as lojas</SelectItem>
                     {stores?.map((store) => (
-                        <SelectItem key={store.id} value={store.id.toString()}>
+                        <SelectItem key={store.id} value={store.id.toString()} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                             {store.code} - {store.name}
                         </SelectItem>
                     ))}
@@ -45,12 +45,12 @@ export function EmployeeFilters({ filters, onFiltersChange }: Props) {
                 value={filters.department || 'all'}
                 onValueChange={(v) => handleChange('department', v === 'all' ? undefined : v)}
             >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                     <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todos os cargos</SelectItem>
-                    <SelectItem value="film">Instaladores de Película</SelectItem>
+                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                    <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos os cargos</SelectItem>
+                    <SelectItem value="film" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Instaladores de Película</SelectItem>
                 </SelectContent>
             </Select>
 
@@ -58,13 +58,13 @@ export function EmployeeFilters({ filters, onFiltersChange }: Props) {
                 value={filters.is_active === undefined ? 'all' : filters.is_active ? 'true' : 'false'}
                 onValueChange={(v) => handleChange('is_active', v === 'all' ? undefined : v === 'true')}
             >
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[160px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                     <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="true">Ativos</SelectItem>
-                    <SelectItem value="false">Inativos</SelectItem>
+                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                    <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos</SelectItem>
+                    <SelectItem value="true" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Ativos</SelectItem>
+                    <SelectItem value="false" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Inativos</SelectItem>
                 </SelectContent>
             </Select>
         </div>

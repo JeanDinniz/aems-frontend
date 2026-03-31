@@ -99,7 +99,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                     <TableBody>
                         {users.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                                <TableCell colSpan={6} className="text-center text-[#666666] dark:text-zinc-500 py-8">
                                     Nenhum usuário encontrado
                                 </TableCell>
                             </TableRow>
@@ -109,7 +109,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar>
-                                                <AvatarFallback>
+                                                <AvatarFallback className="bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-200 text-xs font-semibold">
                                                     {user.full_name
                                                         .split(' ')
                                                         .slice(0, 2)
@@ -120,7 +120,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                             </Avatar>
                                             <div>
                                                 <p className="font-medium">{user.full_name}</p>
-                                                <p className="text-sm text-gray-500">{user.email}</p>
+                                                <p className="text-sm text-[#666666] dark:text-zinc-500">{user.email}</p>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -131,17 +131,17 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
 
                                     <TableCell>
                                         {user.role === 'owner' && (
-                                            <span className="text-sm text-gray-600">Todas</span>
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">Todas</span>
                                         )}
                                         {user.role === 'supervisor' && user.supervised_store_ids && (
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">
                                                 {user.supervised_store_ids.length > 0
                                                     ? `${user.supervised_store_ids.length} loja(s)`
                                                     : 'Nenhuma'}
                                             </span>
                                         )}
                                         {user.role === 'operator' && (
-                                            <span className="text-sm text-gray-600">{user.store_name || '-'}</span>
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">{user.store_name || '-'}</span>
                                         )}
                                     </TableCell>
 
@@ -151,11 +151,11 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
 
                                     <TableCell>
                                         {user.last_login ? (
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">
                                                 {new Date(user.last_login).toLocaleDateString('pt-BR')}
                                             </span>
                                         ) : (
-                                            <span className="text-sm text-gray-400">Nunca</span>
+                                            <span className="text-sm text-[#999999] dark:text-zinc-500">Nunca</span>
                                         )}
                                     </TableCell>
 
@@ -203,7 +203,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
             {/* Paginação */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-[#444444] dark:text-zinc-300">
                         Mostrando {(page - 1) * pageSize + 1} a{' '}
                         {Math.min(page * pageSize, total)} de {total} usuários
                     </p>

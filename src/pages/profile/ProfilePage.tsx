@@ -3,11 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { User as UserIcon, Lock, Mail, Phone, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth.store';
 import { authService } from '@/services/api/auth.service';
 import { useToast } from '@/hooks/use-toast';
@@ -104,175 +100,238 @@ export function ProfilePage() {
     if (!user) return null;
 
     return (
-        <div className="container mx-auto p-6 max-w-4xl">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold">Meu Perfil</h1>
-                <p className="text-gray-600">Gerencie suas informações pessoais</p>
+        <div className="p-6 max-w-4xl">
+            {/* Header */}
+            <div className="mb-8">
+                <h1
+                    className="text-3xl font-bold text-[#111111] dark:text-white"
+                    style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                >
+                    Meu Perfil
+                </h1>
+                <p className="text-[#666666] dark:text-zinc-400 mt-1">Gerencie suas informações pessoais</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
                 {/* Card de Informações Básicas */}
-                <Card className="md:col-span-1">
-                    <CardHeader>
-                        <CardTitle className="text-center">Informações</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="text-center">
-                            <div className="mx-auto w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mb-4">
-                                <UserIcon className="h-12 w-12 text-primary-600" />
-                            </div>
-                            <h2 className="text-xl font-semibold">{user.full_name}</h2>
-                            <p className="text-sm text-gray-600">{user.email}</p>
+                <div className="md:col-span-1 bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-6 space-y-4">
+                    {/* Avatar e nome */}
+                    <div className="text-center">
+                        <div
+                            className="mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-4"
+                            style={{ backgroundColor: 'rgba(252, 175, 22, 0.15)', border: '2px solid rgba(252, 175, 22, 0.3)' }}
+                        >
+                            <UserIcon className="h-12 w-12" style={{ color: '#F5A800' }} />
+                        </div>
+                        <h2
+                            className="text-xl font-semibold text-[#111111] dark:text-white"
+                            style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                        >
+                            {user.full_name}
+                        </h2>
+                        <p className="text-sm text-[#666666] dark:text-zinc-400 mt-0.5">{user.email}</p>
+                    </div>
+
+                    {/* Detalhes do perfil */}
+                    <div className="space-y-3 pt-4 border-t border-[#D1D1D1] dark:border-[#333333]">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#666666] dark:text-zinc-400">Cargo:</span>
+                            <span
+                                className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+                                style={{ backgroundColor: 'rgba(252, 175, 22, 0.15)', color: '#F5A800', borderColor: 'rgba(252, 175, 22, 0.4)' }}
+                            >
+                                {roleLabels[user.role]}
+                            </span>
                         </div>
 
-                        <div className="space-y-2 pt-4 border-t">
+                        {user.store_name && (
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Cargo:</span>
-                                <Badge>{roleLabels[user.role]}</Badge>
+                                <span className="text-sm text-[#666666] dark:text-zinc-400">Loja:</span>
+                                <span className="text-sm font-medium text-[#444444] dark:text-zinc-300">{user.store_name}</span>
                             </div>
-                            {user.store_name && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">Loja:</span>
-                                    <span className="text-sm font-medium">{user.store_name}</span>
-                                </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#666666] dark:text-zinc-400">Status:</span>
+                            {user.is_active ? (
+                                <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-green-900/40 text-green-400 border-green-700">
+                                    Ativo
+                                </span>
+                            ) : (
+                                <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border-[#D1D1D1] dark:border-[#333333]">
+                                    Inativo
+                                </span>
                             )}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Status:</span>
-                                <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                                    {user.is_active ? 'Ativo' : 'Inativo'}
-                                </Badge>
-                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* Tabs de Edição */}
-                <Card className="md:col-span-2">
-                    <CardContent className="pt-6">
-                        <Tabs defaultValue="profile">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="profile">Dados Pessoais</TabsTrigger>
-                                <TabsTrigger value="password">Alterar Senha</TabsTrigger>
-                            </TabsList>
+                <div className="md:col-span-2 bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-6">
+                    <Tabs defaultValue="profile">
+                        <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 mb-6">
+                            <TabsTrigger
+                                value="profile"
+                                className="rounded-md text-[#666666] dark:text-zinc-400 data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold transition-all"
+                                style={{}}
+                            >
+                                Dados Pessoais
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="password"
+                                className="rounded-md text-[#666666] dark:text-zinc-400 data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold transition-all"
+                            >
+                                Alterar Senha
+                            </TabsTrigger>
+                        </TabsList>
 
-                            <TabsContent value="profile" className="space-y-4">
-                                <form
-                                    onSubmit={handleSubmitProfile((data) => updateProfileMutation.mutate(data))}
-                                    className="space-y-4"
-                                >
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-name" className="text-sm font-medium">Nome Completo</label>
-                                        <div className="relative">
-                                            <UserIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-name"
-                                                className="pl-9"
-                                                {...registerProfile('name')}
-                                            />
-                                        </div>
-                                        {profileErrors.name && <p className="text-sm text-red-500">{profileErrors.name.message}</p>}
+                        {/* Dados Pessoais */}
+                        <TabsContent value="profile" className="space-y-5 mt-0">
+                            <form
+                                onSubmit={handleSubmitProfile((data) => updateProfileMutation.mutate(data))}
+                                className="space-y-5"
+                            >
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-name" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        Nome Completo
+                                    </label>
+                                    <div className="relative">
+                                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#999999] dark:text-zinc-500 pointer-events-none" />
+                                        <input
+                                            id="pp-name"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#111111] dark:text-white placeholder-[#999999] dark:placeholder-zinc-500 outline-none transition-colors bg-white dark:bg-[#1A1A1A] border border-[#D1D1D1] dark:border-[#333333] focus:border-[#F5A800] focus:ring-1 focus:ring-[#F5A800]"
+                                            {...registerProfile('name')}
+                                        />
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-email" className="text-sm font-medium">E-mail</label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-email"
-                                                className="pl-9"
-                                                value={user.email}
-                                                disabled
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-phone" className="text-sm font-medium">Telefone</label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-phone"
-                                                className="pl-9"
-                                                placeholder="(00) 00000-0000"
-                                                {...registerProfile('phone')}
-                                            />
-                                        </div>
-                                        {profileErrors.phone && <p className="text-sm text-red-500">{profileErrors.phone.message}</p>}
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        className="w-full"
-                                        disabled={updateProfileMutation.isPending}
-                                    >
-                                        {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Salvar Alterações
-                                    </Button>
-                                </form>
-                            </TabsContent>
-
-                            <TabsContent value="password" className="space-y-4">
-                                <form
-                                    onSubmit={handleSubmitPassword((data) =>
-                                        changePasswordMutation.mutate(data)
+                                    {profileErrors.name && (
+                                        <p className="text-sm text-red-400">{profileErrors.name.message}</p>
                                     )}
-                                    className="space-y-4"
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-email" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        E-mail
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#BBBBBB] dark:text-zinc-600 pointer-events-none" />
+                                        <input
+                                            id="pp-email"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#999999] dark:text-zinc-500 outline-none bg-gray-100 dark:bg-zinc-900 border border-[#D1D1D1] dark:border-[#333333] cursor-not-allowed"
+                                            value={user.email}
+                                            disabled
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-phone" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        Telefone
+                                    </label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#999999] dark:text-zinc-500 pointer-events-none" />
+                                        <input
+                                            id="pp-phone"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#111111] dark:text-white placeholder-[#999999] dark:placeholder-zinc-500 outline-none transition-colors bg-white dark:bg-[#1A1A1A] border border-[#D1D1D1] dark:border-[#333333] focus:border-[#F5A800] focus:ring-1 focus:ring-[#F5A800]"
+                                            placeholder="(00) 00000-0000"
+                                            {...registerProfile('phone')}
+                                        />
+                                    </div>
+                                    {profileErrors.phone && (
+                                        <p className="text-sm text-red-400">{profileErrors.phone.message}</p>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={updateProfileMutation.isPending}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-opacity disabled:opacity-60"
+                                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                                 >
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-current-pw" className="text-sm font-medium">Senha Atual</label>
-                                        <div className="relative">
-                                            <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-current-pw"
-                                                className="pl-9"
-                                                type="password"
-                                                {...registerPassword('currentPassword')}
-                                            />
-                                        </div>
-                                        {passwordErrors.currentPassword && <p className="text-sm text-red-500">{passwordErrors.currentPassword.message}</p>}
-                                    </div>
+                                    {updateProfileMutation.isPending && (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    )}
+                                    Salvar Alterações
+                                </button>
+                            </form>
+                        </TabsContent>
 
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-new-pw" className="text-sm font-medium">Nova Senha</label>
-                                        <div className="relative">
-                                            <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-new-pw"
-                                                className="pl-9"
-                                                type="password"
-                                                {...registerPassword('newPassword')}
-                                            />
-                                        </div>
-                                        {passwordErrors.newPassword && <p className="text-sm text-red-500">{passwordErrors.newPassword.message}</p>}
+                        {/* Alterar Senha */}
+                        <TabsContent value="password" className="space-y-5 mt-0">
+                            <form
+                                onSubmit={handleSubmitPassword((data) =>
+                                    changePasswordMutation.mutate(data)
+                                )}
+                                className="space-y-5"
+                            >
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-current-pw" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        Senha Atual
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#999999] dark:text-zinc-500 pointer-events-none" />
+                                        <input
+                                            id="pp-current-pw"
+                                            type="password"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#111111] dark:text-white placeholder-[#999999] dark:placeholder-zinc-500 outline-none transition-colors bg-white dark:bg-[#1A1A1A] border border-[#D1D1D1] dark:border-[#333333] focus:border-[#F5A800] focus:ring-1 focus:ring-[#F5A800]"
+                                            {...registerPassword('currentPassword')}
+                                        />
                                     </div>
+                                    {passwordErrors.currentPassword && (
+                                        <p className="text-sm text-red-400">{passwordErrors.currentPassword.message}</p>
+                                    )}
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <label htmlFor="pp-confirm-pw" className="text-sm font-medium">Confirmar Nova Senha</label>
-                                        <div className="relative">
-                                            <Lock className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                            <Input
-                                                id="pp-confirm-pw"
-                                                className="pl-9"
-                                                type="password"
-                                                {...registerPassword('confirmPassword')}
-                                            />
-                                        </div>
-                                        {passwordErrors.confirmPassword && <p className="text-sm text-red-500">{passwordErrors.confirmPassword.message}</p>}
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-new-pw" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        Nova Senha
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#999999] dark:text-zinc-500 pointer-events-none" />
+                                        <input
+                                            id="pp-new-pw"
+                                            type="password"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#111111] dark:text-white placeholder-[#999999] dark:placeholder-zinc-500 outline-none transition-colors bg-white dark:bg-[#1A1A1A] border border-[#D1D1D1] dark:border-[#333333] focus:border-[#F5A800] focus:ring-1 focus:ring-[#F5A800]"
+                                            {...registerPassword('newPassword')}
+                                        />
                                     </div>
+                                    {passwordErrors.newPassword && (
+                                        <p className="text-sm text-red-400">{passwordErrors.newPassword.message}</p>
+                                    )}
+                                </div>
 
-                                    <Button
-                                        type="submit"
-                                        className="w-full"
-                                        disabled={changePasswordMutation.isPending}
-                                    >
-                                        {changePasswordMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Alterar Senha
-                                    </Button>
-                                </form>
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
+                                <div className="space-y-1.5">
+                                    <label htmlFor="pp-confirm-pw" className="text-sm font-medium text-[#666666] dark:text-zinc-300">
+                                        Confirmar Nova Senha
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#999999] dark:text-zinc-500 pointer-events-none" />
+                                        <input
+                                            id="pp-confirm-pw"
+                                            type="password"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm text-[#111111] dark:text-white placeholder-[#999999] dark:placeholder-zinc-500 outline-none transition-colors bg-white dark:bg-[#1A1A1A] border border-[#D1D1D1] dark:border-[#333333] focus:border-[#F5A800] focus:ring-1 focus:ring-[#F5A800]"
+                                            {...registerPassword('confirmPassword')}
+                                        />
+                                    </div>
+                                    {passwordErrors.confirmPassword && (
+                                        <p className="text-sm text-red-400">{passwordErrors.confirmPassword.message}</p>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={changePasswordMutation.isPending}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-opacity disabled:opacity-60"
+                                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                                >
+                                    {changePasswordMutation.isPending && (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    )}
+                                    Alterar Senha
+                                </button>
+                            </form>
+                        </TabsContent>
+                    </Tabs>
+                </div>
             </div>
         </div>
     );

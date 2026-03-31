@@ -4,8 +4,6 @@ import { useServiceOrder, useUpdateServiceOrder, useUpdateServiceOrderStatus, us
 import { useAuth } from '@/hooks/useAuth';
 import { WorkerAssignmentDialog } from '@/components/features/service-orders/WorkerAssignmentDialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrafficLightStatus } from '@/components/features/service-orders/TrafficLightStatus';
 import { ChevronLeft, Car, Tag, Loader2, Edit, CheckCircle2, AlertTriangle, Play, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +42,6 @@ export default function ServiceOrderDetailsPage() {
         && os?.status !== 'cancelled';
 
     const handleWorkerAssignment = (workerIds: number[], primaryWorkerId: number) => {
-        // 1. Save selected employees to the OS
         const workers = [
             { employee_id: primaryWorkerId },
             ...workerIds
@@ -54,7 +51,6 @@ export default function ServiceOrderDetailsPage() {
 
         updateOrder.mutate({ id: Number(id), data: { workers } as Partial<CreateServiceOrderData> }, {
             onSuccess: () => {
-                // 2. Change status to 'doing'
                 updateStatus.mutate({ id: Number(id), status: 'doing' }, {
                     onSuccess: () => {
                         setShowWorkerDialog(false);
@@ -179,13 +175,13 @@ export default function ServiceOrderDetailsPage() {
         switch (os.status) {
             case 'waiting':
                 return (
-                    <Button onClick={() => setShowWorkerDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setShowWorkerDialog(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
                         <Play className="mr-2 h-4 w-4" /> Iniciar Serviço
                     </Button>
                 );
             case 'doing':
                 return (
-                    <Button onClick={() => handleStatusUpdate('inspection')} className="bg-purple-600 hover:bg-purple-700">
+                    <Button onClick={() => handleStatusUpdate('inspection')} className="bg-purple-600 hover:bg-purple-700 text-white">
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Enviar para Inspeção
                     </Button>
                 );
@@ -195,14 +191,17 @@ export default function ServiceOrderDetailsPage() {
                         <Button onClick={() => handleStatusUpdate('doing')} variant="destructive">
                             <AlertTriangle className="mr-2 h-4 w-4" /> Reprovar
                         </Button>
-                        <Button onClick={() => setShowQualityDialog(true)} className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={() => setShowQualityDialog(true)} className="bg-green-600 hover:bg-green-700 text-white">
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar / Pronto
                         </Button>
                     </div>
                 );
             case 'ready':
                 return (
-                    <Button onClick={() => handleStatusUpdate('delivered')} variant="outline">
+                    <Button
+                        onClick={() => handleStatusUpdate('delivered')}
+                        className="border border-[#333333] text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
+                    >
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Entregar Veículo
                     </Button>
                 );
@@ -211,24 +210,51 @@ export default function ServiceOrderDetailsPage() {
         }
     };
 
-    if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    if (isError || !os) return <div className="flex justify-center p-8 text-red-500">Erro ao carregar detalhes da OS.</div>;
+    if (isLoading) {
+        return (
+            <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+            </div>
+        );
+    }
+    if (isError || !os) {
+        return (
+            <div className="flex justify-center p-8 text-red-400">
+                Erro ao carregar detalhes da OS.
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
+            {/* Header */}
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/service-orders')}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate('/service-orders')}
+                    className="text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50"
+                >
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="flex-1">
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold tracking-tight">OS #{os.order_number}</h1>
-                            <Badge
-                                variant={os.status === 'cancelled' ? 'destructive' : 'outline'}
+                            <h1
+                                className="text-[#111111] dark:text-white text-2xl font-bold"
+                                style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                            >
+                                OS #{os.order_number}
+                            </h1>
+                            <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                    os.status === 'cancelled'
+                                        ? 'bg-red-900/30 text-red-400 border-red-700/50'
+                                        : 'bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-300 border-[#D1D1D1] dark:border-zinc-700'
+                                }`}
                             >
                                 {STATUS_LABELS[os.status] || os.status}
-                            </Badge>
+                            </span>
                         </div>
                         <div className="flex items-center gap-2">
                             <TrafficLightStatus
@@ -239,7 +265,10 @@ export default function ServiceOrderDetailsPage() {
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {os.status !== 'cancelled' && (
-                                <Button variant="outline" onClick={() => navigate(`/service-orders/${id}/edit`)}>
+                                <Button
+                                    onClick={() => navigate(`/service-orders/${id}/edit`)}
+                                    className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
+                                >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Editar
                                 </Button>
@@ -248,7 +277,7 @@ export default function ServiceOrderDetailsPage() {
                             {canCancel && (
                                 <Button
                                     variant="ghost"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                                     onClick={() => setShowCancelDialog(true)}
                                 >
                                     <XCircle className="mr-2 h-4 w-4" />
@@ -263,108 +292,109 @@ export default function ServiceOrderDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Main Info */}
                 <div className="md:col-span-2 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Detalhes do Serviço</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><Car className="h-3 w-3" /> Veículo / Placa</span>
-                                    <p className="text-lg font-medium">{os.vehicle_model}{os.vehicle_color ? ` - ${os.vehicle_color}` : ''}</p>
-                                    <div className="inline-block bg-gray-100 px-2 py-0.5 rounded text-sm font-mono border border-gray-300">
-                                        {os.plate}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Departamento</span>
-                                    <p className="text-lg font-medium">{DEPARTMENTS_MAP[os.department] || os.department}</p>
-                                    {os.invoice_number && (
-                                        <p className="text-sm text-green-600 flex items-center gap-1">
-                                            <FileText className="h-3 w-3" /> NF: {os.invoice_number}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
+                    <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-6 space-y-6">
+                        <h2 className="text-[#111111] dark:text-zinc-100 font-semibold text-base">Detalhes do Serviço</h2>
 
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <span className="text-sm font-medium text-muted-foreground">Descrição do Serviço</span>
-                                <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
-                                    {os.service_description}
+                                <span className="text-sm font-medium text-[#666666] dark:text-zinc-400 flex items-center gap-1">
+                                    <Car className="h-3 w-3" /> Veículo / Placa
+                                </span>
+                                <p className="text-lg font-medium text-[#111111] dark:text-zinc-100">
+                                    {os.vehicle_model}{os.vehicle_color ? ` - ${os.vehicle_color}` : ''}
+                                </p>
+                                <div className="inline-block bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-sm font-mono border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-zinc-300">
+                                    {os.plate}
                                 </div>
                             </div>
-
                             <div className="space-y-1">
-                                <span className="text-sm font-medium text-muted-foreground">Observações Gerais</span>
-                                <div className="p-3 bg-muted rounded-md text-sm">
-                                    {os.notes || "N/A"}
-                                </div>
+                                <span className="text-sm font-medium text-[#666666] dark:text-zinc-400 flex items-center gap-1">
+                                    <Tag className="h-3 w-3" /> Departamento
+                                </span>
+                                <p className="text-lg font-medium text-[#111111] dark:text-zinc-100">
+                                    {DEPARTMENTS_MAP[os.department] || os.department}
+                                </p>
+                                {os.invoice_number && (
+                                    <p className="text-sm text-green-400 flex items-center gap-1">
+                                        <FileText className="h-3 w-3" /> NF: {os.invoice_number}
+                                    </p>
+                                )}
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
 
+                        <div className="space-y-1">
+                            <span className="text-sm font-medium text-[#666666] dark:text-zinc-400">Descrição do Serviço</span>
+                            <div className="p-3 bg-gray-50 dark:bg-zinc-800/60 rounded-lg text-sm whitespace-pre-wrap text-[#111111] dark:text-zinc-200 border border-[#E8E8E8] dark:border-[#333333]">
+                                {os.service_description}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <span className="text-sm font-medium text-[#666666] dark:text-zinc-400">Observações Gerais</span>
+                            <div className="p-3 bg-gray-50 dark:bg-zinc-800/60 rounded-lg text-sm text-[#111111] dark:text-zinc-200 border border-[#E8E8E8] dark:border-[#333333]">
+                                {os.notes || "N/A"}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Sidebar Info */}
                 <div className="space-y-6">
                     {os.workers && os.workers.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Equipe Atribuída</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
+                        <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-5 space-y-3">
+                            <h3 className="text-[#111111] dark:text-zinc-100 font-semibold text-sm">Equipe Atribuída</h3>
+                            <div className="space-y-3">
                                 {os.workers.map((worker) => (
                                     <div key={worker.id} className="flex items-center justify-between text-sm">
                                         <div className="flex items-center gap-2">
-                                            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center font-medium text-xs">
+                                            <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center font-medium text-xs text-[#111111] dark:text-zinc-200">
                                                 {worker.name.substring(0, 2).toUpperCase()}
                                             </div>
-                                            <span className={worker.isPrimary ? "font-medium" : ""}>
+                                            <span className={`text-[#111111] dark:text-zinc-200 ${worker.isPrimary ? 'font-medium' : ''}`}>
                                                 {worker.name} {worker.isPrimary && "(Responsável)"}
                                             </span>
                                         </div>
-                                        {worker.isPrimary && <Badge variant="secondary" className="text-xs">Principal</Badge>}
+                                        {worker.isPrimary && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border border-[#D1D1D1] dark:border-zinc-700">
+                                                Principal
+                                            </span>
+                                        )}
                                     </div>
                                 ))}
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     )}
 
                     {os.quality_checklist && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Controle de Qualidade</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {os.quality_checklist.all_passed ? (
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center text-green-600 gap-2 font-medium">
-                                            <CheckCircle2 className="h-5 w-5" />
-                                            Aprovado
-                                        </div>
-                                        {os.quality_checklist.approved_at && (
-                                            <p className="text-xs text-muted-foreground">
-                                                Em: {new Date(os.quality_checklist.approved_at).toLocaleString()}
-                                            </p>
-                                        )}
+                        <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-5 space-y-3">
+                            <h3 className="text-[#111111] dark:text-zinc-100 font-semibold text-sm">Controle de Qualidade</h3>
+                            {os.quality_checklist.all_passed ? (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center text-green-400 gap-2 font-medium">
+                                        <CheckCircle2 className="h-5 w-5" />
+                                        Aprovado
                                     </div>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center text-red-600 gap-2 font-medium">
-                                            <AlertTriangle className="h-5 w-5" />
-                                            Reprovado
-                                        </div>
-                                        {os.quality_checklist.rejection_notes && (
-                                            <div className="text-sm bg-red-50 p-2 rounded text-red-800">
-                                                {os.quality_checklist.rejection_notes}
-                                            </div>
-                                        )}
+                                    {os.quality_checklist.approved_at && (
+                                        <p className="text-xs text-zinc-400">
+                                            Em: {new Date(os.quality_checklist.approved_at).toLocaleString()}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center text-red-400 gap-2 font-medium">
+                                        <AlertTriangle className="h-5 w-5" />
+                                        Reprovado
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                    {os.quality_checklist.rejection_notes && (
+                                        <div className="text-sm bg-red-900/20 p-2 rounded border border-red-800/50 text-red-300">
+                                            {os.quality_checklist.rejection_notes}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
-
                 </div>
             </div>
 
@@ -401,39 +431,39 @@ export default function ServiceOrderDetailsPage() {
                     if (!open) setCancelReason('');
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333]">
                     <DialogHeader>
-                        <DialogTitle className="text-destructive flex items-center gap-2">
+                        <DialogTitle className="text-red-400 flex items-center gap-2">
                             <XCircle className="h-5 w-5" />
                             Cancelar Ordem de Serviço
                         </DialogTitle>
                     </DialogHeader>
-                    <p className="text-sm text-muted-foreground">
-                        A OS <strong>#{os.order_number}</strong> será cancelada e removida do painel
+                    <p className="text-sm text-[#666666] dark:text-zinc-400">
+                        A OS <strong className="text-[#111111] dark:text-zinc-200">#{os.order_number}</strong> será cancelada e removida do painel
                         operacional. O registro ficará disponível para auditoria.
                     </p>
                     <div className="space-y-1.5">
-                        <label htmlFor="cancel-reason" className="text-sm font-medium">Motivo (opcional)</label>
+                        <label htmlFor="cancel-reason" className="text-sm font-medium text-[#666666] dark:text-zinc-300">Motivo (opcional)</label>
                         <Textarea
                             id="cancel-reason"
                             placeholder="Ex: OS lançada por engano, veículo não compareceu..."
-                            className="min-h-[80px]"
+                            className="min-h-[80px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
                         />
                     </div>
                     <DialogFooter className="gap-2">
                         <Button
-                            variant="outline"
                             onClick={() => {
                                 setShowCancelDialog(false);
                                 setCancelReason('');
                             }}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
                             Voltar
                         </Button>
                         <Button
-                            variant="destructive"
+                            className="bg-red-600 hover:bg-red-700 text-white"
                             onClick={() => {
                                 cancelOrder.mutate(
                                     { id: Number(id), reason: cancelReason || undefined },

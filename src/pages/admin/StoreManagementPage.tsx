@@ -7,15 +7,6 @@ import * as z from 'zod';
 import { Store, Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import {
     Dialog,
     DialogContent,
@@ -128,10 +119,10 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 
     return (
         <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset({ code: nextCode }); }}>
-            <DialogContent className="sm:max-w-[480px]">
+            <DialogContent className="sm:max-w-[480px] bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333]">
                 <DialogHeader>
-                    <DialogTitle>Nova Loja</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-[#111111] dark:text-white">Nova Loja</DialogTitle>
+                    <DialogDescription className="text-[#666666] dark:text-zinc-400">
                         Cadastre uma nova unidade para a rede AEMS.
                     </DialogDescription>
                 </DialogHeader>
@@ -143,9 +134,13 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nome da Loja *</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Nome da Loja *</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ex: AEMS Toyota - Centro" {...field} />
+                                        <Input
+                                            placeholder="Ex: AEMS Toyota - Centro"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -157,12 +152,12 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Código *</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Código *</FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="Ex: LJ13"
                                             maxLength={4}
-                                            className="uppercase font-mono"
+                                            className="uppercase font-mono bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                             {...field}
                                             onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                                         />
@@ -177,19 +172,19 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             name="dealership_brand"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Marca da Concessionária</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Marca da Concessionária</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value ?? ''}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                                 <SelectValue placeholder="Selecione a marca" />
                                             </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent>
+                                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                             {DEALERSHIP_BRANDS.map((b) => (
-                                                <SelectItem key={b.value} value={b.value}>
+                                                <SelectItem key={b.value} value={b.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
                                                     {b.label}
                                                 </SelectItem>
                                             ))}
@@ -205,9 +200,13 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             name="phone"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Telefone</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Telefone</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                                        <Input
+                                            placeholder="(XX) XXXXX-XXXX"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -219,9 +218,13 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                             name="address"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Endereço</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Endereço</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Rua, número, bairro" {...field} />
+                                        <Input
+                                            placeholder="Rua, número, bairro"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -231,13 +234,18 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                         <DialogFooter>
                             <Button
                                 type="button"
-                                variant="outline"
                                 onClick={() => onOpenChange(false)}
                                 disabled={createMutation.isPending}
+                                className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={createMutation.isPending}>
+                            <Button
+                                type="submit"
+                                disabled={createMutation.isPending}
+                                className="font-semibold"
+                                style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                            >
                                 {createMutation.isPending ? 'Criando...' : 'Criar Loja'}
                             </Button>
                         </DialogFooter>
@@ -308,12 +316,12 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[480px]">
+            <DialogContent className="sm:max-w-[480px] bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333]">
                 <DialogHeader>
-                    <DialogTitle>Editar Loja</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-[#111111] dark:text-white">Editar Loja</DialogTitle>
+                    <DialogDescription className="text-[#666666] dark:text-zinc-400">
                         Atualize os dados de{' '}
-                        <span className="font-semibold">{store?.code}</span> —{' '}
+                        <span className="font-semibold text-[#111111] dark:text-zinc-200">{store?.code}</span> —{' '}
                         {store?.name}
                     </DialogDescription>
                 </DialogHeader>
@@ -325,9 +333,13 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nome da Loja</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Nome da Loja</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ex: AEMS Toyota - Centro" {...field} />
+                                        <Input
+                                            placeholder="Ex: AEMS Toyota - Centro"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -339,19 +351,19 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                             name="is_active"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Status</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Status</FormLabel>
                                     <Select
                                         onValueChange={(val) => field.onChange(val === 'true')}
                                         value={field.value ? 'true' : 'false'}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                                 <SelectValue placeholder="Selecione o status" />
                                             </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="true">Ativo</SelectItem>
-                                            <SelectItem value="false">Inativo</SelectItem>
+                                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                            <SelectItem value="true" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Ativo</SelectItem>
+                                            <SelectItem value="false" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Inativo</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -365,9 +377,13 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                                 name="city"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Cidade</FormLabel>
+                                        <FormLabel className="text-[#666666] dark:text-zinc-300">Cidade</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ex: São Paulo" {...field} />
+                                            <Input
+                                                placeholder="Ex: São Paulo"
+                                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -379,9 +395,14 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                                 name="state"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Estado</FormLabel>
+                                        <FormLabel className="text-[#666666] dark:text-zinc-300">Estado</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ex: SP" maxLength={2} {...field} />
+                                            <Input
+                                                placeholder="Ex: SP"
+                                                maxLength={2}
+                                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -394,9 +415,13 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                             name="phone"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Telefone</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Telefone</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                                        <Input
+                                            placeholder="(XX) XXXXX-XXXX"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -408,9 +433,13 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                             name="address"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Endereço</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Endereço</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Rua, número, bairro" {...field} />
+                                        <Input
+                                            placeholder="Rua, número, bairro"
+                                            className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -420,13 +449,18 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                         <DialogFooter>
                             <Button
                                 type="button"
-                                variant="outline"
                                 onClick={() => onOpenChange(false)}
                                 disabled={updateMutation.isPending}
+                                className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                             >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={updateMutation.isPending}>
+                            <Button
+                                type="submit"
+                                disabled={updateMutation.isPending}
+                                className="font-semibold"
+                                style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                            >
                                 {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
                             </Button>
                         </DialogFooter>
@@ -492,7 +526,6 @@ export function StoreManagementPage() {
         });
     }, [stores, search, statusFilter]);
 
-    // Calcula o próximo código de loja disponível (LJ01, LJ02, ...)
     const nextStoreCode = useMemo(() => {
         const codes = stores
             .map((s) => s.code.match(/^LJ(\d{2})$/)?.at(1))
@@ -516,20 +549,27 @@ export function StoreManagementPage() {
     }
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <Building2 className="h-8 w-8" />
+                    <h1
+                        className="text-[#111111] dark:text-white text-2xl font-bold flex items-center gap-2"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        <Building2 className="h-6 w-6" style={{ color: '#F5A800' }} />
                         Gestão de Lojas
                     </h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">
                         Visualize e edite as configurações das{' '}
-                        <span className="font-medium">{stores.length} lojas</span> da rede
+                        <span className="font-medium text-[#333333] dark:text-zinc-300">{stores.length} lojas</span> da rede
                     </p>
                 </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
+                <Button
+                    onClick={() => setCreateDialogOpen(true)}
+                    className="font-semibold"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                >
                     <Plus className="h-4 w-4 mr-2" />
                     Nova Loja
                 </Button>
@@ -538,12 +578,12 @@ export function StoreManagementPage() {
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 max-w-sm">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                     <Input
                         placeholder="Buscar por nome ou código..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
+                        className="pl-9 bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                     />
                 </div>
 
@@ -551,107 +591,106 @@ export function StoreManagementPage() {
                     value={statusFilter}
                     onValueChange={(val) => setStatusFilter(val as typeof statusFilter)}
                 >
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className="w-[150px] bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="active">Ativo</SelectItem>
-                        <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                        <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos os status</SelectItem>
+                        <SelectItem value="active" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Ativo</SelectItem>
+                        <SelectItem value="inactive" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Inativo</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
             {/* Results count */}
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[#666666] dark:text-zinc-400">
                 {filteredStores.length} loja(s) encontrada(s)
             </p>
 
             {/* Table */}
-            <div className="border rounded-lg overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-24">Código</TableHead>
-                            <TableHead>Nome</TableHead>
-                            <TableHead>Cidade / Estado</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                <table className="w-full">
+                    <thead className="bg-gray-100 dark:bg-zinc-800/60">
+                        <tr>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left w-24">Código</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Nome</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Cidade / Estado</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Status</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {isLoading ? (
                             Array.from({ length: 6 }).map((_, i) => (
-                                <TableRow key={i}>
+                                <tr key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
                                     {Array.from({ length: 5 }).map((__, j) => (
-                                        <TableCell key={j}>
-                                            <Skeleton className="h-5 w-full" />
-                                        </TableCell>
+                                        <td key={j} className="px-4 py-3">
+                                            <Skeleton className="h-5 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse rounded" />
+                                        </td>
                                     ))}
-                                </TableRow>
+                                </tr>
                             ))
                         ) : filteredStores.length === 0 ? (
-                            <TableRow>
-                                <TableCell
+                            <tr>
+                                <td
                                     colSpan={5}
-                                    className="text-center py-12 text-muted-foreground"
+                                    className="text-center py-12 text-[#999999] dark:text-zinc-500"
                                 >
                                     Nenhuma loja encontrada com os filtros aplicados.
-                                </TableCell>
-                            </TableRow>
+                                </td>
+                            </tr>
                         ) : (
                             filteredStores.map((store) => (
-                                <TableRow key={store.id}>
-                                    <TableCell>
-                                        <span className="font-mono font-semibold text-sm">
+                                <tr key={store.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+                                    <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
+                                        <span className="font-mono font-semibold text-sm text-[#111111] dark:text-zinc-100">
                                             {store.code}
                                         </span>
-                                    </TableCell>
-                                    <TableCell className="font-medium">{store.name}</TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-medium">{store.name}</td>
+                                    <td className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
                                         {store.city && store.state
                                             ? `${store.city} / ${store.state}`
                                             : store.city || store.state || '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant={store.is_active ? 'default' : 'secondary'}
-                                            className={
-                                                store.is_active
-                                                    ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-100'
-                                                    : 'bg-gray-100 text-gray-600 border-gray-300'
-                                            }
-                                        >
-                                            {store.is_active ? 'Ativo' : 'Inativo'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
+                                        {store.is_active ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
+                                                Ativo
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border border-[#D1D1D1] dark:border-zinc-700">
+                                                Inativo
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button
                                                 variant="ghost"
-                                                size="sm"
+                                                size="icon"
                                                 onClick={() => handleEditClick(store)}
                                                 aria-label={`Editar loja ${store.name}`}
+                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
                                             >
-                                                <Edit className="h-4 w-4 mr-1" />
-                                                Editar
+                                                <Edit className="h-3.5 w-3.5" />
                                             </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDeleteClick(store)}
                                                 aria-label={`Excluir loja ${store.name}`}
-                                                className="hover:bg-red-50 hover:text-red-600 text-muted-foreground"
+                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <Trash2 className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
+                                    </td>
+                                </tr>
                             ))
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {/* Edit Dialog */}
@@ -673,19 +712,24 @@ export function StoreManagementPage() {
                 open={!!storeToDelete}
                 onOpenChange={(open) => { if (!open) setStoreToDelete(null); }}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333]">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Excluir loja?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
                             A loja{' '}
-                            <span className="font-semibold">
+                            <span className="font-semibold text-[#111111] dark:text-zinc-200">
                                 {storeToDelete?.code} — {storeToDelete?.name}
                             </span>{' '}
                             será excluída permanentemente. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel
+                            disabled={deleteMutation.isPending}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
+                        >
+                            Cancelar
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => storeToDelete && deleteMutation.mutate(storeToDelete.id)}
                             disabled={deleteMutation.isPending}

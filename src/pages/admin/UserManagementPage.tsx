@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { UsersTable } from '@/components/features/users/UsersTable';
 import { UserFilters } from '@/components/features/users/UserFilters';
 import { CreateUserDialog } from '@/components/features/users/CreateUserDialog';
@@ -28,22 +27,34 @@ export function UserManagementPage() {
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
-                    <p className="text-muted-foreground">Gerenciar operadores, supervisores e owners</p>
+                    <h1
+                        className="text-2xl font-bold text-[#111111] dark:text-white"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        Gestão de Usuários
+                    </h1>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">Gerenciar operadores, supervisores e owners</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleExport}>
-                        <Download className="h-4 w-4 mr-2" />
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent transition-colors"
+                    >
+                        <Download className="h-4 w-4" />
                         Exportar
-                    </Button>
-                    <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
+                    </button>
+                    <button
+                        onClick={() => setCreateDialogOpen(true)}
+                        className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-60"
+                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                    >
+                        <Plus className="h-4 w-4" />
                         Novo Usuário
-                    </Button>
+                    </button>
                 </div>
             </div>
 

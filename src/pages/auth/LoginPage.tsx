@@ -17,7 +17,7 @@ export default function LoginPage() {
                     className="absolute inset-0 opacity-10"
                     style={{
                         backgroundImage:
-                            'radial-gradient(circle at 30% 20%, #FCAF16 0%, transparent 50%), radial-gradient(circle at 70% 80%, #FCAF16 0%, transparent 40%)',
+                            'radial-gradient(circle at 30% 20%, #F5A800 0%, transparent 50%), radial-gradient(circle at 70% 80%, #F5A800 0%, transparent 40%)',
                     }}
                 />
 
@@ -26,7 +26,7 @@ export default function LoginPage() {
                     className="absolute inset-0 opacity-5"
                     style={{
                         backgroundImage:
-                            'linear-gradient(#FCAF16 1px, transparent 1px), linear-gradient(90deg, #FCAF16 1px, transparent 1px)',
+                            'linear-gradient(#F5A800 1px, transparent 1px), linear-gradient(90deg, #F5A800 1px, transparent 1px)',
                         backgroundSize: '60px 60px',
                     }}
                 />
@@ -34,7 +34,7 @@ export default function LoginPage() {
                 {/* Decorative glowing circle */}
                 <div
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full opacity-5 blur-3xl"
-                    style={{ backgroundColor: '#FCAF16' }}
+                    style={{ backgroundColor: '#F5A800' }}
                 />
 
                 {/* Content */}
@@ -47,7 +47,7 @@ export default function LoginPage() {
                     />
 
                     {/* Amber divider line — brand graphic element */}
-                    <div className="w-24 h-0.5 mb-8" style={{ backgroundColor: '#FCAF16' }} />
+                    <div className="w-24 h-0.5 mb-8" style={{ backgroundColor: '#F5A800' }} />
 
                     {/* Feature highlights */}
                     <div className="grid grid-cols-1 gap-4 w-full max-w-xs">
@@ -64,11 +64,11 @@ export default function LoginPage() {
                                     className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0"
                                     style={{ backgroundColor: 'rgba(252, 175, 22, 0.15)' }}
                                 >
-                                    <Icon className="w-4 h-4" style={{ color: '#FCAF16' }} />
+                                    <Icon className="w-4 h-4" style={{ color: '#F5A800' }} />
                                 </div>
                                 <span
                                     className="text-zinc-300 text-sm font-medium"
-                                    style={{ fontFamily: 'Josefin Sans, sans-serif' }}
+                                    style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
                                 >
                                     {label}
                                 </span>
@@ -96,7 +96,7 @@ export default function LoginPage() {
                             alt="Wash Center"
                             className="w-48 object-contain mb-3"
                         />
-                        <div className="w-16 h-0.5" style={{ backgroundColor: '#FCAF16' }} />
+                        <div className="w-16 h-0.5" style={{ backgroundColor: '#F5A800' }} />
                     </div>
 
                     <LoginForm />

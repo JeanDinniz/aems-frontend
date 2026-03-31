@@ -25,7 +25,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditEmployeeDialog } from './EditEmployeeDialog';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -73,7 +72,7 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
                     <TableBody>
                         {employees.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                                <TableCell colSpan={5} className="text-center text-[#666666] dark:text-zinc-500 py-8">
                                     Nenhum funcionário encontrado
                                 </TableCell>
                             </TableRow>
@@ -81,16 +80,22 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
                             employees.map((emp) => (
                                 <TableRow key={emp.id}>
                                     <TableCell className="font-medium">{emp.name}</TableCell>
-                                    <TableCell className="text-sm text-gray-600">
+                                    <TableCell className="text-sm text-[#444444] dark:text-zinc-300">
                                         {emp.store_name || 'N/A'}
                                     </TableCell>
-                                    <TableCell className="text-sm text-gray-600">
+                                    <TableCell className="text-sm text-[#444444] dark:text-zinc-300">
                                         {emp.position || '—'}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={emp.is_active ? 'default' : 'secondary'}>
-                                            {emp.is_active ? 'Ativo' : 'Inativo'}
-                                        </Badge>
+                                        {emp.is_active ? (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
+                                                Ativo
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-200 dark:bg-zinc-800 text-[#444444] dark:text-zinc-400 border border-[#BDBDBD] dark:border-zinc-700">
+                                                Inativo
+                                            </span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
@@ -123,7 +128,7 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
 
             {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-[#444444] dark:text-zinc-300">
                         Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, total)} de {total} funcionários
                     </p>
                     <div className="flex gap-2">

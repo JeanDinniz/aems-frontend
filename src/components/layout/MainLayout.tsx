@@ -13,7 +13,7 @@ export function MainLayout() {
     }
 
     return (
-        <div className="h-screen bg-aems-neutral-50 flex overflow-hidden">
+        <div className="h-screen flex overflow-hidden bg-[#F5F5F5] dark:bg-[#111111]">
             {/* Sidebar */}
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

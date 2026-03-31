@@ -81,7 +81,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                     <TableBody>
                         {consultants.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-gray-500 py-8">
+                                <TableCell colSpan={6} className="text-center text-[#666666] dark:text-zinc-500 py-8">
                                     Nenhum consultor encontrado
                                 </TableCell>
                             </TableRow>
@@ -93,24 +93,24 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                     </TableCell>
 
                                     <TableCell>
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-[#444444] dark:text-zinc-300">
                                             {consultant.store_name || 'N/A'}
                                         </span>
                                     </TableCell>
 
                                     <TableCell>
                                         {consultant.phone ? (
-                                            <span className="text-sm text-gray-600">{consultant.phone}</span>
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">{consultant.phone}</span>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-[#999999] dark:text-zinc-500">-</span>
                                         )}
                                     </TableCell>
 
                                     <TableCell>
                                         {consultant.email ? (
-                                            <span className="text-sm text-gray-600">{consultant.email}</span>
+                                            <span className="text-sm text-[#444444] dark:text-zinc-300">{consultant.email}</span>
                                         ) : (
-                                            <span className="text-sm text-gray-400">-</span>
+                                            <span className="text-sm text-[#999999] dark:text-zinc-500">-</span>
                                         )}
                                     </TableCell>
 
@@ -159,7 +159,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
             {/* Paginação */}
             {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-[#444444] dark:text-zinc-300">
                         Mostrando {(page - 1) * pageSize + 1} a{' '}
                         {Math.min(page * pageSize, total)} de {total} consultores
                     </p>

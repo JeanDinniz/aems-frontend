@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useStoreStore } from '@/stores/store.store';
 import type { ServiceOrder } from '@/types/service-order.types';
 import { DEPARTMENTS_MAP } from '@/constants/service-orders';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -118,39 +117,45 @@ export function FechamentoPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="h-6 w-6 text-aems-primary-400" />
+                    <FileSpreadsheet className="h-6 w-6" style={{ color: '#F5A800' }} />
                     <div>
-                        <h1 className="text-2xl font-bold">Fechamento</h1>
-                        <p className="text-sm text-muted-foreground">
+                        <h1
+                            className="text-[#111111] dark:text-white text-2xl font-bold"
+                            style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                        >
+                            Fechamento
+                        </h1>
+                        <p className="text-sm text-[#666666] dark:text-zinc-400">
                             Extrato financeiro de OS verificadas
                         </p>
                     </div>
                 </div>
-                <Button
+                <button
                     onClick={handleExport}
                     disabled={orders.length === 0}
-                    className="bg-aems-primary-400 hover:bg-aems-primary-500 text-aems-neutral-900 font-semibold gap-2"
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
                     <Download className="h-4 w-4" />
                     Exportar Excel
-                </Button>
+                </button>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 p-4 bg-card rounded-lg border">
+            <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl">
                 {availableStores.length > 1 && (
                     <div className="space-y-1">
-                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">Loja</Label>
+                        <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Loja</Label>
                         <Select
                             value={storeId.toString()}
                             onValueChange={(v) => setStoreId(Number(v))}
                         >
-                            <SelectTrigger className="w-52">
+                            <SelectTrigger className="w-52 bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                 <SelectValue placeholder="Selecionar loja" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                 {availableStores.map((s) => (
-                                    <SelectItem key={s.id} value={s.id.toString()}>
+                                    <SelectItem key={s.id} value={s.id.toString()} className="focus:bg-zinc-700 focus:text-white">
                                         {s.name}
                                     </SelectItem>
                                 ))}
@@ -159,63 +164,63 @@ export function FechamentoPage() {
                     </div>
                 )}
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Data início</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Data início</Label>
                     <Input
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-40"
+                        className="w-40 bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus-visible:ring-[#F5A800] dark:[color-scheme:dark]"
                     />
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Data fim</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Data fim</Label>
                     <Input
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="w-40"
+                        className="w-40 bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus-visible:ring-[#F5A800] dark:[color-scheme:dark]"
                     />
                 </div>
             </div>
 
             {/* Summary info */}
             {!isLoading && (
-                <p className="text-sm text-muted-foreground">
-                    {grandCount} OS verificadas encontradas para <strong>{storeName}</strong> no período {dateFrom} a {dateTo}
+                <p className="text-sm text-[#666666] dark:text-zinc-400">
+                    {grandCount} OS verificadas encontradas para <strong className="text-[#111111] dark:text-zinc-200">{storeName}</strong> no período {dateFrom} a {dateTo}
                 </p>
             )}
 
             {/* Grouped table */}
-            <div className="rounded-lg border overflow-hidden">
+            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
+                    <thead className="bg-gray-100 dark:bg-zinc-800/60">
                         <tr>
-                            <th className="text-left px-4 py-3 font-semibold">Departamento</th>
-                            <th className="text-right px-4 py-3 font-semibold">Qtd OS</th>
-                            <th className="text-right px-4 py-3 font-semibold">Valor Total</th>
+                            <th className="text-left px-4 py-3 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Departamento</th>
+                            <th className="text-right px-4 py-3 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Qtd OS</th>
+                            <th className="text-right px-4 py-3 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Valor Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
                             Array.from({ length: 4 }).map((_, i) => (
-                                <tr key={i} className="border-t">
-                                    <td className="px-4 py-3"><Skeleton className="h-4 w-32" /></td>
-                                    <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-8 ml-auto" /></td>
-                                    <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-20 ml-auto" /></td>
+                                <tr key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
+                                    <td className="px-4 py-3"><Skeleton className="h-4 w-32 bg-gray-200 dark:bg-zinc-800 animate-pulse rounded" /></td>
+                                    <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-8 ml-auto bg-gray-200 dark:bg-zinc-800 animate-pulse rounded" /></td>
+                                    <td className="px-4 py-3 text-right"><Skeleton className="h-4 w-20 ml-auto bg-gray-200 dark:bg-zinc-800 animate-pulse rounded" /></td>
                                 </tr>
                             ))
                         ) : grouped.length === 0 ? (
                             <tr>
-                                <td colSpan={3} className="px-4 py-12 text-center text-muted-foreground">
+                                <td colSpan={3} className="px-4 py-12 text-center text-[#999999] dark:text-zinc-500">
                                     Nenhuma OS verificada encontrada para o período selecionado
                                 </td>
                             </tr>
                         ) : (
                             grouped.map((g) => (
-                                <tr key={g.department} className="border-t hover:bg-muted/30 transition-colors">
-                                    <td className="px-4 py-3 font-medium">{g.label}</td>
-                                    <td className="px-4 py-3 text-right tabular-nums">{g.count}</td>
-                                    <td className="px-4 py-3 text-right font-medium tabular-nums">
+                                <tr key={g.department} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+                                    <td className="px-4 py-3 text-[#111111] dark:text-zinc-200 font-medium">{g.label}</td>
+                                    <td className="px-4 py-3 text-right tabular-nums text-[#111111] dark:text-zinc-200">{g.count}</td>
+                                    <td className="px-4 py-3 text-right font-medium tabular-nums text-[#111111] dark:text-zinc-200">
                                         {formatCurrency(g.total)}
                                     </td>
                                 </tr>
@@ -224,10 +229,10 @@ export function FechamentoPage() {
                     </tbody>
                     {!isLoading && grouped.length > 0 && (
                         <tfoot>
-                            <tr className="border-t-2 border-aems-primary-400/30 bg-muted/50 font-bold">
-                                <td className="px-4 py-3">TOTAL GERAL</td>
-                                <td className="px-4 py-3 text-right tabular-nums">{grandCount}</td>
-                                <td className="px-4 py-3 text-right tabular-nums text-aems-primary-600">
+                            <tr className="border-t-2 border-[#F5A800]/30 bg-gray-100 dark:bg-zinc-800/80 font-bold">
+                                <td className="px-4 py-3 text-[#111111] dark:text-zinc-100">TOTAL GERAL</td>
+                                <td className="px-4 py-3 text-right tabular-nums text-[#111111] dark:text-zinc-100">{grandCount}</td>
+                                <td className="px-4 py-3 text-right tabular-nums" style={{ color: '#F5A800' }}>
                                     {formatCurrency(grandTotal)}
                                 </td>
                             </tr>

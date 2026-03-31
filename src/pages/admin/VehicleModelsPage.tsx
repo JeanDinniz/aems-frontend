@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, PowerOff, Power, Loader2, Car } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -155,12 +154,18 @@ export function VehicleModelsPage() {
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="p-6 space-y-6">
             {/* Cabeçalho */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Modelos de Veículos</h1>
-                    <p className="text-muted-foreground">
+                    <h1
+                        className="text-[#111111] dark:text-white text-2xl font-bold flex items-center gap-2"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        <Car className="h-6 w-6" style={{ color: '#F5A800' }} />
+                        Modelos de Veículos
+                    </h1>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">
                         Modelos disponíveis por loja para seleção nas ordens de serviço.
                     </p>
                 </div>
@@ -170,6 +175,8 @@ export function VehicleModelsPage() {
                         setAddDialogOpen(true);
                     }}
                     disabled={!resolvedStoreId}
+                    className="font-semibold"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Modelo
@@ -182,9 +189,13 @@ export function VehicleModelsPage() {
                     value={String(resolvedStoreId)}
                     onValueChange={(v) => setActiveStoreId(Number(v))}
                 >
-                    <TabsList className="flex flex-wrap h-auto gap-1">
+                    <TabsList className="flex flex-wrap h-auto gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
                         {stores.map((store) => (
-                            <TabsTrigger key={store.id} value={String(store.id)}>
+                            <TabsTrigger
+                                key={store.id}
+                                value={String(store.id)}
+                                className="text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#1A1A1A] data-[state=active]:font-semibold rounded"
+                            >
                                 {store.name}
                             </TabsTrigger>
                         ))}
@@ -194,40 +205,43 @@ export function VehicleModelsPage() {
                         <TabsContent key={store.id} value={String(store.id)} className="mt-4">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-40">
-                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
                                 </div>
                             ) : !models?.length ? (
-                                <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                                    <Car className="h-10 w-10 opacity-40" />
-                                    <p className="text-sm">Nenhum modelo cadastrado para esta loja.</p>
+                                <div className="flex flex-col items-center justify-center h-40 gap-2">
+                                    <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
+                                    <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhum modelo cadastrado para esta loja.</p>
                                 </div>
                             ) : (
-                                <div className="border rounded-lg overflow-hidden">
-                                    <div className="divide-y">
+                                <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                                    <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
                                         {models.map((model) => (
                                             <div
                                                 key={model.id}
-                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/20"
+                                                className="flex items-center gap-3 px-4 py-2.5 border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors first:border-t-0"
                                             >
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-sm font-medium">{model.name}</span>
+                                                    <span className="text-sm font-medium text-[#111111] dark:text-zinc-200">{model.name}</span>
                                                     {model.brand && (
-                                                        <span className="ml-2 text-xs text-muted-foreground">
+                                                        <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
                                                             {model.brand}
                                                         </span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                    <Badge
-                                                        variant={model.is_active ? 'default' : 'secondary'}
-                                                        className="text-xs h-5 px-1.5"
-                                                    >
-                                                        {model.is_active ? 'Ativo' : 'Inativo'}
-                                                    </Badge>
+                                                    {model.is_active ? (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
+                                                            Ativo
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border border-[#D1D1D1] dark:border-zinc-700">
+                                                            Inativo
+                                                        </span>
+                                                    )}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
                                                         onClick={() => handleEdit(model)}
                                                         aria-label="Editar modelo"
                                                     >
@@ -237,7 +251,7 @@ export function VehicleModelsPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                                             onClick={() => setConfirmDeactivateId(model.id)}
                                                             aria-label="Desativar modelo"
                                                         >
@@ -247,7 +261,7 @@ export function VehicleModelsPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-7 w-7 text-muted-foreground hover:text-green-600"
+                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
                                                             onClick={() => reactivateMutation.mutate(model.id)}
                                                             disabled={reactivateMutation.isPending}
                                                             aria-label="Reativar modelo"
@@ -274,41 +288,48 @@ export function VehicleModelsPage() {
                     if (!open) setForm(INITIAL_FORM);
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle>Novo Modelo</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Novo Modelo</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="model-name">Nome do Modelo *</Label>
+                            <Label htmlFor="model-name" className="text-[#666666] dark:text-zinc-300">Nome do Modelo *</Label>
                             <Input
                                 id="model-name"
                                 placeholder="Ex: Toyota Corolla"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="model-brand">Marca</Label>
+                            <Label htmlFor="model-brand" className="text-[#666666] dark:text-zinc-300">Marca</Label>
                             <Input
                                 id="model-brand"
                                 placeholder="Ex: Toyota"
                                 value={form.brand}
                                 onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button
-                            variant="outline"
                             onClick={() => {
                                 setAddDialogOpen(false);
                                 setForm(INITIAL_FORM);
                             }}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
                             Cancelar
                         </Button>
-                        <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                        <Button
+                            onClick={handleCreate}
+                            disabled={createMutation.isPending}
+                            className="font-semibold"
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        >
                             {createMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
@@ -328,41 +349,48 @@ export function VehicleModelsPage() {
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle>Editar Modelo</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Editar Modelo</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         <div className="space-y-1.5">
-                            <Label htmlFor="edit-model-name">Nome do Modelo *</Label>
+                            <Label htmlFor="edit-model-name" className="text-[#666666] dark:text-zinc-300">Nome do Modelo *</Label>
                             <Input
                                 id="edit-model-name"
                                 placeholder="Ex: Toyota Corolla"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="edit-model-brand">Marca</Label>
+                            <Label htmlFor="edit-model-brand" className="text-[#666666] dark:text-zinc-300">Marca</Label>
                             <Input
                                 id="edit-model-brand"
                                 placeholder="Ex: Toyota"
                                 value={form.brand}
                                 onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button
-                            variant="outline"
                             onClick={() => {
                                 setEditingModel(null);
                                 setForm(INITIAL_FORM);
                             }}
+                            className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
                             Cancelar
                         </Button>
-                        <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+                        <Button
+                            onClick={handleUpdate}
+                            disabled={updateMutation.isPending}
+                            className="font-semibold"
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        >
                             {updateMutation.isPending && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
@@ -377,19 +405,21 @@ export function VehicleModelsPage() {
                 open={confirmDeactivateId !== null}
                 onOpenChange={(open) => !open && setConfirmDeactivateId(null)}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Desativar Modelo</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Desativar Modelo</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
                             Tem certeza que deseja desativar{' '}
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-[#111111] dark:text-zinc-200">
                                 {models?.find((m) => m.id === confirmDeactivateId)?.name ?? 'este modelo'}
                             </span>
                             ? Ele não aparecerá mais na criação de ordens de serviço.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent">
+                            Cancelar
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() =>
                                 confirmDeactivateId !== null &&

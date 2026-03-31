@@ -157,39 +157,58 @@ export default function EditServiceOrderPage() {
     );
 
     if (isLoadingOS) {
-        return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        return (
+            <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto pb-10">
+        <div className="p-6 space-y-6 max-w-4xl pb-10">
+            {/* Header */}
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate(`/service-orders/${id}`)}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(`/service-orders/${id}`)}
+                    className="text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50"
+                >
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Editar Ordem de Serviço</h1>
-                    <p className="text-muted-foreground">
+                    <h1
+                        className="text-[#111111] dark:text-white text-2xl font-bold"
+                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                    >
+                        Editar Ordem de Serviço
+                    </h1>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">
                         Edição de dados e correção.
                     </p>
                 </div>
             </div>
 
-            <div className="border rounded-lg p-6 bg-background shadow-sm">
+            <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
                         {/* SECTION 1: Dados do Veículo */}
                         <div>
-                            <h3 className="text-lg font-medium mb-4">Dados do Veículo</h3>
+                            <h3 className="text-[#111111] dark:text-zinc-100 text-base font-semibold mb-4">Dados do Veículo</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="vehicle_model"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Modelo do Veículo *</FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">Modelo do Veículo *</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Ex: Honda Civic" {...field} />
+                                                <Input
+                                                    placeholder="Ex: Honda Civic"
+                                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                                    {...field}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -201,9 +220,13 @@ export default function EditServiceOrderPage() {
                                     name="vehicle_color"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Cor do Veículo *</FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">Cor do Veículo *</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Ex: Preto" {...field} />
+                                                <Input
+                                                    placeholder="Ex: Preto"
+                                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                                    {...field}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -215,11 +238,11 @@ export default function EditServiceOrderPage() {
                                     name="plate"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Placa *</FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">Placa *</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     placeholder="ABC1D23"
-                                                    className="uppercase"
+                                                    className="uppercase bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                                     {...field}
                                                     maxLength={7}
                                                 />
@@ -233,23 +256,23 @@ export default function EditServiceOrderPage() {
 
                         {/* SECTION 2: Detalhes do Serviço */}
                         <div>
-                            <h3 className="text-lg font-medium mb-4">Detalhes do Serviço</h3>
+                            <h3 className="text-[#111111] dark:text-zinc-100 text-base font-semibold mb-4">Detalhes do Serviço</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
                                     control={form.control}
                                     name="department"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Departamento *</FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">Departamento *</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                                         <SelectValue placeholder="Selecione o departamento" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                                     {DEPARTMENTS.map((dept) => (
-                                                        <SelectItem key={dept.value} value={dept.value}>
+                                                        <SelectItem key={dept.value} value={dept.value} className="focus:bg-zinc-700 focus:text-white">
                                                             {dept.label}
                                                         </SelectItem>
                                                     ))}
@@ -259,13 +282,12 @@ export default function EditServiceOrderPage() {
                                         </FormItem>
                                     )}
                                 />
-
                             </div>
                         </div>
 
                         {/* SECTION 3: Responsáveis */}
                         <div>
-                            <h3 className="text-lg font-medium mb-4">Responsáveis</h3>
+                            <h3 className="text-[#111111] dark:text-zinc-100 text-base font-semibold mb-4">Responsáveis</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* External OS Number — only for dealership */}
                                 {isDealership && (
@@ -274,14 +296,14 @@ export default function EditServiceOrderPage() {
                                         name="external_os_number"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Nº OS da Concessionária</FormLabel>
+                                                <FormLabel className="text-[#666666] dark:text-zinc-300">Nº OS da Concessionária</FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         placeholder="Ex: 12345"
+                                                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                                         {...field}
                                                     />
                                                 </FormControl>
-
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -293,25 +315,25 @@ export default function EditServiceOrderPage() {
                                     name="consultant_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Consultor{isDealership ? ' *' : ''}</FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">Consultor{isDealership ? ' *' : ''}</FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 defaultValue={field.value?.toString()}
                                                 value={field.value?.toString()}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                                         <SelectValue placeholder="Selecione (Opcional)" />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                                     {isLoadingConsultants ? (
-                                                        <div className="p-2 text-sm text-muted-foreground">Carregando...</div>
+                                                        <div className="p-2 text-sm text-[#666666] dark:text-zinc-400">Carregando...</div>
                                                     ) : consultants?.length === 0 ? (
-                                                        <div className="p-2 text-sm text-muted-foreground">Nenhum consultor encontrado</div>
+                                                        <div className="p-2 text-sm text-[#666666] dark:text-zinc-400">Nenhum consultor encontrado</div>
                                                     ) : (
                                                         consultants?.map((consultant) => (
-                                                            <SelectItem key={consultant.id} value={consultant.id.toString()}>
+                                                            <SelectItem key={consultant.id} value={consultant.id.toString()} className="focus:bg-zinc-700 focus:text-white">
                                                                 {consultant.name}
                                                             </SelectItem>
                                                         ))
@@ -328,7 +350,7 @@ export default function EditServiceOrderPage() {
                                     name="technician_id"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>
+                                            <FormLabel className="text-[#666666] dark:text-zinc-300">
                                                 {selectedDepartment === 'film' ? 'Instalador' : 'Funcionário'}
                                             </FormLabel>
                                             <Select
@@ -337,7 +359,7 @@ export default function EditServiceOrderPage() {
                                                 value={field.value?.toString()}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
                                                         <SelectValue placeholder={
                                                             selectedDepartment === 'film'
                                                                 ? 'Selecione o instalador'
@@ -345,19 +367,19 @@ export default function EditServiceOrderPage() {
                                                         } />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                                                     {isLoadingWorkers ? (
-                                                        <div className="p-2 text-sm text-muted-foreground">Carregando...</div>
+                                                        <div className="p-2 text-sm text-[#666666] dark:text-zinc-400">Carregando...</div>
                                                     ) : workers?.length === 0 ? (
-                                                        <div className="p-2 text-sm text-muted-foreground">
+                                                        <div className="p-2 text-sm text-[#666666] dark:text-zinc-400">
                                                             Nenhum {selectedDepartment === 'film' ? 'instalador' : 'funcionário'} encontrado
                                                         </div>
                                                     ) : (
                                                         workers?.map((worker) => (
-                                                            <SelectItem key={worker.id} value={worker.id.toString()}>
+                                                            <SelectItem key={worker.id} value={worker.id.toString()} className="focus:bg-zinc-700 focus:text-white">
                                                                 {worker.name}
                                                                 {worker.store_name && (
-                                                                    <span className="text-muted-foreground text-xs ml-1">
+                                                                    <span className="text-zinc-400 text-xs ml-1">
                                                                         ({worker.store_name})
                                                                     </span>
                                                                 )}
@@ -366,7 +388,7 @@ export default function EditServiceOrderPage() {
                                                     )}
                                                 </SelectContent>
                                             </Select>
-                                            <FormDescription>Opcional - pode ser alterado depois</FormDescription>
+                                            <FormDescription className="text-zinc-500">Opcional - pode ser alterado depois</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -376,7 +398,7 @@ export default function EditServiceOrderPage() {
 
                         {/* SECTION 4: Documentação */}
                         <div>
-                            <h3 className="text-lg font-medium mb-4">Documentação</h3>
+                            <h3 className="text-[#111111] dark:text-zinc-100 text-base font-semibold mb-4">Documentação</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {selectedDepartment === 'film' && (
                                     <FormField
@@ -384,11 +406,14 @@ export default function EditServiceOrderPage() {
                                         name="invoice_number"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Número da Nota Fiscal *</FormLabel>
+                                                <FormLabel className="text-[#666666] dark:text-zinc-300">Número da Nota Fiscal *</FormLabel>
                                                 <FormControl>
-                                                    <Input {...field} />
+                                                    <Input
+                                                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                                                        {...field}
+                                                    />
                                                 </FormControl>
-                                                <FormDescription className="text-amber-600">
+                                                <FormDescription className="text-amber-500">
                                                     Obrigatório para departamento de Película.
                                                 </FormDescription>
                                                 <FormMessage />
@@ -396,7 +421,6 @@ export default function EditServiceOrderPage() {
                                         )}
                                     />
                                 )}
-
                             </div>
                         </div>
 
@@ -405,10 +429,10 @@ export default function EditServiceOrderPage() {
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Observações</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Observações</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            className="min-h-[100px]"
+                                            className="min-h-[100px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                                             {...field}
                                         />
                                     </FormControl>
@@ -418,10 +442,19 @@ export default function EditServiceOrderPage() {
                         />
 
                         <div className="flex justify-end gap-4">
-                            <Button type="button" variant="outline" onClick={() => navigate(`/service-orders/${id}`)}>
+                            <Button
+                                type="button"
+                                onClick={() => navigate(`/service-orders/${id}`)}
+                                className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={updateServiceOrder.isPending}>
+                            <Button
+                                type="submit"
+                                disabled={updateServiceOrder.isPending}
+                                className="font-semibold"
+                                style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                            >
                                 {updateServiceOrder.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar Alterações
                             </Button>
