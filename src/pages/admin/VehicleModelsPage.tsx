@@ -25,48 +25,51 @@ import {
 } from '@/components/ui/alert-dialog';
 import { vehicleModelsService } from '@/services/api/vehicle-models.service';
 import type { VehicleModelItem } from '@/services/api/vehicle-models.service';
+import brandsService from '@/services/api/brands.service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useStores } from '@/hooks/useStores';
 
 interface ModelForm {
     name: string;
-    brand: string;
 }
 
-const INITIAL_FORM: ModelForm = { name: '', brand: '' };
+const INITIAL_FORM: ModelForm = { name: '' };
 
 export function VehicleModelsPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const { allStores } = useStores();
 
-    const [activeStoreId, setActiveStoreId] = useState<number | null>(null);
+    const [activeBrandId, setActiveBrandId] = useState<number | null>(null);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingModel, setEditingModel] = useState<VehicleModelItem | null>(null);
     const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
     const [form, setForm] = useState<ModelForm>(INITIAL_FORM);
 
-    const stores = allStores ?? [];
-    const resolvedStoreId = activeStoreId ?? stores[0]?.id ?? null;
+    const { data: brandsData, isLoading: brandsLoading } = useQuery({
+        queryKey: ['brands', 'management'],
+        queryFn: () => brandsService.list(),
+        staleTime: 1000 * 60 * 5,
+    });
 
-    const { data: models, isLoading } = useQuery({
-        queryKey: ['vehicle-models', 'management', resolvedStoreId],
+    const brands = brandsData?.items ?? [];
+    const resolvedBrandId = activeBrandId ?? brands[0]?.id ?? null;
+
+    const { data: models, isLoading: modelsLoading } = useQuery({
+        queryKey: ['vehicle-models', 'management', resolvedBrandId],
         queryFn: () =>
-            resolvedStoreId
-                ? vehicleModelsService.list({ store_id: resolvedStoreId, active_only: false })
+            resolvedBrandId
+                ? vehicleModelsService.list({ brand_id: resolvedBrandId, active_only: false })
                 : Promise.resolve([]),
-        enabled: !!resolvedStoreId,
+        enabled: !!resolvedBrandId,
         staleTime: 1000 * 60 * 2,
     });
 
     const createMutation = useMutation({
         mutationFn: () => {
-            if (!resolvedStoreId) throw new Error('Nenhuma loja selecionada');
-            return vehicleModelsService.create(resolvedStoreId, {
+            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
+            return vehicleModelsService.create(resolvedBrandId, {
                 name: form.name.trim(),
-                brand: form.brand.trim() || undefined,
             });
         },
         onSuccess: () => {
@@ -82,10 +85,9 @@ export function VehicleModelsPage() {
 
     const updateMutation = useMutation({
         mutationFn: () => {
-            if (!editingModel || !resolvedStoreId) throw new Error('Dados inválidos');
-            return vehicleModelsService.update(editingModel.id, resolvedStoreId, {
+            if (!editingModel || !resolvedBrandId) throw new Error('Dados inválidos');
+            return vehicleModelsService.update(editingModel.id, resolvedBrandId, {
                 name: form.name.trim(),
-                brand: form.brand.trim() || undefined,
             });
         },
         onSuccess: () => {
@@ -101,8 +103,8 @@ export function VehicleModelsPage() {
 
     const deactivateMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!resolvedStoreId) throw new Error('Nenhuma loja selecionada');
-            return vehicleModelsService.deactivate(id, resolvedStoreId);
+            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
+            return vehicleModelsService.deactivate(id, resolvedBrandId);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -116,8 +118,8 @@ export function VehicleModelsPage() {
 
     const reactivateMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!resolvedStoreId) throw new Error('Nenhuma loja selecionada');
-            return vehicleModelsService.update(id, resolvedStoreId, { is_active: true });
+            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
+            return vehicleModelsService.update(id, resolvedBrandId, { is_active: true });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -134,7 +136,7 @@ export function VehicleModelsPage() {
 
     const handleEdit = (model: VehicleModelItem) => {
         setEditingModel(model);
-        setForm({ name: model.name, brand: model.brand ?? '' });
+        setForm({ name: model.name });
     };
 
     const handleCreate = () => {
@@ -153,6 +155,8 @@ export function VehicleModelsPage() {
         updateMutation.mutate();
     };
 
+    const isLoading = brandsLoading || modelsLoading;
+
     return (
         <div className="p-6 space-y-6">
             {/* Cabeçalho */}
@@ -166,7 +170,7 @@ export function VehicleModelsPage() {
                         Modelos de Veículos
                     </h1>
                     <p className="text-[#666666] dark:text-zinc-400 text-sm">
-                        Modelos disponíveis por loja para seleção nas ordens de serviço.
+                        Modelos disponíveis por marca para seleção nas ordens de serviço.
                     </p>
                 </div>
                 <Button
@@ -174,7 +178,7 @@ export function VehicleModelsPage() {
                         setForm(INITIAL_FORM);
                         setAddDialogOpen(true);
                     }}
-                    disabled={!resolvedStoreId}
+                    disabled={!resolvedBrandId}
                     className="font-semibold"
                     style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
@@ -183,26 +187,26 @@ export function VehicleModelsPage() {
                 </Button>
             </div>
 
-            {/* Tabs por Loja */}
-            {stores.length > 0 && (
+            {/* Tabs por Marca */}
+            {brands.length > 0 && (
                 <Tabs
-                    value={String(resolvedStoreId)}
-                    onValueChange={(v) => setActiveStoreId(Number(v))}
+                    value={String(resolvedBrandId)}
+                    onValueChange={(v) => setActiveBrandId(Number(v))}
                 >
                     <TabsList className="flex flex-wrap h-auto gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                        {stores.map((store) => (
+                        {brands.map((brand) => (
                             <TabsTrigger
-                                key={store.id}
-                                value={String(store.id)}
+                                key={brand.id}
+                                value={String(brand.id)}
                                 className="text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] dark:data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
                             >
-                                {store.name}
+                                {brand.name}
                             </TabsTrigger>
                         ))}
                     </TabsList>
 
-                    {stores.map((store) => (
-                        <TabsContent key={store.id} value={String(store.id)} className="mt-4">
+                    {brands.map((brand) => (
+                        <TabsContent key={brand.id} value={String(brand.id)} className="mt-4">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-40">
                                     <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
@@ -210,7 +214,7 @@ export function VehicleModelsPage() {
                             ) : !models?.length ? (
                                 <div className="flex flex-col items-center justify-center h-40 gap-2">
                                     <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
-                                    <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhum modelo cadastrado para esta loja.</p>
+                                    <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhum modelo cadastrado para {brand.name}.</p>
                                 </div>
                             ) : (
                                 <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
@@ -222,11 +226,6 @@ export function VehicleModelsPage() {
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-sm font-medium text-[#111111] dark:text-zinc-200">{model.name}</span>
-                                                    {model.brand && (
-                                                        <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
-                                                            {model.brand}
-                                                        </span>
-                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">
                                                     {model.is_active ? (
@@ -280,6 +279,19 @@ export function VehicleModelsPage() {
                 </Tabs>
             )}
 
+            {brandsLoading && (
+                <div className="flex items-center justify-center h-40">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                </div>
+            )}
+
+            {!brandsLoading && brands.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-40 gap-2">
+                    <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
+                    <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhuma marca cadastrada. Cadastre marcas primeiro.</p>
+                </div>
+            )}
+
             {/* Dialog: Adicionar Modelo */}
             <Dialog
                 open={addDialogOpen}
@@ -297,19 +309,9 @@ export function VehicleModelsPage() {
                             <Label htmlFor="model-name" className="text-[#666666] dark:text-zinc-300">Nome do Modelo *</Label>
                             <Input
                                 id="model-name"
-                                placeholder="Ex: Toyota Corolla"
+                                placeholder="Ex: Corolla"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="model-brand" className="text-[#666666] dark:text-zinc-300">Marca</Label>
-                            <Input
-                                id="model-brand"
-                                placeholder="Ex: Toyota"
-                                value={form.brand}
-                                onChange={(e) => setForm({ ...form, brand: e.target.value })}
                                 className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>
@@ -358,19 +360,9 @@ export function VehicleModelsPage() {
                             <Label htmlFor="edit-model-name" className="text-[#666666] dark:text-zinc-300">Nome do Modelo *</Label>
                             <Input
                                 id="edit-model-name"
-                                placeholder="Ex: Toyota Corolla"
+                                placeholder="Ex: Corolla"
                                 value={form.name}
                                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="edit-model-brand" className="text-[#666666] dark:text-zinc-300">Marca</Label>
-                            <Input
-                                id="edit-model-brand"
-                                placeholder="Ex: Toyota"
-                                value={form.brand}
-                                onChange={(e) => setForm({ ...form, brand: e.target.value })}
                                 className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                             />
                         </div>

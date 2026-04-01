@@ -32,31 +32,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { servicesService } from '@/services/api/services.service';
 import type { ServiceItem } from '@/services/api/services.service';
+import brandsService from '@/services/api/brands.service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { DEPARTMENTS } from '@/constants/service-orders';
 
-const BRAND_LABELS: Record<string, string> = {
-    byd: 'BYD',
-    fiat: 'FIAT',
-    hyundai: 'HYUNDAI',
-    toyota: 'TOYOTA',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-    vn: 'VN',
-    vu: 'VU',
-    workshop: 'Oficina',
-    bodywork: 'Funilaria',
-    film: 'Película',
-    ppf: 'PPF',
-};
-
 interface AddServiceForm {
     name: string;
     code: string;
-    category: string;
-    brand: string;
+    brand_id: string;
     department: string;
     base_price: string;
 }
@@ -64,8 +48,7 @@ interface AddServiceForm {
 const INITIAL_FORM: AddServiceForm = {
     name: '',
     code: '',
-    category: '',
-    brand: 'byd',
+    brand_id: '',
     department: 'film',
     base_price: '',
 };
@@ -75,14 +58,25 @@ export default function ServicesPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const [activeBrand, setActiveBrand] = useState<string>('byd');
+    const [activeBrandId, setActiveBrandId] = useState<number | null>(null);
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingService, setEditingService] = useState<ServiceItem | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [form, setForm] = useState<AddServiceForm>(INITIAL_FORM);
+    const [codeDuplicateWarning, setCodeDuplicateWarning] = useState(false);
 
-    // Carrega todos os serviços de uma vez (400+ itens, muito leve)
-    const { data: allServices, isLoading } = useQuery({
+    // Load brands from API
+    const { data: brandsData, isLoading: brandsLoading } = useQuery({
+        queryKey: ['brands', 'active'],
+        queryFn: () => brandsService.list({ is_active: true }),
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const brands = brandsData?.items ?? [];
+    const resolvedBrandId = activeBrandId ?? brands[0]?.id ?? null;
+
+    // Load all services at once
+    const { data: allServices, isLoading: servicesLoading } = useQuery({
         queryKey: ['services', 'management'],
         queryFn: async () => {
             const result = await servicesService.list({ limit: 600 });
@@ -91,32 +85,54 @@ export default function ServicesPage() {
         staleTime: 1000 * 60 * 2,
     });
 
-    // Filtra por marca ativa e agrupa por categoria
+    const isLoading = brandsLoading || servicesLoading;
+
+    // Filter by active brand (by brand_id)
     const brandServices = useMemo(
-        () => allServices?.filter((s) => s.brand === activeBrand) ?? [],
-        [allServices, activeBrand]
+        () => allServices?.filter((s) => s.brand_id === resolvedBrandId) ?? [],
+        [allServices, resolvedBrandId]
     );
 
-    const groupedByCategory = useMemo(() => {
+    // Group by department instead of category
+    const groupedByDepartment = useMemo(() => {
         const groups: Record<string, ServiceItem[]> = {};
         for (const svc of brandServices) {
-            const cat = svc.category ?? 'estetica';
-            if (!groups[cat]) groups[cat] = [];
-            groups[cat].push(svc);
+            const dept = svc.department ?? 'other';
+            if (!groups[dept]) groups[dept] = [];
+            groups[dept].push(svc);
         }
+        const deptLabel = (key: string) =>
+            DEPARTMENTS.find((d) => d.value === key)?.label ?? key;
         return Object.entries(groups).sort(([a], [b]) =>
-            (CATEGORY_LABELS[a] ?? a).localeCompare(CATEGORY_LABELS[b] ?? b)
+            deptLabel(a).localeCompare(deptLabel(b))
         );
     }, [brandServices]);
 
-    // Contagem por marca para os badges
+    // Count per brand for badges
     const brandCounts = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const brand of Object.keys(BRAND_LABELS)) {
-            counts[brand] = allServices?.filter((s) => s.brand === brand).length ?? 0;
+        const counts: Record<number, number> = {};
+        for (const brand of brands) {
+            counts[brand.id] = allServices?.filter((s) => s.brand_id === brand.id).length ?? 0;
         }
         return counts;
-    }, [allServices]);
+    }, [allServices, brands]);
+
+    // Duplicate code check on blur
+    const checkCodeDuplicate = (code: string) => {
+        if (!code.trim() || !form.brand_id || !form.department) {
+            setCodeDuplicateWarning(false);
+            return;
+        }
+        const brandIdNum = Number(form.brand_id);
+        const exists = (allServices ?? []).some(
+            (s) =>
+                s.code?.toLowerCase() === code.toLowerCase() &&
+                s.brand_id === brandIdNum &&
+                s.department === form.department &&
+                s.id !== editingService?.id
+        );
+        setCodeDuplicateWarning(exists);
+    };
 
     const deactivateMutation = useMutation({
         mutationFn: (id: number) => servicesService.deactivate(id),
@@ -137,15 +153,15 @@ export default function ServicesPage() {
                 name: form.name.trim(),
                 department: form.department,
                 base_price: parseFloat(form.base_price) || 0,
-                brand: form.brand || null,
+                brand_id: Number(form.brand_id),
                 code: form.code.trim() || null,
-                category: form.category || null,
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['services'] });
             setEditingService(null);
             setForm(INITIAL_FORM);
+            setCodeDuplicateWarning(false);
             toast({ title: 'Serviço atualizado com sucesso.' });
         },
         onError: () => {
@@ -159,14 +175,14 @@ export default function ServicesPage() {
                 name: form.name.trim(),
                 department: form.department,
                 base_price: parseFloat(form.base_price) || 0,
-                brand: form.brand || null,
+                brand_id: Number(form.brand_id),
                 code: form.code.trim() || null,
-                category: form.category || null,
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['services'] });
             setAddDialogOpen(false);
             setForm(INITIAL_FORM);
+            setCodeDuplicateWarning(false);
             toast({ title: 'Serviço adicionado com sucesso.' });
         },
         onError: () => {
@@ -180,11 +196,11 @@ export default function ServicesPage() {
 
     const handleEdit = (svc: ServiceItem) => {
         setEditingService(svc);
+        setCodeDuplicateWarning(false);
         setForm({
             name: svc.name,
             code: svc.code ?? '',
-            category: svc.category ?? '',
-            brand: svc.brand ?? 'byd',
+            brand_id: String(svc.brand_id),
             department: svc.department,
             base_price: String(svc.base_price),
         });
@@ -193,6 +209,10 @@ export default function ServicesPage() {
     const handleUpdate = () => {
         if (!form.name.trim()) {
             toast({ variant: 'destructive', title: 'Nome é obrigatório.' });
+            return;
+        }
+        if (!form.brand_id) {
+            toast({ variant: 'destructive', title: 'Marca é obrigatória.' });
             return;
         }
         if (!form.base_price || isNaN(parseFloat(form.base_price))) {
@@ -207,6 +227,10 @@ export default function ServicesPage() {
             toast({ variant: 'destructive', title: 'Nome é obrigatório.' });
             return;
         }
+        if (!form.brand_id) {
+            toast({ variant: 'destructive', title: 'Marca é obrigatória.' });
+            return;
+        }
         if (!form.base_price || isNaN(parseFloat(form.base_price))) {
             toast({ variant: 'destructive', title: 'Preço base é obrigatório.' });
             return;
@@ -214,9 +238,102 @@ export default function ServicesPage() {
         createMutation.mutate();
     };
 
+    const deptLabel = (key: string) =>
+        DEPARTMENTS.find((d) => d.value === key)?.label ?? key;
+
+    const ServiceFormFields = () => (
+        <div className="space-y-4 py-2">
+            {/* Ordem: Marca → Departamento → Código → Preço → Nome */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label className="text-[#666666] dark:text-zinc-300">Marca *</Label>
+                    <Select
+                        value={form.brand_id}
+                        onValueChange={(v) => {
+                            setForm({ ...form, brand_id: v });
+                            setCodeDuplicateWarning(false);
+                        }}
+                    >
+                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue placeholder="Selecione a marca" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            {brands.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    {b.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
+                    <Select
+                        value={form.department}
+                        onValueChange={(v) => {
+                            setForm({ ...form, department: v });
+                            setCodeDuplicateWarning(false);
+                        }}
+                    >
+                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            {DEPARTMENTS.map((d) => (
+                                <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    {d.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
+                    <Input
+                        id="svc-code"
+                        placeholder="Ex: LAV-001"
+                        value={form.code}
+                        onChange={(e) => {
+                            setForm({ ...form, code: e.target.value });
+                            setCodeDuplicateWarning(false);
+                        }}
+                        onBlur={(e) => checkCodeDuplicate(e.target.value)}
+                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                    />
+                    {codeDuplicateWarning && (
+                        <p className="text-xs text-red-500">Ja existe um servico com este codigo para esta marca e departamento.</p>
+                    )}
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="svc-price" className="text-[#666666] dark:text-zinc-300">Preco Base (R$) *</Label>
+                    <Input
+                        id="svc-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={form.base_price}
+                        onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                    />
+                </div>
+            </div>
+            <div className="space-y-1.5">
+                <Label htmlFor="svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Servico *</Label>
+                <Input
+                    id="svc-name"
+                    placeholder="Ex: Lavagem Simples"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                />
+            </div>
+        </div>
+    );
+
     return (
         <div className="p-6 space-y-6">
-            {/* Cabeçalho */}
+            {/* Cabecalho */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1
@@ -224,223 +341,161 @@ export default function ServicesPage() {
                         style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
                     >
                         <PackageSearch className="h-6 w-6" style={{ color: '#F5A800' }} />
-                        Serviços
+                        Servicos
                     </h1>
                     <p className="text-[#666666] dark:text-zinc-400 text-sm">
-                        Catálogo de serviços por concessionária.
-                        {allServices?.length ? ` ${allServices.length} serviços cadastrados.` : ''}
+                        Catalogo de servicos por concessionaria.
+                        {allServices?.length ? ` ${allServices.length} servicos cadastrados.` : ''}
                     </p>
                 </div>
                 <Button
                     onClick={() => {
-                        setForm({ ...INITIAL_FORM, brand: activeBrand });
+                        setForm({
+                            ...INITIAL_FORM,
+                            brand_id: resolvedBrandId ? String(resolvedBrandId) : '',
+                        });
+                        setCodeDuplicateWarning(false);
                         setAddDialogOpen(true);
                     }}
                     className="font-semibold"
                     style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Novo Serviço
+                    Novo Servico
                 </Button>
             </div>
 
             {/* Tabs por Marca */}
-            <Tabs value={activeBrand} onValueChange={setActiveBrand}>
-                <TabsList className="grid w-full grid-cols-4 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                    {Object.entries(BRAND_LABELS).map(([key, label]) => (
-                        <TabsTrigger
-                            key={key}
-                            value={key}
-                            className="group gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
-                        >
-                            {label}
-                            {(brandCounts[key] ?? 0) > 0 && (
-                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 group-data-[state=active]:bg-black/20 group-data-[state=active]:text-[#111111]">
-                                    {brandCounts[key]}
-                                </span>
+            {brands.length > 0 && (
+                <Tabs
+                    value={String(resolvedBrandId)}
+                    onValueChange={(v) => setActiveBrandId(Number(v))}
+                >
+                    <TabsList className="flex flex-wrap h-auto gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
+                        {brands.map((brand) => (
+                            <TabsTrigger
+                                key={brand.id}
+                                value={String(brand.id)}
+                                className="group gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
+                            >
+                                {brand.name}
+                                {(brandCounts[brand.id] ?? 0) > 0 && (
+                                    <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 group-data-[state=active]:bg-black/20 group-data-[state=active]:text-[#111111]">
+                                        {brandCounts[brand.id]}
+                                    </span>
+                                )}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+
+                    {brands.map((brand) => (
+                        <TabsContent key={brand.id} value={String(brand.id)} className="mt-4">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center h-40">
+                                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                                </div>
+                            ) : !groupedByDepartment.length ? (
+                                <div className="flex flex-col items-center justify-center h-40 gap-2">
+                                    <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
+                                    <p className="text-sm text-[#999999] dark:text-zinc-500">
+                                        Nenhum servico cadastrado para {brand.name}.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {groupedByDepartment.map(([dept, deptServices]) => (
+                                        <div key={dept} className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                                            <div className="bg-gray-100 dark:bg-zinc-800/60 px-4 py-2.5 flex items-center gap-2 border-b border-[#D1D1D1] dark:border-[#333333]">
+                                                <h3 className="font-semibold text-sm text-[#111111] dark:text-zinc-200">
+                                                    {deptLabel(dept)}
+                                                </h3>
+                                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 bg-transparent">
+                                                    {deptServices.length}
+                                                </span>
+                                            </div>
+                                            <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
+                                                {deptServices.map((svc) => (
+                                                    <div
+                                                        key={svc.id}
+                                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-sm text-[#111111] dark:text-zinc-200">{svc.name}</span>
+                                                            {svc.code && (
+                                                                <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
+                                                                    [{svc.code}]
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
+                                                                onClick={() => handleEdit(svc)}
+                                                                aria-label="Editar servico"
+                                                            >
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
+                                                                onClick={() => setConfirmDeleteId(svc.id)}
+                                                                aria-label="Remover servico"
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
-                        </TabsTrigger>
+                        </TabsContent>
                     ))}
-                </TabsList>
+                </Tabs>
+            )}
 
-                {Object.keys(BRAND_LABELS).map((brand) => (
-                    <TabsContent key={brand} value={brand} className="mt-4">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center h-40">
-                                <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
-                            </div>
-                        ) : !groupedByCategory.length ? (
-                            <div className="flex flex-col items-center justify-center h-40 gap-2">
-                                <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
-                                <p className="text-sm text-[#999999] dark:text-zinc-500">
-                                    Nenhum serviço cadastrado para {BRAND_LABELS[brand]}.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {groupedByCategory.map(([cat, catServices]) => (
-                                    <div key={cat} className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
-                                        <div className="bg-gray-100 dark:bg-zinc-800/60 px-4 py-2.5 flex items-center gap-2 border-b border-[#D1D1D1] dark:border-[#333333]">
-                                            <h3 className="font-semibold text-sm text-[#111111] dark:text-zinc-200">
-                                                {CATEGORY_LABELS[cat] ?? cat}
-                                            </h3>
-                                            <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 bg-transparent">
-                                                {catServices.length}
-                                            </span>
-                                        </div>
-                                        <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
-                                            {catServices.map((svc) => (
-                                                <div
-                                                    key={svc.id}
-                                                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
-                                                >
-                                                    <div className="flex-1 min-w-0">
-                                                        <span className="text-sm text-[#111111] dark:text-zinc-200">{svc.name}</span>
-                                                        {svc.code && (
-                                                            <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
-                                                                [{svc.code}]
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-1 shrink-0">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                                            onClick={() => handleEdit(svc)}
-                                                            aria-label="Editar serviço"
-                                                        >
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                                                            onClick={() => setConfirmDeleteId(svc.id)}
-                                                            aria-label="Remover serviço"
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </TabsContent>
-                ))}
-            </Tabs>
+            {brandsLoading && (
+                <div className="flex items-center justify-center h-40">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                </div>
+            )}
 
-            {/* Dialog: Adicionar Serviço */}
+            {!brandsLoading && brands.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-40 gap-2">
+                    <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
+                    <p className="text-sm text-[#999999] dark:text-zinc-500">
+                        Nenhuma marca cadastrada. Cadastre marcas primeiro.
+                    </p>
+                </div>
+            )}
+
+            {/* Dialog: Adicionar Servico */}
             <Dialog
                 open={addDialogOpen}
                 onOpenChange={(open) => {
                     setAddDialogOpen(open);
-                    if (!open) setForm(INITIAL_FORM);
+                    if (!open) {
+                        setForm(INITIAL_FORM);
+                        setCodeDuplicateWarning(false);
+                    }
                 }}
             >
                 <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle className="text-[#111111] dark:text-white">Novo Serviço</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Novo Servico</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="col-span-2 space-y-1.5">
-                            <Label htmlFor="svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Serviço *</Label>
-                            <Input
-                                id="svc-name"
-                                placeholder="Ex: Lavagem Simples"
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
-                                <Input
-                                    id="svc-code"
-                                    placeholder="Ex: LAV-001"
-                                    value={form.code}
-                                    onChange={(e) => setForm({ ...form, code: e.target.value })}
-                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="svc-price" className="text-[#666666] dark:text-zinc-300">Preço Base (R$) *</Label>
-                                <Input
-                                    id="svc-price"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    value={form.base_price}
-                                    onChange={(e) => setForm({ ...form, base_price: e.target.value })}
-                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Marca</Label>
-                                <Select
-                                    value={form.brand}
-                                    onValueChange={(v) => setForm({ ...form, brand: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {Object.entries(BRAND_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {v}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
-                                <Select
-                                    value={form.department}
-                                    onValueChange={(v) => setForm({ ...form, department: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {DEPARTMENTS.map((d) => (
-                                            <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {d.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="col-span-2 space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Categoria</Label>
-                                <Select
-                                    value={form.category}
-                                    onValueChange={(v) => setForm({ ...form, category: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione uma categoria" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {v}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
+                    <ServiceFormFields />
                     <DialogFooter>
                         <Button
                             onClick={() => {
                                 setAddDialogOpen(false);
                                 setForm(INITIAL_FORM);
+                                setCodeDuplicateWarning(false);
                             }}
                             className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
@@ -461,116 +516,28 @@ export default function ServicesPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog: Editar Serviço */}
+            {/* Dialog: Editar Servico */}
             <Dialog
                 open={editingService !== null}
                 onOpenChange={(open) => {
                     if (!open) {
                         setEditingService(null);
                         setForm(INITIAL_FORM);
+                        setCodeDuplicateWarning(false);
                     }
                 }}
             >
                 <DialogContent className="sm:max-w-md bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <DialogHeader>
-                        <DialogTitle className="text-[#111111] dark:text-white">Editar Serviço</DialogTitle>
+                        <DialogTitle className="text-[#111111] dark:text-white">Editar Servico</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="col-span-2 space-y-1.5">
-                            <Label htmlFor="edit-svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Serviço *</Label>
-                            <Input
-                                id="edit-svc-name"
-                                placeholder="Ex: Lavagem Simples"
-                                value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="edit-svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
-                                <Input
-                                    id="edit-svc-code"
-                                    placeholder="Ex: LAV-001"
-                                    value={form.code}
-                                    onChange={(e) => setForm({ ...form, code: e.target.value })}
-                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="edit-svc-price" className="text-[#666666] dark:text-zinc-300">Preço Base (R$) *</Label>
-                                <Input
-                                    id="edit-svc-price"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    value={form.base_price}
-                                    onChange={(e) => setForm({ ...form, base_price: e.target.value })}
-                                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Marca</Label>
-                                <Select
-                                    value={form.brand}
-                                    onValueChange={(v) => setForm({ ...form, brand: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {Object.entries(BRAND_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {v}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
-                                <Select
-                                    value={form.department}
-                                    onValueChange={(v) => setForm({ ...form, department: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {DEPARTMENTS.map((d) => (
-                                            <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {d.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="col-span-2 space-y-1.5">
-                                <Label className="text-[#666666] dark:text-zinc-300">Categoria</Label>
-                                <Select
-                                    value={form.category}
-                                    onValueChange={(v) => setForm({ ...form, category: v })}
-                                >
-                                    <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                        <SelectValue placeholder="Selecione uma categoria" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                        {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                                            <SelectItem key={k} value={k} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                {v}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
+                    <ServiceFormFields />
                     <DialogFooter>
                         <Button
                             onClick={() => {
                                 setEditingService(null);
                                 setForm(INITIAL_FORM);
+                                setCodeDuplicateWarning(false);
                             }}
                             className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent"
                         >
@@ -591,20 +558,20 @@ export default function ServicesPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog: Confirmar Remoção */}
+            {/* Dialog: Confirmar Remocao */}
             <AlertDialog
                 open={confirmDeleteId !== null}
                 onOpenChange={(open) => !open && setConfirmDeleteId(null)}
             >
                 <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-[#111111] dark:text-white">Remover Serviço</AlertDialogTitle>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Remover Servico</AlertDialogTitle>
                         <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
                             Tem certeza que deseja remover{' '}
                             <span className="font-medium text-[#111111] dark:text-zinc-200">
-                                {allServices?.find((s) => s.id === confirmDeleteId)?.name ?? 'este serviço'}
+                                {allServices?.find((s) => s.id === confirmDeleteId)?.name ?? 'este servico'}
                             </span>
-                            ? Ele não aparecerá mais nas ordens de serviço.
+                            ? Ele nao aparecera mais nas ordens de servico.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -14,7 +14,7 @@ export const consultantsService = {
         if (filters?.dealership_id) params.append('dealership_id', filters.dealership_id.toString());
         if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
         if (filters?.search) params.append('search', filters.search);
-        params.append('skip', ((page - 1) * pageSize).toString());
+        params.append('page', page.toString());
         params.append('limit', pageSize.toString());
 
         const response = await apiClient.get<{ items: Consultant[]; total: number }>(`/consultants?${params.toString()}`);
@@ -50,8 +50,8 @@ export const consultantsService = {
         return response.data;
     },
 
-    async deactivate(id: number): Promise<void> {
-        // Backend does soft delete on DELETE /consultants/{id}
-        await apiClient.delete(`/consultants/${id}`);
+    async deactivate(id: number): Promise<Consultant> {
+        const response = await apiClient.patch<Consultant>(`/consultants/${id}`, { is_active: false });
+        return response.data;
     },
 };

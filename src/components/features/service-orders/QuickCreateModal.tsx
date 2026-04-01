@@ -76,6 +76,7 @@ const schema = z.object({
         .min(1, 'Placa ou chassi obrigatório')
         .refine((v) => isValidPlateOrChassi(v), 'Formato inválido. Use placa (ex: ABC1D23) ou chassi (17 caracteres)'),
     vehicle_model: z.string().min(1, 'Modelo obrigatório'),
+    vehicle_model_id: z.number().optional(),
     vehicle_color: z.string().optional(),
     consultant_id: z.number().optional(),
     external_os_number: z.string().optional(),
@@ -176,17 +177,17 @@ export function DeptToggle({ value, onChange, error }: DeptToggleProps) {
 // ─── Sub-component: inline service picker (no prices) ─────────────────────────
 export interface ServicePickerProps {
     department: Department | undefined;
-    brand?: string;
+    brandId?: number;
     selectedIds: number[];
     onChange: (ids: number[]) => void;
     error?: string;
 }
 
-export function ServicePicker({ department, brand, selectedIds, onChange, error }: ServicePickerProps) {
+export function ServicePicker({ department, brandId, selectedIds, onChange, error }: ServicePickerProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
-    const { data: services, isLoading } = useServices(department, brand);
+    const { data: services, isLoading } = useServices(department, brandId);
 
     const filtered = (services ?? []).filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase())
@@ -327,7 +328,7 @@ export interface FilmEntry {
 
 export interface FilmPickerProps {
     storeId: number;
-    brand?: string;
+    brandId?: number;
     department: 'film' | 'ppf';
     selectedEntries: FilmEntry[];
     onChange: (entries: FilmEntry[]) => void;
@@ -338,7 +339,7 @@ export interface FilmPickerProps {
 
 export function FilmPicker({
     storeId: _storeId,
-    brand,
+    brandId,
     department,
     selectedEntries,
     onChange,
@@ -346,7 +347,7 @@ export function FilmPicker({
     onInstallersChange,
     error,
 }: FilmPickerProps) {
-    const { data: services, isLoading: servicesLoading } = useServices(department, brand);
+    const { data: services, isLoading: servicesLoading } = useServices(department, brandId);
     const { data: employeesData, isLoading: employeesLoading } = useFilmInstallers(department);
 
     const employees = (employeesData ?? []).filter(
@@ -628,6 +629,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             department: undefined,
             plate: '',
             vehicle_model: '',
+            vehicle_model_id: undefined,
             vehicle_color: '',
             consultant_id: undefined,
             external_os_number: '',
@@ -653,7 +655,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     // Resolve loja: form_store_id (multi-store) or selectedStoreId/user's store
     const storeId = formStoreId ?? selectedStoreId ?? user?.store_id ?? undefined;
     const currentStore = availableStores.find((s) => s.id === storeId);
-    const storeBrand = currentStore?.dealership_brand ?? undefined;
+    const storeBrandId = currentStore?.brand_id ?? undefined;
 
     // On open: pre-fill form_store_id from global selectedStoreId
     useEffect(() => {
@@ -667,9 +669,9 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         storeId ? { store_id: storeId, is_active: true } : undefined
     );
 
-    // Vehicle models
+    // Vehicle models loaded by brand_id of the selected store
     const { data: vehicleModels, isLoading: modelsLoading } = useVehicleModels(
-        storeId ? { store_id: storeId, active_only: true } : {}
+        storeBrandId ? { brand_id: storeBrandId, active_only: true } : {}
     );
 
     // Focus plate when modal opens
@@ -693,6 +695,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             department: undefined,
             plate: '',
             vehicle_model: '',
+            vehicle_model_id: undefined,
             vehicle_color: '',
             consultant_id: undefined,
             external_os_number: '',
@@ -717,6 +720,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 department: savedDept,
                 plate: '',
                 vehicle_model: '',
+                vehicle_model_id: undefined,
                 vehicle_color: '',
                 consultant_id: savedConsultant,
                 external_os_number: savedOsNumber,
@@ -767,6 +771,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 plate: data.plate.toUpperCase(),
                 vehicle_plate: data.plate.toUpperCase(),
                 vehicle_model: data.vehicle_model,
+                vehicle_model_id: data.vehicle_model_id || undefined,
                 vehicle_color: data.vehicle_color || undefined,
                 department: data.department,
                 location_id: resolvedStoreId,
@@ -998,7 +1003,11 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             ) : (
                                 <Select
                                     value={watch('vehicle_model')}
-                                    onValueChange={(v) => setValue('vehicle_model', v, { shouldValidate: true })}
+                                    onValueChange={(v) => {
+                                        setValue('vehicle_model', v, { shouldValidate: true });
+                                        const selected = (vehicleModels ?? []).find((m) => m.name === v);
+                                        setValue('vehicle_model_id', selected?.id ?? undefined);
+                                    }}
                                 >
                                     <SelectTrigger
                                         id="vehicle_model"
@@ -1067,7 +1076,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         ? (
                             <FilmPicker
                                 storeId={storeId ?? 0}
-                                brand={storeBrand}
+                                brandId={storeBrandId}
                                 department={department}
                                 selectedEntries={watch('film_entries') ?? [{ service_id: 0, tonality: '', roll_code: '' }]}
                                 onChange={(entries) => setValue('film_entries', entries)}
@@ -1079,7 +1088,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         : (
                             <ServicePicker
                                 department={department}
-                                brand={storeBrand}
+                                brandId={storeBrandId}
                                 selectedIds={selectedSvcs}
                                 onChange={(ids) => setValue('selected_services', ids, { shouldValidate: true })}
                                 error={errors.selected_services?.message}

@@ -53,7 +53,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     const [permissionsUser, setPermissionsUser] = useState<User | null>(null);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-    const { deleteUser, isDeletingUser } = useUsers();
+    const { deleteUser, isDeletingUser, activateUser, deactivateUser } = useUsers();
 
     const handleEdit = (user: User) => {
         setSelectedUser(user);
@@ -183,6 +183,15 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                     <Key className="h-4 w-4 mr-2" />
                                                     Resetar Senha
                                                 </DropdownMenuItem>
+                                                {user.is_active ? (
+                                                    <DropdownMenuItem onClick={() => deactivateUser(user.id)}>
+                                                        <span className="text-yellow-600">Desativar</span>
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                    <DropdownMenuItem onClick={() => activateUser(user.id)}>
+                                                        <span className="text-green-600">Ativar</span>
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem
                                                     onClick={() => setUserToDelete(user)}
                                                     className="text-red-600 focus:text-red-600"

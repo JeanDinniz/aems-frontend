@@ -29,10 +29,11 @@ const passwordSchema = z
 type ProfileForm = z.infer<typeof profileSchema>;
 type PasswordForm = z.infer<typeof passwordSchema>;
 
-const roleLabels = {
-    owner: 'Proprietário',
+const roleLabels: Record<string, string> = {
+    owner: 'Proprietario',
     supervisor: 'Supervisor',
     operator: 'Operador',
+    user: 'Usuario',
 };
 
 export function ProfilePage() {

@@ -1,9 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
-import type { UserRole } from '@/types/auth.types';
+
+// Extended to include the new 'user' role (profile-based access)
+type AllowedRole = 'owner' | 'supervisor' | 'operator' | 'user';
 
 interface RoleGuardProps {
-    allowedRoles: UserRole[];
+    allowedRoles: AllowedRole[];
 }
 
 export function RoleGuard({ allowedRoles }: RoleGuardProps) {
@@ -17,7 +19,7 @@ export function RoleGuard({ allowedRoles }: RoleGuardProps) {
         );
     }
 
-    if (!user || !allowedRoles.includes(user.role)) {
+    if (!user || !allowedRoles.includes(user.role as AllowedRole)) {
         return <Navigate to="/unauthorized" replace />;
     }
 

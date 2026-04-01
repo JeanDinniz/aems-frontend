@@ -1,4 +1,5 @@
-export type UserRole = 'owner' | 'supervisor' | 'operator';
+// 'user' is the new profile-based role (replaces supervisor/operator in the new system)
+export type UserRole = 'owner' | 'supervisor' | 'operator' | 'user';
 
 export interface User {
     id: number;

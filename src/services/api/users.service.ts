@@ -16,7 +16,7 @@ export const usersService = {
         if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
         if (filters?.store_id) params.append('store_id', filters.store_id.toString());
         if (filters?.search) params.append('search', filters.search);
-        params.append('skip', ((page - 1) * pageSize).toString());
+        params.append('page', page.toString());
         params.append('limit', pageSize.toString());
 
         const response = await apiClient.get<{ items: User[]; total: number }>(`/users?${params.toString()}`);
@@ -52,9 +52,9 @@ export const usersService = {
         return response.data;
     },
 
-    async deactivate(id: number): Promise<void> {
-        // Backend does soft delete on DELETE /users/{id}
-        await apiClient.delete(`/users/${id}`);
+    async deactivate(id: number): Promise<User> {
+        const response = await apiClient.patch<User>(`/users/${id}`, { is_active: false });
+        return response.data;
     },
 
     async resetPassword(id: number): Promise<{ temporary_password: string }> {

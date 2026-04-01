@@ -2,29 +2,34 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     ClipboardList, Settings, X,
     UserCog,
-    Contact, HardHat, Wrench, Store, Car,
-    ClipboardCheck, FileSpreadsheet,
+    Contact, HardHat, Wrench, Store, Car, Tag,
+    ClipboardCheck, FileSpreadsheet, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyPermissions } from '@/hooks/useMyPermissions';
+import { useAuthStore } from '@/stores/auth.store';
 import { WashCenterLogo } from '@/components/brand/WashCenterLogo';
+import type { SubModule } from '@/types/accessProfile.types';
 
-type UserRole = 'owner' | 'supervisor' | 'operator';
+// All possible roles including the new profile-based 'user' role
+type AllowedRole = 'owner' | 'supervisor' | 'operator' | 'user';
 
 interface SidebarItem {
     icon: typeof ClipboardList;
     label: string;
     href: string;
-    roles?: UserRole[];
-    /** Chave do módulo em MODULE_GROUPS. Se definida, filtra por can_view. */
-    moduleKey?: string;
+    /** If set, only these roles see the item (before permission check). */
+    roles?: AllowedRole[];
+    /** Sub-module key from the new permissions system. If defined, filters by can_view for non-owners. */
+    subModule?: SubModule;
 }
 
 interface SidebarGroup {
     label: string;
-    roles?: UserRole[];
+    /** If set, only these roles see the entire group. */
+    roles?: AllowedRole[];
     items: SidebarItem[];
 }
 
@@ -32,27 +37,29 @@ const sidebarGroups: SidebarGroup[] = [
     {
         label: 'Operacional',
         items: [
-            { icon: ClipboardList,    label: 'Ordens de Serviço', href: '/service-orders', moduleKey: 'service_orders' },
-            { icon: ClipboardCheck,   label: 'Conferência',       href: '/conference',     moduleKey: 'conference' },
-            { icon: FileSpreadsheet,  label: 'Fechamento',        href: '/fechamento',     moduleKey: 'fechamento' },
+            { icon: ClipboardList,    label: 'Ordens de Servico', href: '/service-orders', subModule: 'service_orders' },
+            { icon: ClipboardCheck,   label: 'Conferencia',       href: '/conference',     subModule: 'conference' },
+            { icon: FileSpreadsheet,  label: 'Fechamento',        href: '/fechamento',     subModule: 'fechamento' },
         ],
     },
     {
-        label: 'Administração',
+        label: 'Administracao',
         roles: ['owner'],
         items: [
-            { icon: UserCog, label: 'Usuários',    href: '/admin/users',       moduleKey: 'users' },
-            { icon: HardHat, label: 'Funcionários', href: '/admin/employees',  moduleKey: 'employees' },
-            { icon: Contact, label: 'Consultores',  href: '/admin/consultants', moduleKey: 'consultants' },
-            { icon: Store,   label: 'Lojas',        href: '/admin/stores',     moduleKey: 'stores' },
-            { icon: Wrench,  label: 'Serviços',     href: '/servicos',         moduleKey: 'services' },
-            { icon: Car,     label: 'Modelos',      href: '/admin/modelos',    moduleKey: 'vehicle_models' },
+            { icon: UserCog,    label: 'Usuarios',         href: '/admin/users',       subModule: 'users' },
+            { icon: ShieldCheck,label: 'Perfis de Acesso', href: '/admin/profiles',    subModule: 'profiles' },
+            { icon: HardHat,    label: 'Funcionarios',     href: '/admin/employees',   subModule: 'employees' },
+            { icon: Contact,    label: 'Consultores',      href: '/admin/consultants', subModule: 'consultants' },
+            { icon: Store,      label: 'Lojas',            href: '/admin/stores',      subModule: 'stores' },
+            { icon: Wrench,     label: 'Servicos',         href: '/servicos',          subModule: 'services' },
+            { icon: Tag,        label: 'Marcas',           href: '/admin/marcas',      subModule: 'brands' },
+            { icon: Car,        label: 'Modelos',          href: '/admin/modelos',     subModule: 'models' },
         ],
     },
     {
         label: 'Sistema',
         items: [
-            { icon: Settings, label: 'Configurações', href: '/settings' },
+            { icon: Settings, label: 'Configuracoes', href: '/settings' },
         ],
     },
 ];
@@ -65,22 +72,26 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { user } = useAuth();
-    const { data: myPermissions } = useMyPermissions();
-    const isOwner = user?.role === 'owner';
+    const hasPermissionFn = useAuthStore((s) => s.hasPermission);
+    const isOwnerFn = useAuthStore((s) => s.isOwner);
+    // Trigger permissions loading for non-owner users
+    useMyPermissions();
 
     const isActive = (href: string) =>
         location.pathname.startsWith(href);
 
-    /** Owner vê tudo. Para outros, verifica can_view. Sem moduleKey = sempre visível. */
+    /**
+     * Owner sees everything.
+     * For 'user' role: check effectivePermissions via hasPermission.
+     * Items without subModule are always visible (e.g., Settings).
+     */
     const canViewItem = (item: SidebarItem): boolean => {
-        if (!item.moduleKey || isOwner) return true;
-        if (!myPermissions) return true; // padrão enquanto carrega
-        const perm = myPermissions.module_permissions.find((p) => p.module === item.moduleKey);
-        return perm?.can_view ?? true;
+        if (!item.subModule || isOwnerFn()) return true;
+        return hasPermissionFn(item.subModule, 'view');
     };
 
     const visibleGroups = sidebarGroups.filter(
-        (g) => !g.roles || (user?.role && g.roles.includes(user.role as UserRole))
+        (g) => !g.roles || (user?.role && g.roles.includes(user.role as AllowedRole))
     );
 
     const userInitials =
@@ -110,7 +121,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     'md:translate-x-0 md:static md:h-full'
                 )}
                 style={{ backgroundColor: '#111111' }}
-                aria-label="Navegação principal"
+                aria-label="Navegacao principal"
             >
                 {/* Logo */}
                 <div
@@ -138,7 +149,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {visibleGroups.map((group) => {
                         const visibleItems = group.items.filter(
                             (item) =>
-                                (!item.roles || (user?.role && item.roles.includes(user.role as UserRole))) &&
+                                (!item.roles || (user?.role && item.roles.includes(user.role as AllowedRole))) &&
                                 canViewItem(item)
                         );
                         if (!visibleItems.length) return null;
@@ -213,7 +224,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </div>
                         <div className="min-w-0">
                             <p className="text-xs font-medium text-white truncate leading-tight">
-                                {user?.full_name ?? 'Usuário'}
+                                {user?.full_name ?? 'Usuario'}
                             </p>
                             <p className="text-[10px] truncate leading-none" style={{ color: '#555' }}>
                                 {user?.email ?? ''}
@@ -226,7 +237,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Mobile: slide in */}
             <style>{`
                 @media (max-width: 767px) {
-                    aside[aria-label="Navegação principal"] {
+                    aside[aria-label="Navegacao principal"] {
                         transform: ${isOpen ? 'translateX(0)' : 'translateX(-100%)'};
                     }
                 }

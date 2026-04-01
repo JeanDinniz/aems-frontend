@@ -7,10 +7,9 @@ export interface ServiceItem {
     department: string;
     base_price: number;
     is_active: boolean;
-    available_for_all_departments: boolean;
-    brand?: string | null;
+    brand_id: number;
+    brand?: { id: number; name: string; code: string } | null;
     code?: string | null;
-    category?: string | null;
     created_at?: string;
     updated_at?: string | null;
 }
@@ -31,7 +30,7 @@ const SERVICE_ORDER: string[] = [
 
 export interface ServiceListParams {
     department?: string;
-    brand?: string;
+    brand_id?: number;
     is_active?: boolean;
     search?: string;
     skip?: number;
@@ -62,7 +61,7 @@ export const servicesService = {
             skip: params?.skip ?? 0,
         };
         if (params?.department) queryParams.department = params.department;
-        if (params?.brand) queryParams.brand = params.brand;
+        if (params?.brand_id !== undefined) queryParams.brand_id = params.brand_id;
         if (params?.is_active !== undefined) queryParams.is_active = params.is_active;
         if (params?.search) queryParams.search = params.search;
 
@@ -77,10 +76,8 @@ export const servicesService = {
         name: string;
         department: string;
         base_price: number;
-        brand?: string | null;
+        brand_id: number;
         code?: string | null;
-        category?: string | null;
-        available_for_all_departments?: boolean;
     }): Promise<ServiceItem> => {
         const response = await apiClient.post('/services', payload);
         return response.data;
@@ -90,10 +87,8 @@ export const servicesService = {
         name?: string;
         department?: string;
         base_price?: number;
-        brand?: string | null;
+        brand_id?: number;
         code?: string | null;
-        category?: string | null;
-        available_for_all_departments?: boolean;
     }): Promise<ServiceItem> => {
         const response = await apiClient.patch(`/services/${id}`, payload);
         return response.data;

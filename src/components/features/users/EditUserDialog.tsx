@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
 import {
     Dialog,
     DialogContent,
@@ -13,17 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useUsers } from '@/hooks/useUsers';
-import { storesService } from '@/services/api/stores.service';
+import { UserProfilesSection } from '@/components/features/access-profiles/UserProfilesSection';
 import type { User, UserRole } from '@/types/user.types';
 
 const editUserSchema = z.object({
-    full_name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    email: z.string().email('E-mail inválido').optional(),
-    role: z.enum(['owner', 'supervisor', 'operator']),
-    store_id: z.number().optional().nullable(),
-    supervised_store_ids: z.array(z.number()).optional(),
+    full_name: z.string().min(3, 'Nome deve ter no minimo 3 caracteres'),
+    email: z.string().email('E-mail invalido').optional(),
+    role: z.enum(['owner', 'user']),
 });
 
 type EditUserForm = z.infer<typeof editUserSchema>;
@@ -36,10 +32,6 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
     const { updateUser, isUpdating } = useUsers();
-    const { data: stores } = useQuery({
-        queryKey: ['stores'],
-        queryFn: () => storesService.list(),
-    });
 
     const {
         register,
@@ -57,9 +49,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             reset({
                 full_name: user.full_name,
                 email: user.email,
-                role: user.role,
-                store_id: user.store_id,
-                supervised_store_ids: user.supervised_store_ids || [],
+                role: user.role as EditUserForm['role'],
             });
         }
     }, [open, user, reset]);
@@ -69,7 +59,11 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     const onSubmit = (data: EditUserForm) => {
         updateUser({
             id: user.id,
-            payload: data,
+            payload: {
+                full_name: data.full_name,
+                email: data.email,
+                role: data.role as UserRole,
+            },
         }, {
             onSuccess: () => {
                 onOpenChange(false);
@@ -79,9 +73,9 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Editar Usuário</DialogTitle>
+                    <DialogTitle>Editar Usuario</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -107,69 +101,30 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                         <label htmlFor="eu-role" className="text-sm font-medium">Cargo</label>
                         <Select
                             value={selectedRole}
-                            onValueChange={(value) => setValue('role', value as UserRole)}
+                            onValueChange={(value) => setValue('role', value as EditUserForm['role'])}
                         >
                             <SelectTrigger id="eu-role">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="operator">Operador</SelectItem>
-                                <SelectItem value="supervisor">Supervisor</SelectItem>
-                                <SelectItem value="owner">Proprietário</SelectItem>
+                                <SelectItem value="user">Usuario</SelectItem>
+                                <SelectItem value="owner">Proprietario</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {selectedRole === 'operator' && (
+                    {selectedRole === 'user' && (
                         <div className="space-y-2">
-                            <label htmlFor="eu-store" className="text-sm font-medium">
-                                Loja <span className="text-red-500">*</span>
-                            </label>
-                            <Select
-                                value={watch('store_id')?.toString()}
-                                onValueChange={(value) => setValue('store_id', parseInt(value))}
-                            >
-                                <SelectTrigger id="eu-store">
-                                    <SelectValue placeholder="Selecione a loja" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stores?.map((store) => (
-                                        <SelectItem key={store.id} value={store.id.toString()}>
-                                            {store.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <span className="text-sm font-medium">Perfis de Acesso</span>
+                            <UserProfilesSection userId={user.id.toString()} />
                         </div>
                     )}
 
-                    {selectedRole === 'supervisor' && (
-                        <div className="space-y-2">
-                            <span className="text-sm font-medium">
-                                Lojas Supervisionadas <span className="text-red-500">*</span>
-                            </span>
-                            <div className="border rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
-                                {stores?.map((store) => (
-                                    <label key={store.id} htmlFor={`eu-store-${store.id}`} className="flex items-center gap-2 cursor-pointer">
-                                        <Checkbox
-                                            id={`eu-store-${store.id}`}
-                                            checked={watch('supervised_store_ids')?.includes(store.id)}
-                                            onCheckedChange={(checked) => {
-                                                const current = watch('supervised_store_ids') || [];
-                                                if (checked) {
-                                                    setValue('supervised_store_ids', [...current, store.id]);
-                                                } else {
-                                                    setValue(
-                                                        'supervised_store_ids',
-                                                        current.filter((id) => id !== store.id)
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                        <span className="text-sm">{store.name}</span>
-                                    </label>
-                                ))}
-                            </div>
+                    {selectedRole === 'owner' && (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                Proprietarios tem acesso total a todas as lojas do sistema.
+                            </p>
                         </div>
                     )}
 
@@ -178,7 +133,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isUpdating}>
-                            {isUpdating ? 'Salvando...' : 'Salvar Alterações'}
+                            {isUpdating ? 'Salvando...' : 'Salvar Alteracoes'}
                         </Button>
                     </DialogFooter>
                 </form>

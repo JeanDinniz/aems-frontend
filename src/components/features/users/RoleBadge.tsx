@@ -1,30 +1,26 @@
-import { Crown, Shield, User } from 'lucide-react';
-import type { UserRole } from '@/types/user.types';
+import { Crown, ShieldCheck } from 'lucide-react';
+
+type KnownRole = 'owner' | 'user';
 
 interface RoleBadgeProps {
-    role: UserRole;
+    role: string;
 }
 
-const roleConfig: Record<UserRole, { label: string; icon: typeof Crown; className: string }> = {
+const roleConfig: Record<KnownRole, { label: string; icon: typeof Crown; className: string }> = {
     owner: {
-        label: 'Proprietário',
+        label: 'Proprietario',
         icon: Crown,
         className: 'bg-[#F5A800]/15 text-[#8A6000] dark:text-[#F5A800] border border-[#F5A800]/40',
     },
-    supervisor: {
-        label: 'Supervisor',
-        icon: Shield,
-        className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/50',
-    },
-    operator: {
-        label: 'Operador',
-        icon: User,
-        className: 'bg-gray-200 dark:bg-zinc-800 text-[#444444] dark:text-zinc-400 border border-[#BDBDBD] dark:border-zinc-700',
+    user: {
+        label: 'Usuario',
+        icon: ShieldCheck,
+        className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-700/50',
     },
 };
 
 export function RoleBadge({ role }: RoleBadgeProps) {
-    const config = roleConfig[role];
+    const config = roleConfig[role as ExtendedRole];
     if (!config) return null;
     const Icon = config.icon;
 

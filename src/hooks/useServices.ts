@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { servicesService } from '../services/api/services.service';
 import type { ServiceItem } from '../services/api/services.service';
 
-export function useServices(department?: string, brand?: string) {
+export function useServices(department?: string, brandId?: number) {
     return useQuery<ServiceItem[]>({
-        queryKey: ['services', department, brand],
+        queryKey: ['services', department, brandId],
         queryFn: async () => {
             const result = await servicesService.list({
                 department,
-                brand,
+                brand_id: brandId,
                 is_active: true,
                 limit: 300,
             });

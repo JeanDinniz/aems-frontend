@@ -37,9 +37,8 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
                     <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos os cargos</SelectItem>
-                    <SelectItem value="owner" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Proprietário</SelectItem>
-                    <SelectItem value="supervisor" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Supervisor</SelectItem>
-                    <SelectItem value="operator" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Operador</SelectItem>
+                    <SelectItem value="owner" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Proprietario</SelectItem>
+                    <SelectItem value="user" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Usuario</SelectItem>
                 </SelectContent>
             </Select>
 

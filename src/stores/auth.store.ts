@@ -1,22 +1,28 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthTokens, AuthState } from '@/types/auth.types';
+import type { EffectivePermissions, SubModule } from '@/types/accessProfile.types';
 
 interface AuthStore extends AuthState {
+    effectivePermissions: EffectivePermissions | null;
     setAuth: (user: User, tokens: AuthTokens) => void;
     clearAuth: () => void;
     updateUser: (user: Partial<User>) => void;
     updateTokens: (tokens: AuthTokens) => void;
     setLoading: (isLoading: boolean) => void;
+    setEffectivePermissions: (permissions: EffectivePermissions | null) => void;
+    isOwner: () => boolean;
+    hasPermission: (sub_module: SubModule, action: 'view' | 'edit' | 'delete') => boolean;
 }
 
 export const useAuthStore = create<AuthStore>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             user: null,
             tokens: null,
             isAuthenticated: false,
             isLoading: true,
+            effectivePermissions: null,
 
             setAuth: (user, tokens) =>
                 set({
@@ -32,6 +38,7 @@ export const useAuthStore = create<AuthStore>()(
                     tokens: null,
                     isAuthenticated: false,
                     isLoading: false,
+                    effectivePermissions: null,
                 }),
 
             updateUser: (userData) =>
@@ -44,6 +51,30 @@ export const useAuthStore = create<AuthStore>()(
 
             setLoading: (isLoading) =>
                 set({ isLoading }),
+
+            setEffectivePermissions: (permissions) =>
+                set({ effectivePermissions: permissions }),
+
+            isOwner: () => {
+                return get().user?.role === 'owner';
+            },
+
+            hasPermission: (sub_module, action) => {
+                const state = get();
+                if (!state.user) return false;
+                // Owner always has full access
+                if (state.user.role === 'owner') return true;
+                // If permissions haven't loaded yet, allow by default to avoid blank screens
+                if (!state.effectivePermissions) return true;
+                const perm = state.effectivePermissions.permissions.find(
+                    (p) => p.sub_module === sub_module
+                );
+                if (!perm) return false;
+                if (action === 'view') return perm.can_view;
+                if (action === 'edit') return perm.can_edit;
+                if (action === 'delete') return perm.can_delete;
+                return false;
+            },
         }),
         {
             name: 'aems-auth',
@@ -52,6 +83,7 @@ export const useAuthStore = create<AuthStore>()(
                 user: state.user,
                 tokens: state.tokens ? { ...state.tokens, persistedAt: Date.now() } : null,
                 isAuthenticated: state.isAuthenticated,
+                // effectivePermissions is intentionally NOT persisted — always re-fetched on boot
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
@@ -67,6 +99,7 @@ export const useAuthStore = create<AuthStore>()(
                                 state.user = null;
                                 state.tokens = null;
                                 state.isAuthenticated = false;
+                                state.effectivePermissions = null;
                             }
                         }
                     }

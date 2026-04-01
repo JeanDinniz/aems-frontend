@@ -26,6 +26,8 @@ const ConsultantManagementPage = lazy(() => import('@/pages/admin/ConsultantMana
 const EmployeeManagementPage = lazy(() => import('@/pages/admin/EmployeeManagementPage').then(m => ({ default: m.EmployeeManagementPage })));
 const StoreManagementPage = lazy(() => import('@/pages/admin/StoreManagementPage').then(m => ({ default: m.StoreManagementPage })));
 const VehicleModelsPage = lazy(() => import('@/pages/admin/VehicleModelsPage').then(m => ({ default: m.VehicleModelsPage })));
+const BrandsManagementPage = lazy(() => import('@/pages/admin/BrandsManagementPage').then(m => ({ default: m.BrandsManagementPage })));
+const AccessProfilesPage = lazy(() => import('@/pages/admin/AccessProfilesPage').then(m => ({ default: m.AccessProfilesPage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const ServicesPage = lazy(() => import('@/pages/services/ServicesPage'));
 const ConferencePage = lazy(() => import('@/pages/conference/ConferencePage').then(m => ({ default: m.ConferencePage })));
@@ -77,9 +79,9 @@ const router = createBrowserRouter([
           { path: '/profile', element: <Suspense fallback={<PageFallback />}><ProfilePage /></Suspense> },
           { path: '/settings', element: <Suspense fallback={<PageFallback />}><SettingsPage /></Suspense> },
 
-          // Rotas operacionais (operator, supervisor, owner)
+          // Rotas operacionais (operator, supervisor, owner, user)
           {
-            element: <RoleGuard allowedRoles={['operator', 'supervisor', 'owner']} />,
+            element: <RoleGuard allowedRoles={['operator', 'supervisor', 'owner', 'user']} />,
             children: [
               { path: '/service-orders', element: <Suspense fallback={<PageFallback />}><ServiceOrdersPage /></Suspense> },
               { path: '/service-orders/:id', element: <Suspense fallback={<PageFallback />}><ServiceOrderDetailsPage /></Suspense> },
@@ -98,7 +100,9 @@ const router = createBrowserRouter([
               { path: '/admin/employees', element: <Suspense fallback={<PageFallback />}><EmployeeManagementPage /></Suspense> },
               { path: '/admin/stores', element: <Suspense fallback={<PageFallback />}><StoreManagementPage /></Suspense> },
               { path: '/servicos', element: <Suspense fallback={<PageFallback />}><ServicesPage /></Suspense> },
+              { path: '/admin/marcas', element: <Suspense fallback={<PageFallback />}><BrandsManagementPage /></Suspense> },
               { path: '/admin/modelos', element: <Suspense fallback={<PageFallback />}><VehicleModelsPage /></Suspense> },
+              { path: '/admin/profiles', element: <Suspense fallback={<PageFallback />}><AccessProfilesPage /></Suspense> },
               { path: '/analytics', element: <Suspense fallback={<PageFallback />}><AnalyticsPage /></Suspense> },
             ],
           },

@@ -2,9 +2,9 @@ import { apiClient } from './client'
 
 export interface VehicleModelItem {
     id: number
-    store_id: number
+    brand_id: number
     name: string
-    brand: string | null
+    brand?: { id: number; name: string; code: string } | null
     is_active: boolean
     created_at: string
     updated_at: string | null
@@ -16,20 +16,20 @@ interface VehicleModelListResponse {
 }
 
 export const vehicleModelsService = {
-    list: async (params: { store_id?: number; active_only?: boolean; limit?: number } = {}): Promise<VehicleModelItem[]> => {
+    list: async (params: { brand_id?: number; active_only?: boolean; limit?: number } = {}): Promise<VehicleModelItem[]> => {
         const response = await apiClient.get<VehicleModelListResponse>('/vehicle-models', { params: { limit: 200, ...params } })
         return response.data.items
     },
-    create: async (store_id: number, data: { name: string; brand?: string }): Promise<VehicleModelItem> => {
-        const response = await apiClient.post<VehicleModelItem>('/vehicle-models', data, { params: { store_id } })
+    create: async (brand_id: number, data: { name: string }): Promise<VehicleModelItem> => {
+        const response = await apiClient.post<VehicleModelItem>('/vehicle-models', data, { params: { brand_id } })
         return response.data
     },
-    update: async (id: number, store_id: number, data: { name?: string; brand?: string; is_active?: boolean }): Promise<VehicleModelItem> => {
-        const response = await apiClient.patch<VehicleModelItem>(`/vehicle-models/${id}`, data, { params: { store_id } })
+    update: async (id: number, brand_id: number, data: { name?: string; is_active?: boolean }): Promise<VehicleModelItem> => {
+        const response = await apiClient.patch<VehicleModelItem>(`/vehicle-models/${id}`, data, { params: { brand_id } })
         return response.data
     },
-    deactivate: async (id: number, store_id: number): Promise<VehicleModelItem> => {
-        const response = await apiClient.delete<VehicleModelItem>(`/vehicle-models/${id}`, { params: { store_id } })
+    deactivate: async (id: number, brand_id: number): Promise<VehicleModelItem> => {
+        const response = await apiClient.delete<VehicleModelItem>(`/vehicle-models/${id}`, { params: { brand_id } })
         return response.data
     },
 }

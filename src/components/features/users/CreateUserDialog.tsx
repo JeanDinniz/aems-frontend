@@ -1,7 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
 import {
     Dialog,
     DialogContent,
@@ -12,17 +11,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useUsers } from '@/hooks/useUsers';
-import { storesService } from '@/services/api/stores.service';
 import type { UserRole } from '@/types/user.types';
 
 const createUserSchema = z.object({
-    full_name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    email: z.string().email('E-mail inválido'),
-    role: z.enum(['owner', 'supervisor', 'operator']),
-    store_id: z.number().optional(),
-    supervised_store_ids: z.array(z.number()).optional(),
+    full_name: z.string().min(3, 'Nome deve ter no minimo 3 caracteres'),
+    email: z.string().email('E-mail invalido'),
+    role: z.enum(['owner', 'user']),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -34,10 +29,6 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
     const { createUser, isCreating } = useUsers();
-    const { data: stores } = useQuery({
-        queryKey: ['stores'],
-        queryFn: () => storesService.list(),
-    });
 
     const {
         register,
@@ -48,15 +39,16 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         reset,
     } = useForm<CreateUserForm>({
         resolver: zodResolver(createUserSchema),
-        defaultValues: {
-            supervised_store_ids: [],
-        }
     });
 
     const selectedRole = watch('role');
 
     const onSubmit = (data: CreateUserForm) => {
-        createUser(data, {
+        createUser({
+            full_name: data.full_name,
+            email: data.email,
+            role: data.role as UserRole,
+        }, {
             onSuccess: () => {
                 reset();
                 onOpenChange(false);
@@ -68,7 +60,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Novo Usuário</DialogTitle>
+                    <DialogTitle>Novo Usuario</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -78,7 +70,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                             <Input
                                 id="cu-fullname"
                                 {...register('full_name')}
-                                placeholder="Ex: João da Silva"
+                                placeholder="Ex: Joao da Silva"
                             />
                             {errors.full_name && (
                                 <p className="text-sm text-red-500">{errors.full_name.message}</p>
@@ -101,14 +93,13 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
                     <div className="space-y-2">
                         <label htmlFor="cu-role" className="text-sm font-medium">Cargo</label>
-                        <Select onValueChange={(value) => setValue('role', value as UserRole)}>
+                        <Select onValueChange={(value) => setValue('role', value as CreateUserForm['role'])}>
                             <SelectTrigger id="cu-role">
                                 <SelectValue placeholder="Selecione o cargo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="operator">Operador</SelectItem>
-                                <SelectItem value="supervisor">Supervisor</SelectItem>
-                                <SelectItem value="owner">Proprietário</SelectItem>
+                                <SelectItem value="user">Usuario</SelectItem>
+                                <SelectItem value="owner">Proprietario</SelectItem>
                             </SelectContent>
                         </Select>
                         {errors.role && (
@@ -116,69 +107,18 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         )}
                     </div>
 
-                    {selectedRole === 'operator' && (
-                        <div className="space-y-2">
-                            <label htmlFor="cu-store" className="text-sm font-medium">
-                                Loja <span className="text-red-500">*</span>
-                            </label>
-                            <Select
-                                onValueChange={(value) => setValue('store_id', parseInt(value))}
-                            >
-                                <SelectTrigger id="cu-store">
-                                    <SelectValue placeholder="Selecione a loja" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stores?.map((store) => (
-                                        <SelectItem key={store.id} value={store.id.toString()}>
-                                            {store.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.store_id && (
-                                <p className="text-sm text-red-500">Loja obrigatória para operadores</p>
-                            )}
-                        </div>
-                    )}
-
-                    {selectedRole === 'supervisor' && (
-                        <div className="space-y-2">
-                            <span className="text-sm font-medium">
-                                Lojas Supervisionadas <span className="text-red-500">*</span>
-                            </span>
-                            <div className="border rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
-                                {stores?.map((store) => (
-                                    <label key={store.id} htmlFor={`cu-store-${store.id}`} className="flex items-center gap-2 cursor-pointer">
-                                        <Checkbox
-                                            id={`cu-store-${store.id}`}
-                                            onCheckedChange={(checked) => {
-                                                const current = watch('supervised_store_ids') || [];
-                                                if (checked) {
-                                                    setValue('supervised_store_ids', [...current, store.id]);
-                                                } else {
-                                                    setValue(
-                                                        'supervised_store_ids',
-                                                        current.filter((id) => id !== store.id)
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                        <span className="text-sm">{store.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                            {errors.supervised_store_ids && (
-                                <p className="text-sm text-red-500">
-                                    Selecione pelo menos uma loja
-                                </p>
-                            )}
+                    {selectedRole === 'user' && (
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                                Este usuario tera acesso baseado em perfis. Vincule os perfis apos criar o usuario via "Editar".
+                            </p>
                         </div>
                     )}
 
                     {selectedRole === 'owner' && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-sm text-blue-800">
-                                Proprietários têm acesso a todas as lojas do sistema.
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                Proprietarios tem acesso total a todas as lojas do sistema.
                             </p>
                         </div>
                     )}
@@ -188,7 +128,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isCreating}>
-                            {isCreating ? 'Criando...' : 'Criar Usuário'}
+                            {isCreating ? 'Criando...' : 'Criar Usuario'}
                         </Button>
                     </DialogFooter>
                 </form>

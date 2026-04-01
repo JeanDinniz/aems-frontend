@@ -12,12 +12,15 @@ export interface Store {
     store_type: 'dealership';
     dealership_id?: number | null;
     dealership_brand?: string | null;
+    brand_id?: number;
+    brand?: { id: number; name: string; code: string } | null;
 }
 
 export interface CreateStorePayload {
     name: string;
     code: string;
     store_type: 'dealership';
+    brand_id: number;
     dealership_brand?: string | null;
     address?: string | null;
     phone?: string | null;
