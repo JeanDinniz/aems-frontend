@@ -143,7 +143,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
         storeId ? { store_id: storeId, is_active: true } : undefined
     );
     const { data: vehicleModels, isLoading: modelsLoading } = useVehicleModels(
-        storeId ? { store_id: storeId, active_only: true } : {}
+        storeId ? { active_only: true } : {}
     );
 
     useEffect(() => {

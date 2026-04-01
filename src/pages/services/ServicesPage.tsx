@@ -45,6 +45,115 @@ interface AddServiceForm {
     base_price: string;
 }
 
+interface ServiceFormFieldsProps {
+    form: AddServiceForm;
+    setForm: (form: AddServiceForm) => void;
+    brands: { id: number; name: string }[];
+    codeDuplicateWarning: boolean;
+    setCodeDuplicateWarning: (v: boolean) => void;
+    checkCodeDuplicate: (code: string) => void;
+    editingService: ServiceItem | null;
+}
+
+function ServiceFormFields({
+    form,
+    setForm,
+    brands,
+    codeDuplicateWarning,
+    setCodeDuplicateWarning,
+    checkCodeDuplicate,
+}: ServiceFormFieldsProps) {
+    return (
+        <div className="space-y-4 py-2">
+            {/* Ordem: Marca → Departamento → Código → Preço → Nome */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label className="text-[#666666] dark:text-zinc-300">Marca *</Label>
+                    <Select
+                        value={form.brand_id}
+                        onValueChange={(v) => {
+                            setForm({ ...form, brand_id: v });
+                            setCodeDuplicateWarning(false);
+                        }}
+                    >
+                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue placeholder="Selecione a marca" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            {brands.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    {b.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
+                    <Select
+                        value={form.department}
+                        onValueChange={(v) => {
+                            setForm({ ...form, department: v });
+                            setCodeDuplicateWarning(false);
+                        }}
+                    >
+                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            {DEPARTMENTS.map((d) => (
+                                <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    {d.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
+                    <Input
+                        id="svc-code"
+                        placeholder="Ex: LAV-001"
+                        value={form.code}
+                        onChange={(e) => {
+                            setForm({ ...form, code: e.target.value });
+                            setCodeDuplicateWarning(false);
+                        }}
+                        onBlur={(e) => checkCodeDuplicate(e.target.value)}
+                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                    />
+                    {codeDuplicateWarning && (
+                        <p className="text-xs text-red-500">Ja existe um servico com este codigo para esta marca e departamento.</p>
+                    )}
+                </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="svc-price" className="text-[#666666] dark:text-zinc-300">Preco Base (R$) *</Label>
+                    <Input
+                        id="svc-price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={form.base_price}
+                        onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                    />
+                </div>
+            </div>
+            <div className="space-y-1.5">
+                <Label htmlFor="svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Servico *</Label>
+                <Input
+                    id="svc-name"
+                    placeholder="Ex: Lavagem Simples"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                />
+            </div>
+        </div>
+    );
+}
+
 const INITIAL_FORM: AddServiceForm = {
     name: '',
     code: '',
@@ -241,95 +350,15 @@ export default function ServicesPage() {
     const deptLabel = (key: string) =>
         DEPARTMENTS.find((d) => d.value === key)?.label ?? key;
 
-    const ServiceFormFields = () => (
-        <div className="space-y-4 py-2">
-            {/* Ordem: Marca → Departamento → Código → Preço → Nome */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                    <Label className="text-[#666666] dark:text-zinc-300">Marca *</Label>
-                    <Select
-                        value={form.brand_id}
-                        onValueChange={(v) => {
-                            setForm({ ...form, brand_id: v });
-                            setCodeDuplicateWarning(false);
-                        }}
-                    >
-                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                            <SelectValue placeholder="Selecione a marca" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                            {brands.map((b) => (
-                                <SelectItem key={b.id} value={String(b.id)} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                    {b.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-1.5">
-                    <Label className="text-[#666666] dark:text-zinc-300">Departamento</Label>
-                    <Select
-                        value={form.department}
-                        onValueChange={(v) => {
-                            setForm({ ...form, department: v });
-                            setCodeDuplicateWarning(false);
-                        }}
-                    >
-                        <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                            <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                            {DEPARTMENTS.map((d) => (
-                                <SelectItem key={d.value} value={d.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                    {d.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-1.5">
-                    <Label htmlFor="svc-code" className="text-[#666666] dark:text-zinc-300">Código</Label>
-                    <Input
-                        id="svc-code"
-                        placeholder="Ex: LAV-001"
-                        value={form.code}
-                        onChange={(e) => {
-                            setForm({ ...form, code: e.target.value });
-                            setCodeDuplicateWarning(false);
-                        }}
-                        onBlur={(e) => checkCodeDuplicate(e.target.value)}
-                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                    />
-                    {codeDuplicateWarning && (
-                        <p className="text-xs text-red-500">Ja existe um servico com este codigo para esta marca e departamento.</p>
-                    )}
-                </div>
-                <div className="space-y-1.5">
-                    <Label htmlFor="svc-price" className="text-[#666666] dark:text-zinc-300">Preco Base (R$) *</Label>
-                    <Input
-                        id="svc-price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={form.base_price}
-                        onChange={(e) => setForm({ ...form, base_price: e.target.value })}
-                        className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                    />
-                </div>
-            </div>
-            <div className="space-y-1.5">
-                <Label htmlFor="svc-name" className="text-[#666666] dark:text-zinc-300">Nome do Servico *</Label>
-                <Input
-                    id="svc-name"
-                    placeholder="Ex: Lavagem Simples"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                />
-            </div>
-        </div>
-    );
+    const formFieldsProps: ServiceFormFieldsProps = {
+        form,
+        setForm,
+        brands,
+        codeDuplicateWarning,
+        setCodeDuplicateWarning,
+        checkCodeDuplicate,
+        editingService,
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -489,7 +518,7 @@ export default function ServicesPage() {
                     <DialogHeader>
                         <DialogTitle className="text-[#111111] dark:text-white">Novo Servico</DialogTitle>
                     </DialogHeader>
-                    <ServiceFormFields />
+                    <ServiceFormFields {...formFieldsProps} />
                     <DialogFooter>
                         <Button
                             onClick={() => {
@@ -531,7 +560,7 @@ export default function ServicesPage() {
                     <DialogHeader>
                         <DialogTitle className="text-[#111111] dark:text-white">Editar Servico</DialogTitle>
                     </DialogHeader>
-                    <ServiceFormFields />
+                    <ServiceFormFields {...formFieldsProps} />
                     <DialogFooter>
                         <Button
                             onClick={() => {

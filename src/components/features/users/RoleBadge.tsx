@@ -20,7 +20,7 @@ const roleConfig: Record<KnownRole, { label: string; icon: typeof Crown; classNa
 };
 
 export function RoleBadge({ role }: RoleBadgeProps) {
-    const config = roleConfig[role as ExtendedRole];
+    const config = roleConfig[role as KnownRole];
     if (!config) return null;
     const Icon = config.icon;
 
