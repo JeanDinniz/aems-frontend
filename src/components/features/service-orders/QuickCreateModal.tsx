@@ -853,7 +853,18 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 aria-describedby={undefined}
             >
                 <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitle className="text-lg font-bold">Lançar OS</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle className="text-lg font-bold">Lançar OS</DialogTitle>
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            aria-label="Fechar"
+                            className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                        >
+                            <X className="h-5 w-5" />
+                            <span className="sr-only">Fechar</span>
+                        </button>
+                    </div>
                 </DialogHeader>
 
                 <form className="px-6 py-4 space-y-5" onSubmit={(e) => e.preventDefault()}>
@@ -930,8 +941,8 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     />
 
                     {/* Row: Data do Serviço + Nº OS Concessionária */}
-                    <div className="grid grid-cols-5 gap-3">
-                        <div className="col-span-3 space-y-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                        <div className="sm:col-span-3 space-y-1.5">
                             <Label htmlFor="service_date" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Data do Serviço <span className="text-destructive">*</span>
                             </Label>
@@ -948,7 +959,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         </div>
 
                         {(department !== 'vn' && department !== 'vu') && (
-                            <div className="col-span-2 space-y-1.5">
+                            <div className="sm:col-span-2 space-y-1.5">
                                 <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Nº OS Concessionária
                                 </Label>
@@ -962,7 +973,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     </div>
 
                     {/* Row: Placa / Modelo / Cor */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         <div className="space-y-1.5">
                             <Label htmlFor="plate" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Placa / Chassi <span className="text-destructive">*</span>

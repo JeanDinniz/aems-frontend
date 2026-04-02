@@ -16,7 +16,6 @@ import { StoreSelector } from '@/components/common/StoreSelector';
 import { useNavigate } from "react-router-dom";
 import { useNotifications, useUnreadNotificationCount, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
-import { WashCenterIcon } from "@/components/brand/WashCenterIcon";
 
 interface HeaderProps {
     onMenuClick: () => void;
@@ -90,8 +89,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         <header
             className="sticky top-0 z-30 flex h-[60px] w-full items-center justify-between px-4 md:px-6 bg-white dark:bg-[#1A1A1A] border-b border-[#E8E8E8] dark:border-[#222]"
         >
-            {/* Left: menu + brand icon */}
-            <div className="flex items-center gap-3">
+            {/* Left: hamburger (mobile only) */}
+            <div className="flex items-center">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -101,14 +100,10 @@ export function Header({ onMenuClick }: HeaderProps) {
                 >
                     <Menu className="h-5 w-5" />
                 </Button>
-
-                <div className="hidden md:flex items-center">
-                    <WashCenterIcon size={24} color="#F5A800" />
-                </div>
             </div>
 
             {/* Center: store selector */}
-            <div className="hidden md:flex flex-1 mx-6 max-w-xs">
+            <div className="hidden md:flex flex-1 mx-4 max-w-sm">
                 <StoreSelector />
             </div>
 
