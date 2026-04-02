@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Menu, Bell, CheckCheck, LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { ConnectionIndicator } from '@/components/common/ConnectionIndicator';
 import { StoreSelector } from '@/components/common/StoreSelector';
 import { useNavigate } from "react-router-dom";
 import { useNotifications, useUnreadNotificationCount, useMarkAllNotificationsRead } from "@/hooks/useNotifications";
@@ -110,8 +109,6 @@ export function Header({ onMenuClick }: HeaderProps) {
             {/* Right: role badge + connection + notifications + avatar */}
             <div className="flex items-center gap-2">
                 {user?.role && <RoleBadge role={user.role} />}
-
-                <ConnectionIndicator />
 
                 {/* Notifications Bell */}
                 <DropdownMenu>

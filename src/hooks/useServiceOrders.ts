@@ -23,7 +23,6 @@ export const useCreateServiceOrder = () => {
         mutationFn: (data: CreateServiceOrderData) => serviceOrdersService.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
-            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
     });
 };
@@ -36,7 +35,6 @@ export const useUpdateServiceOrder = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
             queryClient.invalidateQueries({ queryKey: ['service-order'] });
-            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
     });
 };
@@ -49,7 +47,6 @@ export const useCancelServiceOrder = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
             queryClient.invalidateQueries({ queryKey: ['service-order', variables.id] });
-            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         },
     });
 };
@@ -62,7 +59,6 @@ export const useUpdateServiceOrderStatus = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
             queryClient.invalidateQueries({ queryKey: ['service-order', variables.id] });
-            queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
         }
     });
 };

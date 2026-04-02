@@ -21,8 +21,6 @@ export function StoreSelector() {
         // Invalidate queries that depend on store context
         queryClient.invalidateQueries({ queryKey: ['service-orders'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-        queryClient.invalidateQueries({ queryKey: ['day-panel-orders'] });
-        // Add more keys as needed
     };
 
     const selectedStore = stores.find(s => s.id === selectedStoreId);

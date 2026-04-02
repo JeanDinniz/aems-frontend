@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RoleGuard } from '@/components/auth/RoleGuard';
 import { UnauthorizedPage } from '@/components/common/UnauthorizedPage';
@@ -66,11 +65,7 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        element: (
-          <WebSocketProvider>
-            <MainLayout />
-          </WebSocketProvider>
-        ),
+        element: <MainLayout />,
         children: [
           // Redirecionar raiz
           { path: '/', element: <Navigate to="/service-orders" replace /> },
