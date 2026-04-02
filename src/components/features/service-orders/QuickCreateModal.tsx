@@ -1120,7 +1120,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             {...register('notes')}
                             placeholder="Informações adicionais..."
                             rows={2}
-                            className="resize-none"
+                            className="resize-none bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
                         />
                     </div>
                 </form>
