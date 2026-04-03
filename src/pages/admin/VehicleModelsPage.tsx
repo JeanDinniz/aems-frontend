@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, PowerOff, Power, Loader2, Car } from 'lucide-react';
+import { Plus, Pencil, PowerOff, Power, Loader2, Car, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ export function VehicleModelsPage() {
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingModel, setEditingModel] = useState<VehicleModelItem | null>(null);
     const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
+    const [confirmHardDeleteId, setConfirmHardDeleteId] = useState<number | null>(null);
     const [form, setForm] = useState<ModelForm>(INITIAL_FORM);
 
     const { data: brandsData, isLoading: brandsLoading } = useQuery({
@@ -127,6 +128,21 @@ export function VehicleModelsPage() {
         },
         onError: () => {
             toast({ variant: 'destructive', title: 'Erro ao reativar modelo.' });
+        },
+    });
+
+    const hardDeleteMutation = useMutation({
+        mutationFn: (id: number) => {
+            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
+            return vehicleModelsService.hardDelete(id, resolvedBrandId);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
+            setConfirmHardDeleteId(null);
+            toast({ title: 'Modelo excluído permanentemente.' });
+        },
+        onError: () => {
+            toast({ variant: 'destructive', title: 'Não foi possível excluir. Verifique se há O.S. vinculadas.' });
         },
     });
 
@@ -268,6 +284,15 @@ export function VehicleModelsPage() {
                                                             <Power className="h-3.5 w-3.5" />
                                                         </Button>
                                                     )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                                        onClick={() => setConfirmHardDeleteId(model.id)}
+                                                        aria-label="Excluir modelo permanentemente"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         ))}
@@ -424,6 +449,38 @@ export function VehicleModelsPage() {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
                             Desativar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog: Confirmar Exclusão Permanente */}
+            <AlertDialog
+                open={confirmHardDeleteId !== null}
+                onOpenChange={(open) => !open && setConfirmHardDeleteId(null)}
+            >
+                <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Excluir Modelo Permanentemente</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
+                            Esta ação é <span className="font-semibold text-red-600">irreversível</span>. O modelo{' '}
+                            <span className="font-medium text-[#111111] dark:text-zinc-200">
+                                {models?.find((m) => m.id === confirmHardDeleteId)?.name ?? ''}
+                            </span>{' '}
+                            será excluído permanentemente. Só é possível excluir modelos sem ordens de serviço vinculadas.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => confirmHardDeleteId !== null && hardDeleteMutation.mutate(confirmHardDeleteId)}
+                            disabled={hardDeleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {hardDeleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Excluir Permanentemente
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

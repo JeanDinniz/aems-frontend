@@ -39,6 +39,9 @@ const brandsService = {
 
     deactivate: async (id: number): Promise<BrandItem> =>
         apiClient.delete(`/brands/${id}`).then((r) => r.data),
+
+    hardDelete: async (id: number): Promise<{ id: number; name: string }> =>
+        apiClient.delete(`/brands/${id}/permanent`).then((r) => r.data),
 };
 
 export default brandsService;

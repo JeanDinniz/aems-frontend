@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, PowerOff, Power, Loader2, Tag } from 'lucide-react';
+import { Plus, Pencil, PowerOff, Power, Loader2, Tag, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,7 @@ export function BrandsManagementPage() {
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingBrand, setEditingBrand] = useState<BrandItem | null>(null);
     const [confirmDeactivateId, setConfirmDeactivateId] = useState<number | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
     const [createForm, setCreateForm] = useState<CreateForm>(INITIAL_CREATE_FORM);
     const [editForm, setEditForm] = useState<EditForm>(INITIAL_EDIT_FORM);
 
@@ -115,6 +116,18 @@ export function BrandsManagementPage() {
         },
         onError: () => {
             toast({ variant: 'destructive', title: 'Erro ao reativar marca.' });
+        },
+    });
+
+    const hardDeleteMutation = useMutation({
+        mutationFn: (id: number) => brandsService.hardDelete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['brands'] });
+            setConfirmDeleteId(null);
+            toast({ title: 'Marca excluída permanentemente.' });
+        },
+        onError: () => {
+            toast({ variant: 'destructive', title: 'Não foi possível excluir. Verifique se há vínculos ativos.' });
         },
     });
 
@@ -193,7 +206,7 @@ export function BrandsManagementPage() {
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400">Nome</span>
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-24 text-center">Código</span>
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-20 text-center">Status</span>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-20 text-center">Ações</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-28 text-center">Ações</span>
                     </div>
 
                     <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
@@ -222,7 +235,7 @@ export function BrandsManagementPage() {
                                     )}
                                 </div>
 
-                                <div className="w-20 flex items-center justify-center gap-1">
+                                <div className="w-28 flex items-center justify-center gap-1">
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -255,6 +268,15 @@ export function BrandsManagementPage() {
                                             <Power className="h-3.5 w-3.5" />
                                         </Button>
                                     )}
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                        onClick={() => setConfirmDeleteId(brand.id)}
+                                        aria-label="Excluir marca permanentemente"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
                                 </div>
                             </div>
                         ))}
@@ -440,6 +462,38 @@ export function BrandsManagementPage() {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
                             Desativar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* AlertDialog: Confirmar Exclusão Permanente */}
+            <AlertDialog
+                open={confirmDeleteId !== null}
+                onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+            >
+                <AlertDialogContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-[#111111] dark:text-white">Excluir Marca Permanentemente</AlertDialogTitle>
+                        <AlertDialogDescription className="text-[#666666] dark:text-zinc-400">
+                            Esta ação é <span className="font-semibold text-red-600">irreversível</span>. A marca{' '}
+                            <span className="font-medium text-[#111111] dark:text-zinc-200">
+                                {brands.find((b) => b.id === confirmDeleteId)?.name ?? ''}
+                            </span>{' '}
+                            será excluída permanentemente. Só é possível excluir marcas sem lojas, modelos ou serviços vinculados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => confirmDeleteId !== null && hardDeleteMutation.mutate(confirmDeleteId)}
+                            disabled={hardDeleteMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            {hardDeleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Excluir Permanentemente
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
