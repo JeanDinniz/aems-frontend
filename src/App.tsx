@@ -74,9 +74,9 @@ const router = createBrowserRouter([
           { path: '/profile', element: <Suspense fallback={<PageFallback />}><ProfilePage /></Suspense> },
           { path: '/settings', element: <Suspense fallback={<PageFallback />}><SettingsPage /></Suspense> },
 
-          // Rotas operacionais (operator, supervisor, owner, user)
+          // Rotas operacionais (owner, user)
           {
-            element: <RoleGuard allowedRoles={['operator', 'supervisor', 'owner', 'user']} />,
+            element: <RoleGuard allowedRoles={['owner', 'user']} />,
             children: [
               { path: '/service-orders', element: <Suspense fallback={<PageFallback />}><ServiceOrdersPage /></Suspense> },
               { path: '/service-orders/:id', element: <Suspense fallback={<PageFallback />}><ServiceOrderDetailsPage /></Suspense> },

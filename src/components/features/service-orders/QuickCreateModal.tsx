@@ -34,6 +34,7 @@ import { useFilmInstallers } from '@/hooks/useEmployees';
 import { useConsultants } from '@/hooks/useConsultants';
 import { useCreateServiceOrder } from '@/hooks/useServiceOrders';
 import type { Department } from '@/types/service-order.types';
+import { CourtesyReturnSelect } from './CourtesyReturnSelect';
 import type { Photo } from '@/types/photo.types';
 import { compressImage } from '@/utils/imageCompression';
 import { validateImageFile } from '@/utils/fileValidation';
@@ -79,7 +80,7 @@ const schema = z.object({
     vehicle_model_id: z.number().optional(),
     vehicle_color: z.string().optional(),
     consultant_id: z.number().optional(),
-    external_os_number: z.string().optional(),
+    external_os_number: z.string().optional(), // validação condicional via superRefine
     selected_services: z.array(z.number()).default([]),
     is_return: z.boolean().default(false),
     is_courtesy: z.boolean().default(false),
@@ -119,6 +120,14 @@ const schema = z.object({
                 path: ['selected_services'],
             });
         }
+    }
+
+    if (data.department !== 'vn' && data.department !== 'vu' && !data.external_os_number?.trim()) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Nº OS Concessionária obrigatório',
+            path: ['external_os_number'],
+        });
     }
 });
 
@@ -389,7 +398,7 @@ export function FilmPicker({
     return (
         <div className="space-y-3">
             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Películas <span className="text-destructive">*</span>
+                {department === 'ppf' ? 'PPF' : 'Películas'} <span className="text-destructive">*</span>
             </Label>
 
             <div className="space-y-2">
@@ -467,7 +476,7 @@ export function FilmPicker({
                 onClick={addEntry}
                 className="text-sm font-medium text-[#E89200] hover:text-[#D47F00] transition-colors"
             >
-                + Adicionar Película
+                + Adicionar {department === 'ppf' ? 'PPF' : 'Película'}
             </button>
 
             {error && <p className="text-xs text-destructive">{error}</p>}
@@ -509,9 +518,10 @@ export function FilmPicker({
 export interface CompactPhotoUploaderProps {
     photos: Photo[];
     onChange: (photos: Photo[]) => void;
+    label?: string;
 }
 
-export function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderProps) {
+export function CompactPhotoUploader({ photos, onChange, label = 'Foto da OS' }: CompactPhotoUploaderProps) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleCapture = useCallback(
@@ -554,7 +564,7 @@ export function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderP
     return (
         <div className="space-y-1.5">
             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Foto da OS
+                {label}
             </Label>
             <input
                 ref={inputRef}
@@ -583,7 +593,7 @@ export function CompactPhotoUploader({ photos, onChange }: CompactPhotoUploaderP
                     >
                         <img
                             src={photos[0].preview}
-                            alt="Foto da OS"
+                            alt={label}
                             className="w-full h-full object-cover rounded-lg border"
                         />
                     </button>
@@ -613,6 +623,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const createServiceOrder = useCreateServiceOrder();
 
     const [photos, setPhotos] = useState<Photo[]>([]);
+    const [damagePhotos, setDamagePhotos] = useState<Photo[]>([]);
     const plateInputRef = useRef<HTMLInputElement>(null);
 
     const {
@@ -685,6 +696,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const handleClose = useCallback(() => {
         reset();
         setPhotos([]);
+        setDamagePhotos([]);
         onClose();
     }, [reset, onClose]);
 
@@ -710,6 +722,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             form_store_id: currentFormStoreId,
         });
         setPhotos([]);
+        setDamagePhotos([]);
         setTimeout(() => plateInputRef.current?.focus(), 50);
     }, [reset, formStoreId, selectedStoreId, user, availableStores]);
 
@@ -735,22 +748,18 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 form_store_id: savedFormStoreId,
             });
             setPhotos([]);
+            setDamagePhotos([]);
             setTimeout(() => plateInputRef.current?.focus(), 50);
         },
         [reset]
     );
 
     const buildPayload = useCallback(
-        (data: QuickCreateFormData, uploadedPhotoUrls: string[]) => {
+        (data: QuickCreateFormData, uploadedPhotoUrls: string[], uploadedDamageUrls: string[] = []) => {
             const resolvedStoreId = data.form_store_id ?? storeId ?? 0;
             const resolvedStore = availableStores.find((s) => s.id === resolvedStoreId);
 
-            const notesText = [
-                data.notes || '',
-                data.is_courtesy ? '[CORTESIA]' : '',
-            ]
-                .filter(Boolean)
-                .join(' | ');
+            const notesText = data.notes || undefined;
 
             const isFilmDept = data.department === 'film' || data.department === 'ppf';
 
@@ -780,10 +789,13 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 consultant_id: data.consultant_id || undefined,
                 external_os_number: data.external_os_number || undefined,
                 is_galpon: data.is_galpon,
+                is_return: data.is_return,
+                is_courtesy: data.is_courtesy,
                 items,
                 workers,
-                notes: notesText || undefined,
+                notes: notesText,
                 photos: uploadedPhotoUrls,
+                damage_photos: uploadedDamageUrls,
                 service_date: data.service_date,
             };
         },
@@ -804,11 +816,25 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         }
     }, [photos]);
 
+    const uploadDamagePhotos = useCallback(async (): Promise<string[]> => {
+        const unuploaded = damagePhotos.filter((p) => !p.url);
+        if (unuploaded.length === 0) return damagePhotos.map((p) => p.url).filter(Boolean) as string[];
+        try {
+            const results = await uploadService.uploadPhotos(unuploaded);
+            const urlMap = new Map(results.map((r) => [r.id, r.url]));
+            const updated = damagePhotos.map((p) => urlMap.has(p.id) ? { ...p, url: urlMap.get(p.id), uploaded: true } : p);
+            setDamagePhotos(updated);
+            return updated.map((p) => p.url).filter(Boolean) as string[];
+        } catch {
+            throw new Error('Falha ao enviar foto de avaria. Tente novamente.');
+        }
+    }, [damagePhotos]);
+
     const onSave = handleSubmit(async (rawData) => {
         const data = rawData as QuickCreateFormData;
         try {
-            const uploadedUrls = await uploadPhotos();
-            await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls));
+            const [uploadedUrls, damageUrls] = await Promise.all([uploadPhotos(), uploadDamagePhotos()]);
+            await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls, damageUrls));
             toast({ title: 'OS lançada com sucesso!' });
             fullReset();
             onClose();
@@ -834,8 +860,8 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         const savedFormStore  = data.form_store_id;
 
         try {
-            const uploadedUrls = await uploadPhotos();
-            await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls));
+            const [uploadedUrls, damageUrls] = await Promise.all([uploadPhotos(), uploadDamagePhotos()]);
+            await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls, damageUrls));
             toast({ title: 'OS lançada! Próxima OS...' });
             partialReset(savedDept, savedConsultant, savedOsNumber, savedFormStore);
         } catch (err) {
@@ -899,8 +925,8 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             )}
                         </div>
 
-                        {/* Checkboxes: Galpão / Retorno / Cortesia */}
-                        <div className="flex items-center gap-4 pb-0.5">
+                        {/* Galpão checkbox + Cortesia/Retorno dropdown */}
+                        <div className="flex items-end gap-4 pb-0.5">
                             <label htmlFor="is_galpon" className="flex items-center gap-2 cursor-pointer select-none">
                                 <Checkbox
                                     checked={isGalpon}
@@ -909,22 +935,18 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                                 />
                                 <span className="text-sm font-medium">Galpão</span>
                             </label>
-                            <label htmlFor="is_return" className="flex items-center gap-2 cursor-pointer select-none">
-                                <Checkbox
-                                    checked={isReturn}
-                                    onCheckedChange={(v) => setValue('is_return', Boolean(v))}
-                                    id="is_return"
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Cortesia/Retorno
+                                </Label>
+                                <CourtesyReturnSelect
+                                    value={{ is_courtesy: isCourtesy, is_return: isReturn }}
+                                    onChange={({ is_courtesy, is_return }) => {
+                                        setValue('is_courtesy', is_courtesy);
+                                        setValue('is_return', is_return);
+                                    }}
                                 />
-                                <span className="text-sm font-medium">Retorno</span>
-                            </label>
-                            <label htmlFor="is_courtesy" className="flex items-center gap-2 cursor-pointer select-none">
-                                <Checkbox
-                                    checked={isCourtesy}
-                                    onCheckedChange={(v) => setValue('is_courtesy', Boolean(v))}
-                                    id="is_courtesy"
-                                />
-                                <span className="text-sm font-medium">Cortesia</span>
-                            </label>
+                            </div>
                         </div>
                     </div>
 
@@ -961,7 +983,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         {(department !== 'vn' && department !== 'vu') && (
                             <div className="sm:col-span-2 space-y-1.5">
                                 <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Nº OS Concessionária
+                                    Nº OS Concessionária <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
                                     id="external_os_number"
@@ -1009,7 +1031,18 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             <Label htmlFor="vehicle_model" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Modelo <span className="text-destructive">*</span>
                             </Label>
-                            {modelsLoading ? (
+                            {department === 'vu' ? (
+                                <Input
+                                    id="vehicle_model"
+                                    value={watch('vehicle_model')}
+                                    onChange={(e) => {
+                                        setValue('vehicle_model', e.target.value, { shouldValidate: true });
+                                        setValue('vehicle_model_id', undefined);
+                                    }}
+                                    placeholder="Digite o modelo..."
+                                    className={cn('h-10', errors.vehicle_model && 'border-destructive')}
+                                />
+                            ) : modelsLoading ? (
                                 <Skeleton className="h-10 w-full" />
                             ) : (
                                 <Select
@@ -1108,7 +1141,10 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     }
 
                     {/* Fotos */}
-                    <CompactPhotoUploader photos={photos} onChange={setPhotos} />
+                    <div className="flex flex-wrap gap-6">
+                        <CompactPhotoUploader photos={photos} onChange={setPhotos} label="Foto da OS" />
+                        <CompactPhotoUploader photos={damagePhotos} onChange={setDamagePhotos} label="Foto de Avaria" />
+                    </div>
 
                     {/* Observações */}
                     <div className="space-y-1.5">

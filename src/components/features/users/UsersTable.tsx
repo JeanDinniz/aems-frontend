@@ -130,17 +130,9 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                     </TableCell>
 
                                     <TableCell>
-                                        {user.role === 'owner' && (
+                                        {user.role === 'owner' ? (
                                             <span className="text-sm text-[#444444] dark:text-zinc-300">Todas</span>
-                                        )}
-                                        {user.role === 'supervisor' && user.supervised_store_ids && (
-                                            <span className="text-sm text-[#444444] dark:text-zinc-300">
-                                                {user.supervised_store_ids.length > 0
-                                                    ? `${user.supervised_store_ids.length} loja(s)`
-                                                    : 'Nenhuma'}
-                                            </span>
-                                        )}
-                                        {user.role === 'operator' && (
+                                        ) : (
                                             <span className="text-sm text-[#444444] dark:text-zinc-300">{user.store_name || '-'}</span>
                                         )}
                                     </TableCell>

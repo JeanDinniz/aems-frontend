@@ -37,7 +37,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { uploadService } from '@/services/api/upload.service';
 import {
     DeptToggle,
@@ -47,14 +48,13 @@ import {
     type FilmEntry,
 } from '@/components/features/service-orders/QuickCreateModal';
 
-// Badge de departamento — dark theme
 const DEPT_COLORS: Record<string, string> = {
-    film: 'bg-purple-900/40 text-purple-300 border-purple-700/50',
-    ppf: 'bg-blue-900/40 text-blue-300 border-blue-700/50',
-    vn: 'bg-green-900/40 text-green-300 border-green-700/50',
-    vu: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50',
-    bodywork: 'bg-orange-900/40 text-orange-300 border-orange-700/50',
-    workshop: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+    film:     'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700/50',
+    ppf:      'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50',
+    vn:       'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700/50',
+    vu:       'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700/50',
+    bodywork: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700/50',
+    workshop: 'bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
 };
 
 function DeptBadge({ dept }: { dept: string }) {
@@ -89,13 +89,21 @@ function calcTotal(order: ServiceOrder): number {
     }, 0);
 }
 
-// Nomes dos serviços de uma OS
-function getServiceNames(order: ServiceOrder, services?: Array<{ id: number; name: string }>): string {
-    if (!order.items || order.items.length === 0) return '—';
-    if (!services || services.length === 0) return `${order.items.length} serviço(s)`;
-    return order.items
-        .map((item) => services.find((s) => s.id === item.service_id)?.name ?? `Serviço #${item.service_id}`)
-        .join(', ');
+// Remove tags [CORTESIA] e [RETORNO] das observações para exibição
+function cleanNotes(notes: string | null | undefined): string {
+    if (!notes) return '—';
+    const clean = notes
+        .replace(/\s*\|\s*\[CORTESIA\]|\[CORTESIA\]\s*\|\s*/g, '')
+        .replace(/\s*\|\s*\[RETORNO\]|\[RETORNO\]\s*\|\s*/g, '')
+        .trim();
+    return clean || '—';
+}
+
+// Lista de nomes dos serviços de uma OS
+function getServiceList(order: ServiceOrder, services?: Array<{ id: number; name: string }>): string[] {
+    if (!order.items || order.items.length === 0) return [];
+    if (!services || services.length === 0) return order.items.map((_, i) => `Serviço #${i + 1}`);
+    return order.items.map((item) => item.service_name ?? services.find((s) => s.id === item.service_id)?.name ?? `Serviço #${item.service_id}`);
 }
 
 // ─── PhotoDialog ───────────────────────────────────────────────────────────────
@@ -139,11 +147,14 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
     const [saving, setSaving] = useState(false);
 
     const storeId = order?.location_id;
+    const { availableStores } = useStoreStore();
+    const storeBrandId = availableStores.find((s) => s.id === storeId)?.brand_id;
+
     const { consultants, isLoading: consultantsLoading } = useConsultants(
         storeId ? { store_id: storeId, is_active: true } : undefined
     );
     const { data: vehicleModels, isLoading: modelsLoading } = useVehicleModels(
-        storeId ? { active_only: true } : {}
+        storeId && storeBrandId ? { brand_id: storeBrandId, active_only: true } : {}
     );
 
     useEffect(() => {
@@ -383,6 +394,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     {isFilmDept ? (
                         <FilmPicker
                             storeId={storeId ?? 0}
+                            brandId={storeBrandId}
                             department={department as 'film' | 'ppf'}
                             selectedEntries={filmEntries}
                             onChange={setFilmEntries}
@@ -392,6 +404,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     ) : (
                         <ServicePicker
                             department={department}
+                            brandId={storeBrandId}
                             selectedIds={selectedServices}
                             onChange={setSelectedServices}
                         />
@@ -488,6 +501,12 @@ export function ConferencePage() {
     const [dateTo, setDateTo] = useState(today);
     const [department, setDepartment] = useState<string>('');
     const [search, setSearch] = useState('');
+    const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all'>('pending');
+
+    // Visibilidade de colunas condicionais por departamento
+    const showFilmCols = !department || department === 'film' || department === 'ppf';
+    const showTonality = !department || department === 'film';
+    const totalCols = 13 + (showFilmCols ? 2 : 0) + (showTonality ? 2 : 0);
 
     // Edit state
     const [editOrder, setEditOrder] = useState<ServiceOrder | null>(null);
@@ -495,16 +514,17 @@ export function ConferencePage() {
 
     // Photo lightbox state
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [damagePhotoUrl, setDamagePhotoUrl] = useState<string | null>(null);
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search];
+    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter];
 
     const { data, isLoading } = useQuery({
         queryKey,
         queryFn: () => serviceOrdersService.getFiltered({
             store_id: storeId,
-            is_verified: false,
+            is_verified: verifiedFilter === 'all' ? undefined : verifiedFilter === 'verified',
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             department: department || undefined,
@@ -532,6 +552,17 @@ export function ConferencePage() {
         },
     });
 
+    const unverifyMutation = useMutation({
+        mutationFn: (id: number) => serviceOrdersService.unverify(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] });
+            toast({ title: 'Verificação desfeita.' });
+        },
+        onError: () => {
+            toast({ variant: 'destructive', title: 'Erro ao desfazer verificação' });
+        },
+    });
+
     const orders = data?.items ?? [];
 
     const handleVerify = (order: ServiceOrder) => {
@@ -556,7 +587,7 @@ export function ConferencePage() {
                         Conferência de OS
                     </h1>
                     <p className="text-sm text-[#666666] dark:text-zinc-400">
-                        OS aguardando verificação
+                        {verifiedFilter === 'pending' ? 'OS aguardando verificação' : verifiedFilter === 'verified' ? 'OS verificadas' : 'Todas as OS'}
                     </p>
                 </div>
             </div>
@@ -596,6 +627,19 @@ export function ConferencePage() {
                     </Select>
                 </div>
                 <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Status</Label>
+                    <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all')}>
+                        <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="pending">Aguardando</SelectItem>
+                            <SelectItem value="verified">Verificadas</SelectItem>
+                            <SelectItem value="all">Todas</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Busca (placa/OS)</Label>
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#999999] dark:text-zinc-500" />
@@ -611,7 +655,7 @@ export function ConferencePage() {
 
             {/* Count */}
             <div className="text-sm text-[#666666] dark:text-zinc-400">
-                {isLoading ? '...' : `${orders.length} OS aguardando verificação`}
+                {isLoading ? '...' : verifiedFilter === 'pending' ? `${orders.length} OS aguardando verificação` : verifiedFilter === 'verified' ? `${orders.length} OS verificadas` : `${orders.length} OS no total`}
             </div>
 
             {/* Table */}
@@ -619,22 +663,30 @@ export function ConferencePage() {
                 <Table>
                     <TableHeader className="bg-gray-100 dark:bg-zinc-800/60">
                         <TableRow className="border-b border-[#E8E8E8] dark:border-[#333333] hover:bg-transparent">
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center">Ações</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Foto</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Data Serv.</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Depto</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Consultor</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Cortesia</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Placa</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Modelo</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Depto</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Foto</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Observações</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Serviços</TableHead>
+                            {showTonality && <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Tonalidade</TableHead>}
+                            {showTonality && <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">N° Pelicula</TableHead>}
+                            {showFilmCols && <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Instalador</TableHead>}
+                            {showFilmCols && <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº NF</TableHead>}
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-right">Valor</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center">Ações</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Foto de Avaria</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
                                 <TableRow key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                    {Array.from({ length: 9 }).map((_, j) => (
+                                    {Array.from({ length: totalCols }).map((_, j) => (
                                         <TableCell key={j} className="px-4 py-3">
                                             <div className="bg-gray-200 dark:bg-zinc-800 animate-pulse rounded h-4 w-full" />
                                         </TableCell>
@@ -643,28 +695,45 @@ export function ConferencePage() {
                             ))
                         ) : orders.length === 0 ? (
                             <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                <TableCell colSpan={9} className="text-center py-12 text-[#999999] dark:text-zinc-500">
+                                <TableCell colSpan={totalCols} className="text-center py-12 text-[#999999] dark:text-zinc-500">
                                     Nenhuma OS aguardando verificação
                                 </TableCell>
                             </TableRow>
                         ) : (
                             orders.map((order) => (
-                                <TableRow key={order.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
-                                        {order.external_os_number || order.order_number || `#${order.id}`}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
-                                        {formatDate(order.service_date)}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono font-medium">
-                                        {order.plate}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
-                                        {order.vehicle_model || '—'}
-                                    </TableCell>
+                                <TableRow key={order.id} className={`border-t border-[#E8E8E8] dark:border-[#333333] transition-colors ${order.is_verified ? 'bg-green-50 dark:bg-green-900/10 hover:bg-green-100/60 dark:hover:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40'}`}>
+                                    {/* Ações */}
                                     <TableCell className="px-4 py-3">
-                                        <DeptBadge dept={order.department} />
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={() => handleEdit(order)}
+                                                title="Editar"
+                                                className="h-8 w-8 rounded-lg text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                            {order.is_verified ? (
+                                                <button
+                                                    onClick={() => unverifyMutation.mutate(order.id)}
+                                                    disabled={unverifyMutation.isPending}
+                                                    title="Desfazer verificação"
+                                                    className="h-8 w-8 rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <RotateCcw className="h-4 w-4" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleVerify(order)}
+                                                    disabled={verifyMutation.isPending}
+                                                    title="Verificar"
+                                                    className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </TableCell>
+                                    {/* Foto */}
                                     <TableCell className="px-4 py-3">
                                         {order.photos?.[0] ? (
                                             <button
@@ -682,30 +751,141 @@ export function ConferencePage() {
                                             <ImageOff className="h-5 w-5 text-zinc-600" />
                                         )}
                                     </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 max-w-[200px] truncate">
-                                        {getServiceNames(order, services)}
+                                    {/* Data Serv. */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
+                                        {formatDate(order.service_date)}
                                     </TableCell>
+                                    {/* Depto */}
+                                    <TableCell className="px-4 py-3">
+                                        <DeptBadge dept={order.department} />
+                                    </TableCell>
+                                    {/* Consultor */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
+                                        {order.consultant_name || '—'}
+                                    </TableCell>
+                                    {/* Cortesia */}
+                                    <TableCell className="px-4 py-3">
+                                        {order.is_courtesy ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/50">
+                                                Cortesia
+                                            </span>
+                                        ) : (
+                                            <span className="text-sm text-zinc-400">—</span>
+                                        )}
+                                    </TableCell>
+                                    {/* Nº OS Conc. */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span>{order.external_os_number || order.order_number || `#${order.id}`}</span>
+                                            {order.is_return && (
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 w-fit">
+                                                    Retorno
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    {/* Placa */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono font-medium">
+                                        {order.plate}
+                                    </TableCell>
+                                    {/* Modelo */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
+                                        {order.vehicle_model || '—'}
+                                    </TableCell>
+                                    {/* Observações */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 max-w-[180px]">
+                                        <span
+                                            className="block truncate"
+                                            title={cleanNotes(order.notes) !== '—' ? cleanNotes(order.notes) : undefined}
+                                        >
+                                            {cleanNotes(order.notes)}
+                                        </span>
+                                    </TableCell>
+                                    {/* Serviços */}
+                                    <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 max-w-[220px]">
+                                        {(() => {
+                                            const list = getServiceList(order, services);
+                                            if (list.length === 0) return <span>—</span>;
+                                            const preview = list.length === 1
+                                                ? list[0]
+                                                : `${list[0].length > 22 ? list[0].slice(0, 22) + '…' : list[0]} +${list.length - 1}`;
+                                            return (
+                                                <TooltipProvider delayDuration={200}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="cursor-default truncate block">{preview}</span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom" className="max-w-xs p-2">
+                                                            <ul className="space-y-0.5">
+                                                                {list.map((name, i) => (
+                                                                    <li key={i} className="text-xs">{name}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    {/* Tonalidade (film) */}
+                                    {showTonality && (
+                                        <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
+                                            {order.department === 'film'
+                                                ? (order.items?.map(i => i.tonality).filter(Boolean).join(', ') || '—')
+                                                : <span className="text-zinc-300 dark:text-zinc-600">—</span>
+                                            }
+                                        </TableCell>
+                                    )}
+                                    {/* N° Pelicula (film) */}
+                                    {showTonality && (
+                                        <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 font-mono">
+                                            {order.department === 'film'
+                                                ? (order.items?.map(i => i.roll_code).filter(Boolean).join(', ') || '—')
+                                                : <span className="text-zinc-300 dark:text-zinc-600">—</span>
+                                            }
+                                        </TableCell>
+                                    )}
+                                    {/* Instalador (film/ppf) */}
+                                    {showFilmCols && (
+                                        <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
+                                            {(order.department === 'film' || order.department === 'ppf')
+                                                ? (order.workers && order.workers.length > 0
+                                                    ? order.workers.map(w => w.name).join(', ')
+                                                    : '—')
+                                                : <span className="text-zinc-300 dark:text-zinc-600">—</span>
+                                            }
+                                        </TableCell>
+                                    )}
+                                    {/* Nº NF (film/ppf) */}
+                                    {showFilmCols && (
+                                        <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400 font-mono">
+                                            {(order.department === 'film' || order.department === 'ppf')
+                                                ? (order.invoice_number || '—')
+                                                : <span className="text-zinc-300 dark:text-zinc-600">—</span>
+                                            }
+                                        </TableCell>
+                                    )}
+                                    {/* Valor */}
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 text-right font-medium">
                                         {formatCurrency(calcTotal(order))}
                                     </TableCell>
+                                    {/* Foto de Avaria */}
                                     <TableCell className="px-4 py-3">
-                                        <div className="flex items-center justify-center gap-1">
+                                        {order.damage_photos?.[0] ? (
                                             <button
-                                                onClick={() => handleEdit(order)}
-                                                title="Editar"
-                                                className="h-8 w-8 rounded-lg text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center"
+                                                onClick={() => setDamagePhotoUrl(order.damage_photos![0])}
+                                                className="block rounded overflow-hidden hover:opacity-80 transition-opacity"
+                                                title="Ver foto de avaria"
                                             >
-                                                <Pencil className="h-4 w-4" />
+                                                <img
+                                                    src={order.damage_photos[0]}
+                                                    alt="Foto de avaria"
+                                                    className="h-10 w-10 object-cover rounded"
+                                                />
                                             </button>
-                                            <button
-                                                onClick={() => handleVerify(order)}
-                                                disabled={verifyMutation.isPending}
-                                                title="Verificar"
-                                                className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                <CheckCircle className="h-4 w-4" />
-                                            </button>
-                                        </div>
+                                        ) : (
+                                            <ImageOff className="h-5 w-5 text-zinc-600" />
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -726,6 +906,13 @@ export function ConferencePage() {
                     url={photoUrl}
                     open={!!photoUrl}
                     onClose={() => setPhotoUrl(null)}
+                />
+            )}
+            {damagePhotoUrl && (
+                <PhotoDialog
+                    url={damagePhotoUrl}
+                    open={!!damagePhotoUrl}
+                    onClose={() => setDamagePhotoUrl(null)}
                 />
             )}
         </div>

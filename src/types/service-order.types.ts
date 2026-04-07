@@ -39,7 +39,7 @@ export interface ServiceOrder {
     department: Department;
     service_type: string;        // Mantendo compatibilidade se necessário, ou usar service_description
     service_description?: string;  // Descrição livre do serviço (LEGACY - use items)
-    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string }>;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string; service_name?: string | null }>;
     film_type?: string;          // Opcional agora, específico de film?
 
     // Workflow
@@ -58,6 +58,7 @@ export interface ServiceOrder {
 
     // Documentação
     photos: string[];              // URLs das fotos
+    damage_photos: string[];        // URLs das fotos de avaria
     damage_map: string | null;     // Mapa de avarias
     invoice_number: string | null; // Número da NF
 
@@ -67,6 +68,8 @@ export interface ServiceOrder {
     dealership_id?: number;
     dealership_name?: string;
     is_galpon: boolean;
+    is_return: boolean;
+    is_courtesy: boolean;
 
     notes: string | null;
     internal_notes?: string | null;
@@ -108,6 +111,8 @@ export interface CreateServiceOrderData {
     damage_map?: string;
     invoice_number?: string;
     is_galpon?: boolean;
+    is_return?: boolean;
+    is_courtesy?: boolean;
     service_date?: string;
 }
 

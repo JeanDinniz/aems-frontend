@@ -44,17 +44,10 @@ export function UserDetailsDialog({ user, open, onOpenChange }: UserDetailsDialo
                             <p>{user.phone || '-'}</p>
                         </div>
 
-                        {user.role === 'operator' && (
+                        {user.store_name && (
                             <div>
                                 <span className="text-sm font-medium text-gray-500">Loja Atribuída</span>
-                                <p>{user.store_name || '-'}</p>
-                            </div>
-                        )}
-
-                        {user.role === 'supervisor' && (
-                            <div>
-                                <span className="text-sm font-medium text-gray-500">Lojas Supervisionadas</span>
-                                <p>{user.supervised_store_ids?.length ? `${user.supervised_store_ids.length} loja(s)` : '-'}</p>
+                                <p>{user.store_name}</p>
                             </div>
                         )}
 

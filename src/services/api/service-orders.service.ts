@@ -39,6 +39,7 @@ interface BackendServiceOrder {
     entry_time?: string;
     created_at?: string;
     photos?: string | string[];
+    damage_photos?: string | string[];
     quality_checklist?: string | QualityChecklist;
     workers?: BackendWorker[];
     semaphore_color?: string;
@@ -53,7 +54,7 @@ interface BackendServiceOrder {
     notes?: string;
     damage_map?: string;
     invoice_number?: string;
-    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string }>;
+    items?: Array<{ service_id: number; quantity: number; unit_price?: number; notes?: string; tonality?: string; roll_code?: string; service_name?: string | null }>;
     services?: BackendService[];
     service_date?: string | null;
     is_verified?: boolean;
@@ -104,6 +105,7 @@ function parseJson<T>(value: unknown, fallback: T): T {
 // ─── Backend → Frontend mapper ────────────────────────────────────────────────
 function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
     const photos = parseJson<string[]>(raw.photos, []);
+    const damagePhotos = parseJson<string[]>(raw.damage_photos, []);
     const qualityChecklist = raw.quality_checklist
         ? parseJson<QualityChecklist>(raw.quality_checklist, undefined as unknown as QualityChecklist)
         : undefined;
@@ -122,6 +124,7 @@ function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
         notes: item.notes,
         tonality: item.tonality,
         roll_code: item.roll_code,
+        service_name: item.service_name ?? null,
     }));
 
     return {
@@ -135,6 +138,7 @@ function mapServiceOrder(raw: BackendServiceOrder): ServiceOrder {
         completed_at: raw.completion_time ?? raw.completed_at ?? null,
         delivered_at: raw.delivery_time ?? raw.delivered_at ?? null,
         photos,
+        damage_photos: damagePhotos,
         quality_checklist: qualityChecklist,
         workers,
         items,
@@ -218,6 +222,11 @@ export const serviceOrdersService = {
 
     verify: async (id: number): Promise<ServiceOrder> => {
         const response = await apiClient.patch<BackendServiceOrder>(`/service-orders/${id}`, { is_verified: true });
+        return mapServiceOrder(response.data);
+    },
+
+    unverify: async (id: number): Promise<ServiceOrder> => {
+        const response = await apiClient.patch<BackendServiceOrder>(`/service-orders/${id}`, { is_verified: false });
         return mapServiceOrder(response.data);
     },
 

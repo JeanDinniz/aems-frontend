@@ -19,7 +19,7 @@ export const mockUser: User = {
     id: 1,
     full_name: 'Test User',
     email: 'test@example.com',
-    role: 'operator',
+    role: 'user',
     is_active: true,
     must_change_password: false,
     store_id: 1,
@@ -36,7 +36,7 @@ export const mockSupervisor: User = {
     id: 2,
     full_name: 'Supervisor User',
     email: 'supervisor@example.com',
-    role: 'supervisor',
+    role: 'user',
     supervised_store_ids: [1, 2],
 };
 
@@ -559,7 +559,7 @@ export const handlers = [
             id: 4,
             full_name: body.full_name || '',
             email: body.email || '',
-            role: body.role || 'operator',
+            role: body.role || 'user',
             is_active: true,
             must_change_password: true,
             store_id: body.store_id || null,

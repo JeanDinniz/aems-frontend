@@ -38,7 +38,7 @@ export default function ServiceOrderDetailsPage() {
     const [cancelReason, setCancelReason] = useState('');
     const [pendingQualityItems, setPendingQualityItems] = useState<QualityChecklistItem[]>([]);
 
-    const canCancel = (user?.role === 'owner' || user?.role === 'supervisor')
+    const canCancel = user?.role === 'owner'
         && os?.status !== 'cancelled';
 
     const handleWorkerAssignment = (workerIds: number[], primaryWorkerId: number) => {

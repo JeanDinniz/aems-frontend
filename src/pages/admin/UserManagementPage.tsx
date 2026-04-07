@@ -37,7 +37,7 @@ export function UserManagementPage() {
                     >
                         Gestão de Usuários
                     </h1>
-                    <p className="text-[#666666] dark:text-zinc-400 text-sm">Gerenciar operadores, supervisores e owners</p>
+                    <p className="text-[#666666] dark:text-zinc-400 text-sm">Gerenciar usuários e owners</p>
                 </div>
                 <div className="flex gap-2">
                     <button

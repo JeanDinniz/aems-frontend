@@ -15,8 +15,7 @@ import { WashCenterLogo } from '@/components/brand/WashCenterLogo';
 import { WashCenterIcon } from '@/components/brand/WashCenterIcon';
 import type { SubModule } from '@/types/accessProfile.types';
 
-// All possible roles including the new profile-based 'user' role
-type AllowedRole = 'owner' | 'supervisor' | 'operator' | 'user';
+type AllowedRole = 'owner' | 'user';
 
 interface SidebarItem {
     icon: typeof ClipboardList;

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import brandsService from '@/services/api/brands.service';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -46,19 +47,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { storesService, type Store as StoreType, type UpdateStorePayload, type CreateStorePayload } from '@/services/api/stores.service';
 import { getApiErrorMessage } from '@/lib/api-error';
 
-const DEALERSHIP_BRANDS = [
-    { value: 'byd', label: 'BYD' },
-    { value: 'fiat', label: 'FIAT' },
-    { value: 'hyundai', label: 'HYUNDAI' },
-    { value: 'toyota', label: 'TOYOTA' },
-];
-
 const createStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
     code: z
         .string()
         .regex(/^LJ\d{2}$/, 'Código deve ser no formato LJ01 a LJ99'),
-    dealership_brand: z.string().optional().nullable(),
+    brand_id: z.number({ error: 'Selecione uma marca' }).int().positive('Selecione uma marca'),
     phone: z.string().optional(),
     address: z.string().optional(),
 });
@@ -75,12 +69,20 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
     const queryClient = useQueryClient();
     const { toast } = useToast();
 
+    const { data: brandsData } = useQuery({
+        queryKey: ['brands', 'active'],
+        queryFn: () => brandsService.list({ is_active: true }),
+        staleTime: 1000 * 60 * 10,
+    });
+
+    const brands = brandsData?.items ?? [];
+
     const form = useForm<CreateStoreFormValues>({
         resolver: zodResolver(createStoreSchema),
         defaultValues: {
             name: '',
             code: nextCode,
-            dealership_brand: null,
+            brand_id: undefined,
             phone: '',
             address: '',
         },
@@ -108,8 +110,7 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
             createMutation.mutate({
                 name: data.name,
                 code: data.code,
-                store_type: 'dealership',
-                dealership_brand: data.dealership_brand || null,
+                brand_id: data.brand_id,
                 phone: data.phone || null,
                 address: data.address || null,
             });
@@ -118,7 +119,7 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
     );
 
     return (
-        <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset({ code: nextCode }); }}>
+        <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset({ name: '', code: nextCode, brand_id: undefined, phone: '', address: '' }); }}>
             <DialogContent className="sm:max-w-[480px] bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333]">
                 <DialogHeader>
                     <DialogTitle className="text-[#111111] dark:text-white">Nova Loja</DialogTitle>
@@ -169,13 +170,13 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 
                         <FormField
                             control={form.control}
-                            name="dealership_brand"
+                            name="brand_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Marca da Concessionária</FormLabel>
+                                    <FormLabel className="text-[#666666] dark:text-zinc-300">Marca da Concessionária *</FormLabel>
                                     <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value ?? ''}
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? String(field.value) : ''}
                                     >
                                         <FormControl>
                                             <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
@@ -183,9 +184,9 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                            {DEALERSHIP_BRANDS.map((b) => (
-                                                <SelectItem key={b.value} value={b.value} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                                    {b.label}
+                                            {brands.map((b) => (
+                                                <SelectItem key={b.id} value={String(b.id)} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                                    {b.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -511,19 +512,25 @@ export function StoreManagementPage() {
     });
 
     const filteredStores = useMemo(() => {
-        return stores.filter((store) => {
-            const matchesSearch =
-                search.trim() === '' ||
-                store.name.toLowerCase().includes(search.toLowerCase()) ||
-                store.code.toLowerCase().includes(search.toLowerCase());
+        return stores
+            .filter((store) => {
+                const matchesSearch =
+                    search.trim() === '' ||
+                    store.name.toLowerCase().includes(search.toLowerCase()) ||
+                    store.code.toLowerCase().includes(search.toLowerCase());
 
-            const matchesStatus =
-                statusFilter === 'all' ||
-                (statusFilter === 'active' && store.is_active) ||
-                (statusFilter === 'inactive' && !store.is_active);
+                const matchesStatus =
+                    statusFilter === 'all' ||
+                    (statusFilter === 'active' && store.is_active) ||
+                    (statusFilter === 'inactive' && !store.is_active);
 
-            return matchesSearch && matchesStatus;
-        });
+                return matchesSearch && matchesStatus;
+            })
+            .sort((a, b) => {
+                const brandA = (a.brand?.name ?? a.dealership_brand ?? '').toLowerCase();
+                const brandB = (b.brand?.name ?? b.dealership_brand ?? '').toLowerCase();
+                return brandA.localeCompare(brandB, 'pt-BR');
+            });
     }, [stores, search, statusFilter]);
 
     const nextStoreCode = useMemo(() => {
@@ -612,7 +619,7 @@ export function StoreManagementPage() {
                 <table className="w-full">
                     <thead className="bg-gray-100 dark:bg-zinc-800/60">
                         <tr>
-                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left w-24">Código</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left w-24">Marca</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Nome</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Cidade / Estado</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Status</th>
@@ -644,7 +651,7 @@ export function StoreManagementPage() {
                                 <tr key={store.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
                                     <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         <span className="font-mono font-semibold text-sm text-[#111111] dark:text-zinc-100">
-                                            {store.code}
+                                            {store.brand?.name ?? store.dealership_brand ?? '—'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-medium">{store.name}</td>

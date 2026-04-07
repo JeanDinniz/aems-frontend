@@ -21,11 +21,8 @@ export function useStores() {
 
         if (user.role === 'owner') {
             setAvailableStores(allStores);
-        } else if (user.role === 'supervisor') {
-            const supervised = allStores.filter(s => user.supervised_store_ids?.includes(s.id));
-            setAvailableStores(supervised);
         } else {
-            // operator - only their store
+            // user - only their store if store_id is set
             const myStore = allStores.filter(s => s.id === user.store_id);
             setAvailableStores(myStore);
         }

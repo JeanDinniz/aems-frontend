@@ -1,5 +1,4 @@
-// 'user' is the new profile-based role introduced in the access profiles system
-export type UserRole = 'owner' | 'supervisor' | 'operator' | 'user';
+export type UserRole = 'owner' | 'user';
 
 export interface User {
     id: number;

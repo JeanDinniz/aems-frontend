@@ -1,5 +1,4 @@
-// 'user' is the new profile-based role (replaces supervisor/operator in the new system)
-export type UserRole = 'owner' | 'supervisor' | 'operator' | 'user';
+export type UserRole = 'owner' | 'user';
 
 export interface User {
     id: number;
@@ -25,8 +24,9 @@ export interface CreateUserPayload {
     full_name: string;
     email: string;
     role: UserRole;
-    store_id?: number;              // Para operator
-    supervised_store_ids?: number[]; // Para supervisor
+    password: string;
+    store_id?: number;
+    supervised_store_ids?: number[];
 }
 
 export interface UpdateUserPayload {

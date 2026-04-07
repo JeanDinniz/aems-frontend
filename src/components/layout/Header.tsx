@@ -22,8 +22,7 @@ interface HeaderProps {
 
 const roleLabels: Record<string, string> = {
     owner: 'Proprietário',
-    supervisor: 'Supervisor',
-    operator: 'Operador',
+    user: 'Usuário',
 };
 
 
@@ -38,13 +37,6 @@ function RoleBadge({ role }: { role: string }) {
                     borderColor: 'rgba(245,168,0,0.30)',
                 }}
             >
-                {roleLabels[role]}
-            </span>
-        );
-    }
-    if (role === 'supervisor') {
-        return (
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-500/15 text-blue-400 border-blue-500/30">
                 {roleLabels[role]}
             </span>
         );

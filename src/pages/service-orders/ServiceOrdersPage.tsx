@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useServiceOrders } from '@/hooks/useServiceOrders';
+import { useServiceOrders, useUpdateServiceOrderStatus } from '@/hooks/useServiceOrders';
 import { useStoreStore } from '@/stores/store.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,19 +20,35 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, ClipboardList, AlertCircle, Zap } from 'lucide-react';
+import { Search, ClipboardList, AlertCircle, Zap, Pencil } from 'lucide-react';
 import { QuickCreateModal } from '@/components/features/service-orders/QuickCreateModal';
+import { EditServicesModal } from '@/components/features/service-orders/EditServicesModal';
 import { EmptyState } from '@/components/common/EmptyState';
-import type { Department } from '@/types/service-order.types';
+import type { Department, ServiceOrder } from '@/types/service-order.types';
 import { DEPARTMENTS_MAP } from '@/constants/service-orders';
+
+const STATUS_COLORS: Record<string, string> = {
+    waiting: 'border-[#D1D1D1] text-[#666666]',
+    doing:   'border-[#F5A800] text-[#F5A800]',
+    ready:   'border-[#22c55e] text-[#22c55e]',
+};
 
 export default function ServiceOrdersPage() {
     const [page, setPage] = useState(0);
     const pageSize = 10;
     const [quickCreateOpen, setQuickCreateOpen] = useState(true);
+    const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
 
     const [departmentFilter, setDepartmentFilter] = useState<Department | 'all'>('all');
     const [search, setSearch] = useState('');
+    const [selectedDate, setSelectedDate] = useState<string>(
+        new Date().toISOString().split('T')[0]
+    );
+
+    const today = new Date().toISOString().split('T')[0];
+    const isToday = selectedDate === today;
+
+    const updateStatus = useUpdateServiceOrderStatus();
 
     const { selectedStoreId } = useStoreStore();
 
@@ -40,6 +56,9 @@ export default function ServiceOrdersPage() {
         {
             store_id: selectedStoreId ?? undefined,
             search: search || undefined,
+            department: departmentFilter !== 'all' ? departmentFilter : undefined,
+            date_from: selectedDate,
+            date_to: selectedDate,
         },
         page * pageSize,
         pageSize
@@ -110,6 +129,21 @@ export default function ServiceOrdersPage() {
                             <SelectItem value="workshop">Oficina</SelectItem>
                         </SelectContent>
                     </Select>
+
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                            Data
+                        </label>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                setPage(0);
+                            }}
+                            className="h-10 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -118,17 +152,20 @@ export default function ServiceOrdersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-gray-100 dark:bg-zinc-800/60 hover:bg-gray-100 dark:hover:bg-zinc-800/60 border-0">
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Ações</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Status</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Placa</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Veículo</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Departamento</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Serviços</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
                                 <TableRow key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                    {Array.from({ length: 4 }).map((__, j) => (
+                                    {Array.from({ length: 7 }).map((__, j) => (
                                         <TableCell key={j} className="px-4 py-3">
                                             <Skeleton className="h-5 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse" />
                                         </TableCell>
@@ -137,7 +174,7 @@ export default function ServiceOrdersPage() {
                             ))
                         ) : isError ? (
                             <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                <TableCell colSpan={4} className="px-4 py-3">
+                                <TableCell colSpan={7} className="px-4 py-3">
                                     <div className="flex items-center justify-center gap-2 py-8 text-red-400 text-sm">
                                         <AlertCircle className="w-4 h-4" />
                                         Erro ao carregar ordens de serviço. Tente recarregar a página.
@@ -146,7 +183,7 @@ export default function ServiceOrdersPage() {
                             </TableRow>
                         ) : data?.items.length === 0 ? (
                             <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                <TableCell colSpan={4} className="p-0">
+                                <TableCell colSpan={7} className="p-0">
                                     <EmptyState
                                         icon={ClipboardList}
                                         title={search ? 'Nenhuma O.S. encontrada' : 'Nenhuma ordem de serviço'}
@@ -161,6 +198,39 @@ export default function ServiceOrdersPage() {
                         ) : (
                             data?.items.map((os) => (
                                 <TableRow key={os.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+                                    {/* Ações */}
+                                    <TableCell className="px-4 py-3">
+                                        <button
+                                            onClick={() => setEditingOrder(os)}
+                                            disabled={!isToday}
+                                            className={[
+                                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition-colors',
+                                                isToday
+                                                    ? 'border-[#F5A800] text-[#F5A800] hover:bg-[#F5A800]/10 cursor-pointer'
+                                                    : 'border-[#D1D1D1] text-[#BBBBBB] dark:border-[#444444] dark:text-[#555555] opacity-50 cursor-not-allowed',
+                                            ].join(' ')}
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                            Editar
+                                        </button>
+                                    </TableCell>
+                                    {/* Status */}
+                                    <TableCell className="px-4 py-3">
+                                        <select
+                                            value={os.status}
+                                            onChange={(e) =>
+                                                updateStatus.mutate({ id: os.id, status: e.target.value })
+                                            }
+                                            className={[
+                                                'h-8 rounded-md border bg-transparent px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#F5A800] cursor-pointer',
+                                                STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
+                                            ].join(' ')}
+                                        >
+                                            <option value="waiting">Aguardando</option>
+                                            <option value="doing">Desenvolvendo</option>
+                                            <option value="ready">Finalizado</option>
+                                        </select>
+                                    </TableCell>
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono text-xs">{os.external_os_number || '—'}</TableCell>
                                     <TableCell className="px-4 py-3">
                                         <span className="bg-gray-100 dark:bg-zinc-800 border border-[#D1D1D1] dark:border-zinc-700 text-[#111111] dark:text-white font-mono px-2 py-0.5 rounded text-sm tracking-widest">
@@ -174,6 +244,24 @@ export default function ServiceOrdersPage() {
                                         <Badge variant="outline" className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 text-xs">
                                             {DEPARTMENTS_MAP[os.department] || os.department}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3">
+                                        <div className="flex flex-wrap gap-1">
+                                            {(os.items ?? [])
+                                                .filter(item => item.service_name)
+                                                .map((item, i) => (
+                                                    <span
+                                                        key={i}
+                                                        className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded"
+                                                    >
+                                                        {item.service_name}
+                                                    </span>
+                                                ))
+                                            }
+                                            {(!os.items || os.items.filter(item => item.service_name).length === 0) && (
+                                                <span className="text-muted-foreground text-xs">—</span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -208,6 +296,14 @@ export default function ServiceOrdersPage() {
                 open={quickCreateOpen}
                 onClose={() => setQuickCreateOpen(false)}
             />
+
+            {editingOrder && (
+                <EditServicesModal
+                    serviceOrder={editingOrder}
+                    open={!!editingOrder}
+                    onClose={() => setEditingOrder(null)}
+                />
+            )}
         </div>
     );
 }

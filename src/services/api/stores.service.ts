@@ -19,9 +19,7 @@ export interface Store {
 export interface CreateStorePayload {
     name: string;
     code: string;
-    store_type: 'dealership';
-    brand_id?: number | null;
-    dealership_brand?: string | null;
+    brand_id: number;
     address?: string | null;
     phone?: string | null;
 }

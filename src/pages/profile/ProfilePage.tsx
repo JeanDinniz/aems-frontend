@@ -31,8 +31,6 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 const roleLabels: Record<string, string> = {
     owner: 'Proprietario',
-    supervisor: 'Supervisor',
-    operator: 'Operador',
     user: 'Usuario',
 };
 

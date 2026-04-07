@@ -1,8 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth.store';
 
-// Extended to include the new 'user' role (profile-based access)
-type AllowedRole = 'owner' | 'supervisor' | 'operator' | 'user';
+type AllowedRole = 'owner' | 'user';
 
 interface RoleGuardProps {
     allowedRoles: AllowedRole[];

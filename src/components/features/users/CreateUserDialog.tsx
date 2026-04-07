@@ -18,6 +18,7 @@ const createUserSchema = z.object({
     full_name: z.string().min(3, 'Nome deve ter no minimo 3 caracteres'),
     email: z.string().email('E-mail invalido'),
     role: z.enum(['owner', 'user']),
+    password: z.string().min(8, 'Senha deve ter no minimo 8 caracteres'),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -48,6 +49,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             full_name: data.full_name,
             email: data.email,
             role: data.role as UserRole,
+            password: data.password,
         }, {
             onSuccess: () => {
                 reset();
@@ -91,20 +93,35 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label htmlFor="cu-role" className="text-sm font-medium">Cargo</label>
-                        <Select onValueChange={(value) => setValue('role', value as CreateUserForm['role'])}>
-                            <SelectTrigger id="cu-role">
-                                <SelectValue placeholder="Selecione o cargo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="user">Usuario</SelectItem>
-                                <SelectItem value="owner">Proprietario</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.role && (
-                            <p className="text-sm text-red-500">{errors.role.message}</p>
-                        )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label htmlFor="cu-role" className="text-sm font-medium">Cargo</label>
+                            <Select onValueChange={(value) => setValue('role', value as CreateUserForm['role'])}>
+                                <SelectTrigger id="cu-role">
+                                    <SelectValue placeholder="Selecione o cargo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="user">Usuario</SelectItem>
+                                    <SelectItem value="owner">Proprietario</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.role && (
+                                <p className="text-sm text-red-500">{errors.role.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="cu-password" className="text-sm font-medium">Senha Temporaria</label>
+                            <Input
+                                id="cu-password"
+                                type="password"
+                                {...register('password')}
+                                placeholder="Minimo 8 caracteres"
+                            />
+                            {errors.password && (
+                                <p className="text-sm text-red-500">{errors.password.message}</p>
+                            )}
+                        </div>
                     </div>
 
                     {selectedRole === 'user' && (
