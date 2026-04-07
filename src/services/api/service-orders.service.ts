@@ -233,6 +233,8 @@ export const serviceOrdersService = {
     getFiltered: async (params: {
         store_id?: number;
         is_verified?: boolean;
+        is_courtesy?: boolean;
+        status?: string;
         department?: string;
         date_from?: string;
         date_to?: string;

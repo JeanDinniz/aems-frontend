@@ -37,7 +37,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { uploadService } from '@/services/api/upload.service';
 import {
@@ -489,6 +489,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export function ConferencePage() {
     const user = useAuthStore((s) => s.user);
+    const hasDeletePermission = useAuthStore((s) => s.hasPermission);
     const { selectedStoreId } = useStoreStore();
     const queryClient = useQueryClient();
 
@@ -501,7 +502,8 @@ export function ConferencePage() {
     const [dateTo, setDateTo] = useState(today);
     const [department, setDepartment] = useState<string>('');
     const [search, setSearch] = useState('');
-    const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all'>('pending');
+    const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
+    const [courtesyOnly, setCourtesyOnly] = useState(false);
 
     // Visibilidade de colunas condicionais por departamento
     const showFilmCols = !department || department === 'film' || department === 'ppf';
@@ -512,19 +514,24 @@ export function ConferencePage() {
     const [editOrder, setEditOrder] = useState<ServiceOrder | null>(null);
     const [editOpen, setEditOpen] = useState(false);
 
+    // Delete state
+    const [deleteTarget, setDeleteTarget] = useState<ServiceOrder | null>(null);
+
     // Photo lightbox state
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [damagePhotoUrl, setDamagePhotoUrl] = useState<string | null>(null);
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter];
+    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, courtesyOnly];
 
     const { data, isLoading } = useQuery({
         queryKey,
         queryFn: () => serviceOrdersService.getFiltered({
             store_id: storeId,
-            is_verified: verifiedFilter === 'all' ? undefined : verifiedFilter === 'verified',
+            is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
+            status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
+            is_courtesy: courtesyOnly ? true : undefined,
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             department: department || undefined,
@@ -563,6 +570,18 @@ export function ConferencePage() {
         },
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => serviceOrdersService.cancel(id, 'OS cancelada via conferência'),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] });
+            toast({ title: 'OS cancelada.' });
+            setDeleteTarget(null);
+        },
+        onError: () => {
+            toast({ variant: 'destructive', title: 'Erro ao cancelar OS' });
+        },
+    });
+
     const orders = data?.items ?? [];
 
     const handleVerify = (order: ServiceOrder) => {
@@ -587,13 +606,13 @@ export function ConferencePage() {
                         Conferência de OS
                     </h1>
                     <p className="text-sm text-[#666666] dark:text-zinc-400">
-                        {verifiedFilter === 'pending' ? 'OS aguardando verificação' : verifiedFilter === 'verified' ? 'OS verificadas' : 'Todas as OS'}
+                        {verifiedFilter === 'pending' ? 'OS aguardando verificação' : verifiedFilter === 'verified' ? 'OS verificadas' : verifiedFilter === 'cancelled' ? 'OS canceladas' : 'Todas as OS'}
                     </p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-4 flex flex-wrap gap-3">
+            <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-4 flex flex-wrap gap-3 items-start">
                 <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data início</Label>
                     <Input
@@ -628,7 +647,7 @@ export function ConferencePage() {
                 </div>
                 <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Status</Label>
-                    <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all')}>
+                    <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all' | 'cancelled')}>
                         <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
                             <SelectValue />
                         </SelectTrigger>
@@ -636,6 +655,7 @@ export function ConferencePage() {
                             <SelectItem value="pending">Aguardando</SelectItem>
                             <SelectItem value="verified">Verificadas</SelectItem>
                             <SelectItem value="all">Todas</SelectItem>
+                            <SelectItem value="cancelled">Canceladas</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -651,11 +671,25 @@ export function ConferencePage() {
                         />
                     </div>
                 </div>
+                <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia</Label>
+                    <button
+                        type="button"
+                        onClick={() => setCourtesyOnly((v) => !v)}
+                        className={`block h-9 px-4 rounded-lg text-sm font-medium border transition-colors ${
+                            courtesyOnly
+                                ? 'bg-amber-100 text-amber-700 border-amber-400 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-600'
+                                : 'bg-white text-[#666666] border-[#D1D1D1] dark:bg-[#252525] dark:text-zinc-400 dark:border-[#333333]'
+                        }`}
+                    >
+                        Somente Cortesia
+                    </button>
+                </div>
             </div>
 
             {/* Count */}
             <div className="text-sm text-[#666666] dark:text-zinc-400">
-                {isLoading ? '...' : verifiedFilter === 'pending' ? `${orders.length} OS aguardando verificação` : verifiedFilter === 'verified' ? `${orders.length} OS verificadas` : `${orders.length} OS no total`}
+                {isLoading ? '...' : verifiedFilter === 'pending' ? `${orders.length} OS aguardando verificação` : verifiedFilter === 'verified' ? `${orders.length} OS verificadas` : verifiedFilter === 'cancelled' ? `${orders.length} OS canceladas` : `${orders.length} OS no total`}
             </div>
 
             {/* Table */}
@@ -729,6 +763,15 @@ export function ConferencePage() {
                                                     className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <CheckCircle className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                            {hasDeletePermission('conference', 'delete') && (
+                                                <button
+                                                    onClick={() => setDeleteTarget(order)}
+                                                    title="Excluir OS"
+                                                    className="h-8 w-8 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors flex items-center justify-center"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
                                                 </button>
                                             )}
                                         </div>
@@ -915,6 +958,29 @@ export function ConferencePage() {
                     onClose={() => setDamagePhotoUrl(null)}
                 />
             )}
+
+            <Dialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+                <DialogContent className="max-w-sm bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333]">
+                    <DialogHeader>
+                        <DialogTitle className="text-[#111111] dark:text-white">Cancelar OS?</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-[#666666] dark:text-zinc-400">
+                        A OS <span className="font-semibold text-[#111111] dark:text-white">#{deleteTarget?.id}</span> será cancelada e não aparecerá mais na listagem padrão. É possível visualizá-la filtrando por "Canceladas".
+                    </p>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                            Voltar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            disabled={deleteMutation.isPending}
+                            onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+                        >
+                            {deleteMutation.isPending ? 'Cancelando...' : 'Confirmar'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
