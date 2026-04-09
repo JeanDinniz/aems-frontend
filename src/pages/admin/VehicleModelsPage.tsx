@@ -5,7 +5,13 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Dialog,
     DialogContent,
@@ -31,9 +37,10 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ModelForm {
     name: string;
+    brand_id: string;
 }
 
-const INITIAL_FORM: ModelForm = { name: '' };
+const INITIAL_FORM: ModelForm = { name: '', brand_id: '' };
 
 export function VehicleModelsPage() {
     const { user } = useAuth();
@@ -54,24 +61,28 @@ export function VehicleModelsPage() {
     });
 
     const brands = brandsData?.items ?? [];
-    const resolvedBrandId = activeBrandId ?? brands[0]?.id ?? null;
 
     const { data: models, isLoading: modelsLoading } = useQuery({
-        queryKey: ['vehicle-models', 'management', resolvedBrandId],
-        queryFn: () =>
-            resolvedBrandId
-                ? vehicleModelsService.list({ brand_id: resolvedBrandId, active_only: false })
-                : Promise.resolve([]),
-        enabled: !!resolvedBrandId,
+        queryKey: ['vehicle-models', 'management', activeBrandId, brands.map((b) => b.id)],
+        queryFn: async () => {
+            if (activeBrandId !== null) {
+                return vehicleModelsService.list({ brand_id: activeBrandId, active_only: false });
+            }
+            // "Todos": busca modelos de cada marca em paralelo e combina
+            const results = await Promise.all(
+                brands.map((b) => vehicleModelsService.list({ brand_id: b.id, active_only: false }))
+            );
+            return results.flat();
+        },
+        enabled: brands.length > 0,
         staleTime: 1000 * 60 * 2,
     });
 
     const createMutation = useMutation({
         mutationFn: () => {
-            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
-            return vehicleModelsService.create(resolvedBrandId, {
-                name: form.name.trim(),
-            });
+            const brandId = Number(form.brand_id);
+            if (!brandId) throw new Error('Nenhuma marca selecionada');
+            return vehicleModelsService.create(brandId, { name: form.name.trim() });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -86,8 +97,8 @@ export function VehicleModelsPage() {
 
     const updateMutation = useMutation({
         mutationFn: () => {
-            if (!editingModel || !resolvedBrandId) throw new Error('Dados inválidos');
-            return vehicleModelsService.update(editingModel.id, resolvedBrandId, {
+            if (!editingModel) throw new Error('Dados inválidos');
+            return vehicleModelsService.update(editingModel.id, editingModel.brand_id, {
                 name: form.name.trim(),
             });
         },
@@ -104,8 +115,9 @@ export function VehicleModelsPage() {
 
     const deactivateMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
-            return vehicleModelsService.deactivate(id, resolvedBrandId);
+            const model = models?.find((m) => m.id === id);
+            if (!model) throw new Error('Modelo não encontrado');
+            return vehicleModelsService.deactivate(id, model.brand_id);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -119,8 +131,9 @@ export function VehicleModelsPage() {
 
     const reactivateMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
-            return vehicleModelsService.update(id, resolvedBrandId, { is_active: true });
+            const model = models?.find((m) => m.id === id);
+            if (!model) throw new Error('Modelo não encontrado');
+            return vehicleModelsService.update(id, model.brand_id, { is_active: true });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -133,8 +146,9 @@ export function VehicleModelsPage() {
 
     const hardDeleteMutation = useMutation({
         mutationFn: (id: number) => {
-            if (!resolvedBrandId) throw new Error('Nenhuma marca selecionada');
-            return vehicleModelsService.hardDelete(id, resolvedBrandId);
+            const model = models?.find((m) => m.id === id);
+            if (!model) throw new Error('Modelo não encontrado');
+            return vehicleModelsService.hardDelete(id, model.brand_id);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vehicle-models'] });
@@ -152,12 +166,16 @@ export function VehicleModelsPage() {
 
     const handleEdit = (model: VehicleModelItem) => {
         setEditingModel(model);
-        setForm({ name: model.name });
+        setForm({ name: model.name, brand_id: String(model.brand_id) });
     };
 
     const handleCreate = () => {
         if (!form.name.trim()) {
             toast({ variant: 'destructive', title: 'Nome é obrigatório.' });
+            return;
+        }
+        if (!form.brand_id) {
+            toast({ variant: 'destructive', title: 'Marca é obrigatória.' });
             return;
         }
         createMutation.mutate();
@@ -194,7 +212,6 @@ export function VehicleModelsPage() {
                         setForm(INITIAL_FORM);
                         setAddDialogOpen(true);
                     }}
-                    disabled={!resolvedBrandId}
                     className="font-semibold"
                     style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
@@ -203,117 +220,127 @@ export function VehicleModelsPage() {
                 </Button>
             </div>
 
-            {/* Tabs por Marca */}
-            {brands.length > 0 && (
-                <Tabs
-                    value={String(resolvedBrandId)}
-                    onValueChange={(v) => setActiveBrandId(Number(v))}
-                >
-                    <TabsList className="flex flex-wrap h-auto gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                        {brands.map((brand) => (
-                            <TabsTrigger
-                                key={brand.id}
-                                value={String(brand.id)}
-                                className="text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] dark:data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
-                            >
-                                {brand.name}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-
-                    {brands.map((brand) => (
-                        <TabsContent key={brand.id} value={String(brand.id)} className="mt-4">
-                            {isLoading ? (
-                                <div className="flex items-center justify-center h-40">
-                                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
-                                </div>
-                            ) : !models?.length ? (
-                                <div className="flex flex-col items-center justify-center h-40 gap-2">
-                                    <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
-                                    <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhum modelo cadastrado para {brand.name}.</p>
-                                </div>
-                            ) : (
-                                <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
-                                    <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
-                                        {models.map((model) => (
-                                            <div
-                                                key={model.id}
-                                                className="flex items-center gap-3 px-4 py-2.5 border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors first:border-t-0"
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="text-sm font-medium text-[#111111] dark:text-zinc-200">{model.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    {model.is_active ? (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
-                                                            Ativo
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border border-[#D1D1D1] dark:border-zinc-700">
-                                                            Inativo
-                                                        </span>
-                                                    )}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                                        onClick={() => handleEdit(model)}
-                                                        aria-label="Editar modelo"
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    {model.is_active ? (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                                            onClick={() => setConfirmDeactivateId(model.id)}
-                                                            aria-label="Desativar modelo"
-                                                        >
-                                                            <PowerOff className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                                                            onClick={() => reactivateMutation.mutate(model.id)}
-                                                            disabled={reactivateMutation.isPending}
-                                                            aria-label="Reativar modelo"
-                                                        >
-                                                            <Power className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                                        onClick={() => setConfirmHardDeleteId(model.id)}
-                                                        aria-label="Excluir modelo permanentemente"
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </TabsContent>
-                    ))}
-                </Tabs>
-            )}
-
-            {brandsLoading && (
-                <div className="flex items-center justify-center h-40">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
-                </div>
-            )}
-
-            {!brandsLoading && brands.length === 0 && (
+            {!brandsLoading && brands.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-2">
                     <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
                     <p className="text-sm text-[#666666] dark:text-zinc-500">Nenhuma marca cadastrada. Cadastre marcas primeiro.</p>
+                </div>
+            ) : (
+                /* Filtro de Marca */
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Select
+                            value={activeBrandId !== null ? String(activeBrandId) : 'all'}
+                            onValueChange={(v) => setActiveBrandId(v === 'all' ? null : Number(v))}
+                        >
+                            <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                <SelectValue placeholder="Marca" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    Todos
+                                </SelectItem>
+                                {brands.map((brand) => (
+                                    <SelectItem
+                                        key={brand.id}
+                                        value={String(brand.id)}
+                                        className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
+                                    >
+                                        {brand.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-40">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                        </div>
+                    ) : !models?.length ? (
+                        <div className="flex flex-col items-center justify-center h-40 gap-2">
+                            <Car className="h-10 w-10 text-[#999999]/40 dark:text-zinc-400/40" />
+                            <p className="text-sm text-[#666666] dark:text-zinc-500">
+                                Nenhum modelo encontrado para os filtros selecionados.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                            {/* Header da tabela */}
+                            <div className="grid grid-cols-[2fr_1fr_auto_auto] gap-x-4 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800/60 border-b border-[#D1D1D1] dark:border-[#333333]">
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Nome do Modelo</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Marca</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Status</span>
+                                <span className="w-24" />
+                            </div>
+                            <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
+                                {models.map((model) => (
+                                    <div
+                                        key={model.id}
+                                        className="grid grid-cols-[2fr_1fr_auto_auto] gap-x-4 items-center px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
+                                    >
+                                        <span className="text-sm font-medium text-[#111111] dark:text-zinc-200">{model.name}</span>
+                                        <span className="text-sm text-[#666666] dark:text-zinc-400">
+                                            {model.brand?.name ?? brands.find((b) => b.id === model.brand_id)?.name ?? '—'}
+                                        </span>
+                                        <div>
+                                            {model.is_active ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
+                                                    Ativo
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-[#666666] dark:text-zinc-400 border border-[#D1D1D1] dark:border-zinc-700">
+                                                    Inativo
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0 w-24 justify-end">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
+                                                onClick={() => handleEdit(model)}
+                                                aria-label="Editar modelo"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </Button>
+                                            {model.is_active ? (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                                    onClick={() => setConfirmDeactivateId(model.id)}
+                                                    aria-label="Desativar modelo"
+                                                >
+                                                    <PowerOff className="h-3.5 w-3.5" />
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                                                    onClick={() => reactivateMutation.mutate(model.id)}
+                                                    disabled={reactivateMutation.isPending}
+                                                    aria-label="Reativar modelo"
+                                                >
+                                                    <Power className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                                onClick={() => setConfirmHardDeleteId(model.id)}
+                                                aria-label="Excluir modelo permanentemente"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -330,6 +357,24 @@ export function VehicleModelsPage() {
                         <DialogTitle className="text-[#111111] dark:text-white">Novo Modelo</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-[#666666] dark:text-zinc-300">Marca *</Label>
+                            <Select
+                                value={form.brand_id}
+                                onValueChange={(v) => setForm({ ...form, brand_id: v })}
+                            >
+                                <SelectTrigger className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                    <SelectValue placeholder="Selecione a marca" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                    {brands.map((b) => (
+                                        <SelectItem key={b.id} value={String(b.id)} className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                            {b.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="model-name" className="text-[#666666] dark:text-zinc-300">Nome do Modelo *</Label>
                             <Input

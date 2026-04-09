@@ -5,7 +5,6 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Select,
     SelectContent,
@@ -168,6 +167,7 @@ export default function ServicesPage() {
     const queryClient = useQueryClient();
 
     const [activeBrandId, setActiveBrandId] = useState<number | null>(null);
+    const [activeDept, setActiveDept] = useState<string>('all');
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [editingService, setEditingService] = useState<ServiceItem | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
@@ -182,7 +182,7 @@ export default function ServicesPage() {
     });
 
     const brands = brandsData?.items ?? [];
-    const resolvedBrandId = activeBrandId ?? brands[0]?.id ?? null;
+    const resolvedBrandId = activeBrandId; // null = Todos
 
     // Load all services at once
     const { data: allServices, isLoading: servicesLoading } = useQuery({
@@ -196,26 +196,17 @@ export default function ServicesPage() {
 
     const isLoading = brandsLoading || servicesLoading;
 
-    // Filter by active brand (by brand_id)
-    const brandServices = useMemo(
-        () => allServices?.filter((s) => s.brand_id === resolvedBrandId) ?? [],
-        [allServices, resolvedBrandId]
-    );
-
-    // Group by department instead of category
-    const groupedByDepartment = useMemo(() => {
-        const groups: Record<string, ServiceItem[]> = {};
-        for (const svc of brandServices) {
-            const dept = svc.department ?? 'other';
-            if (!groups[dept]) groups[dept] = [];
-            groups[dept].push(svc);
+    // Filter by active brand and/or department
+    const brandServices = useMemo(() => {
+        let filtered = allServices ?? [];
+        if (resolvedBrandId !== null) {
+            filtered = filtered.filter((s) => s.brand_id === resolvedBrandId);
         }
-        const deptLabel = (key: string) =>
-            DEPARTMENTS.find((d) => d.value === key)?.label ?? key;
-        return Object.entries(groups).sort(([a], [b]) =>
-            deptLabel(a).localeCompare(deptLabel(b))
-        );
-    }, [brandServices]);
+        if (activeDept !== 'all') {
+            filtered = filtered.filter((s) => s.department === activeDept);
+        }
+        return filtered;
+    }, [allServices, resolvedBrandId, activeDept]);
 
     // Count per brand for badges
     const brandCounts = useMemo(() => {
@@ -381,7 +372,7 @@ export default function ServicesPage() {
                     onClick={() => {
                         setForm({
                             ...INITIAL_FORM,
-                            brand_id: resolvedBrandId ? String(resolvedBrandId) : '',
+                            brand_id: resolvedBrandId !== null ? String(resolvedBrandId) : '',
                         });
                         setCodeDuplicateWarning(false);
                         setAddDialogOpen(true);
@@ -394,103 +385,124 @@ export default function ServicesPage() {
                 </Button>
             </div>
 
-            {/* Tabs por Marca */}
+            {/* Filtros */}
             {brands.length > 0 && (
-                <Tabs
-                    value={String(resolvedBrandId)}
-                    onValueChange={(v) => setActiveBrandId(Number(v))}
-                >
-                    <TabsList className="flex flex-wrap h-auto gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                        {brands.map((brand) => (
-                            <TabsTrigger
-                                key={brand.id}
-                                value={String(brand.id)}
-                                className="group gap-2 text-[#666666] dark:text-zinc-400 data-[state=active]:bg-[#F5A800] data-[state=active]:text-[#111111] data-[state=active]:font-semibold rounded"
-                            >
-                                {brand.name}
-                                {(brandCounts[brand.id] ?? 0) > 0 && (
-                                    <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs font-normal bg-gray-200 dark:bg-zinc-700 text-[#444444] dark:text-zinc-300 group-data-[state=active]:bg-black/20 group-data-[state=active]:text-[#111111]">
-                                        {brandCounts[brand.id]}
-                                    </span>
-                                )}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <Select
+                            value={resolvedBrandId !== null ? String(resolvedBrandId) : 'all'}
+                            onValueChange={(v) => setActiveBrandId(v === 'all' ? null : Number(v))}
+                        >
+                            <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                <SelectValue placeholder="Marca" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    Todos
+                                </SelectItem>
+                                {brands.map((brand) => (
+                                    <SelectItem
+                                        key={brand.id}
+                                        value={String(brand.id)}
+                                        className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
+                                    >
+                                        {brand.name}{(brandCounts[brand.id] ?? 0) > 0 ? ` (${brandCounts[brand.id]})` : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
 
-                    {brands.map((brand) => (
-                        <TabsContent key={brand.id} value={String(brand.id)} className="mt-4">
-                            {isLoading ? (
-                                <div className="flex items-center justify-center h-40">
-                                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
-                                </div>
-                            ) : !groupedByDepartment.length ? (
-                                <div className="flex flex-col items-center justify-center h-40 gap-2">
-                                    <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
-                                    <p className="text-sm text-[#999999] dark:text-zinc-500">
-                                        Nenhum servico cadastrado para {brand.name}.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {groupedByDepartment.map(([dept, deptServices]) => (
-                                        <div key={dept} className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
-                                            <div className="bg-gray-100 dark:bg-zinc-800/60 px-4 py-2.5 flex items-center gap-2 border-b border-[#D1D1D1] dark:border-[#333333]">
-                                                <h3 className="font-semibold text-sm text-[#111111] dark:text-zinc-200">
-                                                    {deptLabel(dept)}
-                                                </h3>
-                                                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full text-xs border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 bg-transparent">
-                                                    {deptServices.length}
-                                                </span>
-                                            </div>
-                                            <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
-                                                {deptServices.map((svc) => (
-                                                    <div
-                                                        key={svc.id}
-                                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
-                                                    >
-                                                        <div className="flex-1 min-w-0">
-                                                            <span className="text-sm text-[#111111] dark:text-zinc-200">{svc.name}</span>
-                                                            {svc.code && (
-                                                                <span className="ml-2 text-xs text-[#666666] dark:text-zinc-400">
-                                                                    [{svc.code}]
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-1 shrink-0">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                                                onClick={() => handleEdit(svc)}
-                                                                aria-label="Editar servico"
-                                                            >
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                                                                onClick={() => setConfirmDeleteId(svc.id)}
-                                                                aria-label="Remover servico"
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                        <Select
+                            value={activeDept}
+                            onValueChange={setActiveDept}
+                        >
+                            <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                <SelectValue placeholder="Departamento" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                    Todos
+                                </SelectItem>
+                                {DEPARTMENTS.map((d) => (
+                                    <SelectItem
+                                        key={d.value}
+                                        value={d.value}
+                                        className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
+                                    >
+                                        {d.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-40">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                        </div>
+                    ) : !brandServices.length ? (
+                        <div className="flex flex-col items-center justify-center h-40 gap-2">
+                            <PackageSearch className="h-10 w-10 text-[#CCCCCC] dark:text-zinc-400/40" />
+                            <p className="text-sm text-[#999999] dark:text-zinc-500">
+                                Nenhum servico encontrado para os filtros selecionados.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+                            {/* Header da tabela */}
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-x-4 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800/60 border-b border-[#D1D1D1] dark:border-[#333333]">
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Nome do Serviço</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Código</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Departamento</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Marca</span>
+                                <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Valor</span>
+                                <span className="w-16" />
+                            </div>
+                            {/* Linhas */}
+                            <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
+                                {brandServices.map((svc) => (
+                                    <div
+                                        key={svc.id}
+                                        className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-x-4 items-center px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
+                                    >
+                                        <span className="text-sm text-[#111111] dark:text-zinc-200 truncate">{svc.name}</span>
+                                        <span className="text-sm text-[#666666] dark:text-zinc-400 truncate">
+                                            {svc.code ?? '—'}
+                                        </span>
+                                        <span className="text-sm text-[#666666] dark:text-zinc-400 truncate">
+                                            {deptLabel(svc.department)}
+                                        </span>
+                                        <span className="text-sm text-[#666666] dark:text-zinc-400 truncate">
+                                            {brands.find((b) => b.id === svc.brand_id)?.name ?? '—'}
+                                        </span>
+                                        <span className="text-sm text-[#111111] dark:text-zinc-200 font-medium">
+                                            {svc.base_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        </span>
+                                        <div className="flex items-center gap-1 shrink-0 w-16 justify-end">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
+                                                onClick={() => handleEdit(svc)}
+                                                aria-label="Editar servico"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
+                                                onClick={() => setConfirmDeleteId(svc.id)}
+                                                aria-label="Remover servico"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </TabsContent>
-                    ))}
-                </Tabs>
-            )}
-
-            {brandsLoading && (
-                <div className="flex items-center justify-center h-40">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#999999] dark:text-zinc-400" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
