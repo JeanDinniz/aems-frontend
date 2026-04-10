@@ -302,8 +302,8 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
         onError: () => {
             toast({
                 variant: 'destructive',
-                title: 'Erro',
-                description: 'Falha ao atualizar a loja. Tente novamente.',
+                title: 'Não foi possível atualizar',
+                description: 'Ocorreu um erro ao atualizar os dados da loja. Tente novamente.',
             });
         },
     });

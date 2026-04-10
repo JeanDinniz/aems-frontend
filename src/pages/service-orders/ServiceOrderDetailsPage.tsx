@@ -102,8 +102,8 @@ export default function ServiceOrderDetailsPage() {
             onError: () => {
                 toast({
                     variant: "destructive",
-                    title: "Erro",
-                    description: "Falha ao aprovar serviço."
+                    title: "Não foi possível aprovar",
+                    description: "Ocorreu um erro ao aprovar o serviço. Tente novamente."
                 });
             }
         });
@@ -137,7 +137,6 @@ export default function ServiceOrderDetailsPage() {
             onSuccess: () => {
                 setShowQualityDialog(false);
                 toast({
-                    variant: "destructive",
                     title: "Serviço Reprovado",
                     description: "O serviço voltou para a fase de execução."
                 });
@@ -145,8 +144,8 @@ export default function ServiceOrderDetailsPage() {
             onError: () => {
                 toast({
                     variant: "destructive",
-                    title: "Erro",
-                    description: "Falha ao reprovar serviço."
+                    title: "Não foi possível reprovar",
+                    description: "Ocorreu um erro ao reprovar o serviço. Tente novamente."
                 });
             }
         });
@@ -156,15 +155,15 @@ export default function ServiceOrderDetailsPage() {
         updateStatus.mutate({ id: Number(id), status: newStatus }, {
             onSuccess: () => {
                 toast({
-                    title: "Status atualizado",
-                    description: `O status da OS foi alterado para ${STATUS_LABELS[newStatus]}.`
+                    title: "Situação atualizada",
+                    description: `A OS foi atualizada para: ${STATUS_LABELS[newStatus]}.`
                 });
             },
             onError: () => {
                 toast({
                     variant: "destructive",
-                    title: "Erro",
-                    description: "Não foi possível atualizar o status."
+                    title: "Não foi possível atualizar",
+                    description: "Ocorreu um erro ao atualizar a situação da OS. Tente novamente."
                 });
             }
         });
@@ -479,8 +478,8 @@ export default function ServiceOrderDetailsPage() {
                                         onError: () => {
                                             toast({
                                                 variant: 'destructive',
-                                                title: 'Erro',
-                                                description: 'Não foi possível cancelar a OS.',
+                                                title: 'Não foi possível cancelar',
+                                                description: 'Ocorreu um erro ao cancelar a OS. Tente novamente.',
                                             });
                                         },
                                     }

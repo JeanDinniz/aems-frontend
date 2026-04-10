@@ -42,7 +42,7 @@ export function useConsultants(filters?: ConsultantFilters, page = 1) {
         },
         onError: (error: Error) => {
             toast({
-                title: 'Erro ao atualizar',
+                title: 'Erro ao atualizar consultor',
                 description: getApiErrorMessage(error),
                 variant: 'destructive',
             });

@@ -38,8 +38,8 @@ export function ForgotPasswordPage() {
         },
         onError: () => {
             toast({
-                title: 'Erro',
-                description: 'Não foi possível enviar o e-mail. Tente novamente.',
+                title: 'Não foi possível enviar',
+                description: 'Não foi possível enviar o e-mail de recuperação. Tente novamente.',
                 variant: 'destructive',
             });
         },

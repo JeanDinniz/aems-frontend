@@ -70,8 +70,8 @@ export function ProfilePage() {
         },
         onError: () => {
             toast({
-                title: 'Erro',
-                description: 'Não foi possível atualizar o perfil.',
+                title: 'Não foi possível atualizar',
+                description: 'Ocorreu um erro ao salvar as informações do perfil. Tente novamente.',
                 variant: 'destructive',
             });
         },
@@ -89,8 +89,8 @@ export function ProfilePage() {
         },
         onError: (error: Error) => {
             toast({
-                title: 'Erro',
-                description: getApiErrorMessage(error, 'Não foi possível alterar a senha.'),
+                title: 'Não foi possível alterar a senha',
+                description: getApiErrorMessage(error, 'Verifique a senha atual e tente novamente.'),
                 variant: 'destructive',
             });
         },

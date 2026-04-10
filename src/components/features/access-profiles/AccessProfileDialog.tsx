@@ -145,7 +145,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                     };
                 }
                 setPermState(newPerms);
-                setSelectedStoreIds(new Set(profile.store_ids));
+                setSelectedStoreIds(new Set(profile.store_ids.map(String)));
             } else {
                 reset({
                     name: '',
@@ -224,10 +224,10 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
                     <Tabs defaultValue="geral" className="flex flex-col flex-1 min-h-0">
-                        <TabsList className="mx-6 mt-4 w-auto justify-start shrink-0">
-                            <TabsTrigger value="geral">Geral</TabsTrigger>
-                            <TabsTrigger value="permissions">Permissoes</TabsTrigger>
-                            <TabsTrigger value="stores">Lojas</TabsTrigger>
+                        <TabsList className="mx-6 mt-4 w-auto justify-start shrink-0 bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
+                            <TabsTrigger value="geral" className="data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-gray-500 dark:text-zinc-400">Geral</TabsTrigger>
+                            <TabsTrigger value="permissions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-gray-500 dark:text-zinc-400">Permissoes</TabsTrigger>
+                            <TabsTrigger value="stores" className="data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-gray-500 dark:text-zinc-400">Lojas</TabsTrigger>
                         </TabsList>
 
                         {/* Tab: Geral */}
@@ -253,6 +253,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                                     {...register('description')}
                                     placeholder="Descreva o propósito deste perfil..."
                                     rows={3}
+                                    className="border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 resize-none"
                                 />
                             </div>
 

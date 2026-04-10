@@ -59,23 +59,24 @@ export function FechamentoPage() {
     const [dateFrom, setDateFrom] = useState(firstOfMonth);
     const [dateTo, setDateTo] = useState(lastOfMonth);
     const [department, setDepartment] = useState<string>('');
-    const [courtesyOnly, setCourtesyOnly] = useState(false);
+    const [flagFilter, setFlagFilter] = useState<'all' | 'courtesy' | 'galpon'>('all');
     const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
 
     const selectedStore = availableStores.find((s) => s.id === storeId);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['service-orders', 'fechamento', storeId, dateFrom, dateTo, department, courtesyOnly],
+        queryKey: ['service-orders', 'fechamento', storeId, dateFrom, dateTo, department, flagFilter],
         queryFn: () => serviceOrdersService.getFiltered({
             store_id: storeId || undefined,
             is_verified: true,
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             department: department || undefined,
-            is_courtesy: courtesyOnly ? true : undefined,
+            is_courtesy: flagFilter === 'courtesy' ? true : undefined,
+            is_galpon: flagFilter === 'galpon' ? true : undefined,
             limit: 9999,
         }),
-        enabled: !!storeId,
+        enabled: true,
     });
 
     const orders = data?.items ?? [];
@@ -125,7 +126,8 @@ export function FechamentoPage() {
                     date_from: dateFrom || undefined,
                     date_to: dateTo || undefined,
                     department: department || undefined,
-                    is_courtesy: courtesyOnly ? true : undefined,
+                    is_courtesy: flagFilter === 'courtesy' ? true : undefined,
+                    is_galpon: flagFilter === 'galpon' ? true : undefined,
                 },
                 responseType: 'blob',
             });
@@ -234,17 +236,20 @@ export function FechamentoPage() {
                     </Select>
                 </div>
                 <div className="space-y-1">
-                    <Label className="block text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Cortesia</Label>
-                    <button
-                        onClick={() => setCourtesyOnly((v) => !v)}
-                        className={`block h-9 px-4 rounded-lg text-sm font-semibold border transition-all ${
-                            courtesyOnly
-                                ? 'bg-amber-500 text-white border-amber-500'
-                                : 'bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white hover:border-amber-400'
-                        }`}
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Cortesia/Galpão</Label>
+                    <Select
+                        value={flagFilter}
+                        onValueChange={(v) => setFlagFilter(v as 'all' | 'courtesy' | 'galpon')}
                     >
-                        Somente Cortesia
-                    </button>
+                        <SelectTrigger className="w-48 bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            <SelectItem value="all" className="focus:bg-zinc-700 focus:text-white">Todos</SelectItem>
+                            <SelectItem value="courtesy" className="focus:bg-zinc-700 focus:text-white">Somente Cortesia</SelectItem>
+                            <SelectItem value="galpon" className="focus:bg-zinc-700 focus:text-white">Somente Galpão</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
@@ -298,14 +303,14 @@ export function FechamentoPage() {
                                                 <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Data</th>
                                                 <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Placa</th>
                                                 <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Nº OS</th>
-                                                <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Cortesia</th>
+                                                <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Cortesia/Galpão</th>
                                                 <th className="text-left px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Serviços</th>
                                                 <th className="text-right px-4 py-2 font-semibold text-[#666666] dark:text-zinc-400 text-xs uppercase tracking-wide">Valor</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {group.orders.map((order) => {
-                                                const orderAny = order as typeof order & { is_courtesy?: boolean };
+                                                const orderAny = order as typeof order & { is_courtesy?: boolean; is_galpon?: boolean };
                                                 const serviceNames = order.items
                                                     ?.map((i) => i.service_name)
                                                     .filter(Boolean)
@@ -325,13 +330,21 @@ export function FechamentoPage() {
                                                             {order.order_number}
                                                         </td>
                                                         <td className="px-4 py-2">
-                                                            {orderAny.is_courtesy ? (
-                                                                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
-                                                                    Sim
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-xs text-[#999999] dark:text-zinc-500">—</span>
-                                                            )}
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {orderAny.is_courtesy && (
+                                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
+                                                                        Cortesia
+                                                                    </span>
+                                                                )}
+                                                                {orderAny.is_galpon && (
+                                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                                                                        Galpão
+                                                                    </span>
+                                                                )}
+                                                                {!orderAny.is_courtesy && !orderAny.is_galpon && (
+                                                                    <span className="text-xs text-[#999999] dark:text-zinc-500">—</span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-2 text-[#666666] dark:text-zinc-400 max-w-xs">
                                                             <span className="line-clamp-1" title={serviceNames}>{serviceNames}</span>

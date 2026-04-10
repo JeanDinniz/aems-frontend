@@ -42,7 +42,7 @@ export function useUsers(filters?: UserFilters, page = 1) {
         },
         onError: (error: Error) => {
             toast({
-                title: 'Erro ao atualizar',
+                title: 'Erro ao atualizar usuário',
                 description: getApiErrorMessage(error),
                 variant: 'destructive',
             });
@@ -94,13 +94,13 @@ export function useUsers(filters?: UserFilters, page = 1) {
         mutationFn: (id: number) => usersService.resetPassword(id),
         onSuccess: (data) => {
             toast({
-                title: 'Senha resetada',
+                title: 'Senha redefinida',
                 description: `Nova senha temporária: ${data.temporary_password}`,
             });
         },
         onError: (error: Error) => {
             toast({
-                title: 'Erro ao resetar senha',
+                title: 'Não foi possível redefinir a senha',
                 description: getApiErrorMessage(error),
                 variant: 'destructive',
             });

@@ -32,8 +32,8 @@ export function UserProfilesSection({ userId }: UserProfilesSectionProps) {
         if (profiles.length > 0) {
             const linkedIds = new Set(
                 profiles
-                    .filter((p) => p.user_ids.includes(userId))
-                    .map((p) => p.id)
+                    .filter((p) => p.user_ids.some((id) => String(id) === userId))
+                    .map((p) => String(p.id))
             );
             setSelected(linkedIds);
             setInitialSelected(linkedIds);
@@ -87,16 +87,18 @@ export function UserProfilesSection({ userId }: UserProfilesSectionProps) {
                 Selecione os perfis que este usuario deve herdar.
             </p>
             <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                {profiles.map((profile) => (
+                {profiles.map((profile) => {
+                    const profileId = String(profile.id);
+                    return (
                     <label
-                        key={profile.id}
-                        htmlFor={`up-profile-${profile.id}`}
+                        key={profileId}
+                        htmlFor={`up-profile-${profileId}`}
                         className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
                     >
                         <Checkbox
-                            id={`up-profile-${profile.id}`}
-                            checked={selected.has(profile.id)}
-                            onCheckedChange={(v) => handleToggle(profile.id, Boolean(v))}
+                            id={`up-profile-${profileId}`}
+                            checked={selected.has(profileId)}
+                            onCheckedChange={(v) => handleToggle(profileId, Boolean(v))}
                             disabled={addUsers.isPending || removeUsers.isPending}
                         />
                         <div className="flex-1 min-w-0">
@@ -114,7 +116,8 @@ export function UserProfilesSection({ userId }: UserProfilesSectionProps) {
                             )}
                         </div>
                     </label>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

@@ -34,7 +34,7 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
             toast({ title: 'Funcionário atualizado', description: 'As alterações foram salvas.' });
         },
         onError: (error: Error) => {
-            toast({ title: 'Erro ao atualizar', description: getApiErrorMessage(error), variant: 'destructive' });
+            toast({ title: 'Erro ao atualizar funcionário', description: getApiErrorMessage(error), variant: 'destructive' });
         },
     });
 
@@ -45,7 +45,7 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
             toast({ title: 'Funcionário desativado' });
         },
         onError: () => {
-            toast({ title: 'Erro ao desativar', variant: 'destructive' });
+            toast({ title: 'Erro ao desativar funcionário', variant: 'destructive' });
         },
     });
 
@@ -56,7 +56,7 @@ export function useEmployees(filters?: EmployeeFilters, page = 1) {
             toast({ title: 'Funcionário reativado' });
         },
         onError: () => {
-            toast({ title: 'Erro ao reativar', variant: 'destructive' });
+            toast({ title: 'Erro ao reativar funcionário', variant: 'destructive' });
         },
     });
 

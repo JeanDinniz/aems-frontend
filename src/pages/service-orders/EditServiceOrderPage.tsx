@@ -123,8 +123,8 @@ export default function EditServiceOrderPage() {
             {
                 onSuccess: () => {
                     toast({
-                        title: 'Sucesso',
-                        description: 'Ordem de serviço atualizada com sucesso!',
+                        title: 'OS atualizada com sucesso',
+                        description: 'As alterações foram salvas.',
                     });
                     navigate(`/service-orders/${id}`);
                 },
@@ -132,8 +132,8 @@ export default function EditServiceOrderPage() {
                     logger.error(error);
                     toast({
                         variant: 'destructive',
-                        title: 'Erro',
-                        description: 'Erro ao atualizar ordem de serviço.',
+                        title: 'Não foi possível salvar',
+                        description: 'Ocorreu um erro ao atualizar a ordem de serviço. Tente novamente.',
                     });
                 },
             }

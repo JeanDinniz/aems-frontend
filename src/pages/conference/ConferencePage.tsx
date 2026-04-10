@@ -528,7 +528,7 @@ export function ConferencePage() {
     const { data, isLoading } = useQuery({
         queryKey,
         queryFn: () => serviceOrdersService.getFiltered({
-            store_id: storeId,
+            store_id: storeId ?? undefined,
             is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
             status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
             is_courtesy: flagFilter === 'courtesy' ? true : undefined,
@@ -539,7 +539,7 @@ export function ConferencePage() {
             plate: search || undefined,
             limit: 200,
         }),
-        enabled: !!storeId,
+        enabled: true,
     });
 
     // Lista de serviços para exibir nomes nas colunas
@@ -694,15 +694,16 @@ export function ConferencePage() {
 
             {/* Table */}
             <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-gray-100 dark:bg-zinc-800/60">
                         <TableRow className="border-b border-[#E8E8E8] dark:border-[#333333] hover:bg-transparent">
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center">Ações</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Foto</TableHead>
+                            <TableHead className="sticky left-0 z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Ações</TableHead>
+                            <TableHead className="sticky left-[140px] z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Foto</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Data Serv.</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Depto</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Consultor</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Cortesia</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Cortesia/Galpão</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Placa</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Modelo</TableHead>
@@ -737,7 +738,7 @@ export function ConferencePage() {
                             orders.map((order) => (
                                 <TableRow key={order.id} className={`border-t border-[#E8E8E8] dark:border-[#333333] transition-colors ${order.is_verified ? 'bg-green-50 dark:bg-green-900/10 hover:bg-green-100/60 dark:hover:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40'}`}>
                                     {/* Ações */}
-                                    <TableCell className="px-4 py-3">
+                                    <TableCell className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-4 py-3 w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#E8E8E8] after:dark:bg-zinc-700">
                                         <div className="flex items-center justify-center gap-1">
                                             <button
                                                 onClick={() => handleEdit(order)}
@@ -777,7 +778,7 @@ export function ConferencePage() {
                                         </div>
                                     </TableCell>
                                     {/* Foto */}
-                                    <TableCell className="px-4 py-3">
+                                    <TableCell className="sticky left-[140px] z-10 bg-white dark:bg-zinc-900 px-4 py-3 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#E8E8E8] after:dark:bg-zinc-700">
                                         {order.photos?.[0] ? (
                                             <button
                                                 onClick={() => setPhotoUrl(order.photos![0])}
@@ -943,6 +944,7 @@ export function ConferencePage() {
                         )}
                     </TableBody>
                 </Table>
+              </div>
             </div>
 
             <EditDialog

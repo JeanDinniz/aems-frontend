@@ -865,7 +865,15 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             toast({ title: 'OS lançada! Próxima OS...' });
             partialReset(savedDept, savedConsultant, savedOsNumber, savedFormStore);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Verifique os dados e tente novamente.';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const detail = (err as any)?.response?.data?.detail;
+            const msg = typeof detail === 'string'
+                ? detail
+                : Array.isArray(detail)
+                    ? detail.map((d: { msg?: string }) => d.msg).join('; ')
+                    : err instanceof Error
+                        ? err.message
+                        : 'Verifique os dados e tente novamente.';
             toast({ variant: 'destructive', title: 'Erro ao lançar OS', description: msg });
         }
     });
