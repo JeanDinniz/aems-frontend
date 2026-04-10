@@ -85,6 +85,7 @@ const schema = z.object({
     selected_services: z.array(z.number()).default([]),
     is_return: z.boolean().default(false),
     is_courtesy: z.boolean().default(false),
+    courtesy_return_set: z.boolean().refine((v) => v === true, { message: 'Selecione uma opção' }),
     is_galpon: z.boolean().default(false),
     notes: z.string().optional(),
     service_date: z.string().min(1, 'Data do serviço obrigatória'),
@@ -648,6 +649,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             selected_services: [],
             is_return: false,
             is_courtesy: false,
+            courtesy_return_set: false,
             is_galpon: false,
             notes: '',
             service_date: new Date().toISOString().split('T')[0],
@@ -657,11 +659,12 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         },
     });
 
-    const department   = watch('department');
-    const selectedSvcs = watch('selected_services');
-    const isReturn     = watch('is_return');
-    const isCourtesy   = watch('is_courtesy');
-    const isGalpon     = watch('is_galpon');
+    const department         = watch('department');
+    const selectedSvcs       = watch('selected_services');
+    const isReturn           = watch('is_return');
+    const isCourtesy         = watch('is_courtesy');
+    const courtesyReturnSet  = watch('courtesy_return_set');
+    const isGalpon           = watch('is_galpon');
     const formStoreId  = watch('form_store_id');
 
     // Resolve loja: form_store_id (multi-store) or selectedStoreId/user's store
@@ -715,6 +718,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             selected_services: [],
             is_return: false,
             is_courtesy: false,
+            courtesy_return_set: false,
             is_galpon: false,
             notes: '',
             service_date: new Date().toISOString().split('T')[0],
@@ -741,6 +745,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 selected_services: [],
                 is_return: false,
                 is_courtesy: false,
+                courtesy_return_set: false,
                 is_galpon: false,
                 notes: '',
                 service_date: new Date().toISOString().split('T')[0],
@@ -944,15 +949,21 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             </label>
                             <div className="flex flex-col gap-1">
                                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Cortesia/Retorno
+                                    Cortesia/Retorno <span className="text-destructive">*</span>
                                 </Label>
                                 <CourtesyReturnSelect
                                     value={{ is_courtesy: isCourtesy, is_return: isReturn }}
+                                    isSet={courtesyReturnSet}
+                                    error={errors.courtesy_return_set?.message}
                                     onChange={({ is_courtesy, is_return }) => {
                                         setValue('is_courtesy', is_courtesy);
                                         setValue('is_return', is_return);
+                                        setValue('courtesy_return_set', true, { shouldValidate: true });
                                     }}
                                 />
+                                {errors.courtesy_return_set && (
+                                    <p className="text-xs text-destructive">{errors.courtesy_return_set.message}</p>
+                                )}
                             </div>
                         </div>
                     </div>

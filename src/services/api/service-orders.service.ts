@@ -233,8 +233,7 @@ export const serviceOrdersService = {
     getFiltered: async (params: {
         store_id?: number;
         is_verified?: boolean;
-        is_courtesy?: boolean;
-        is_galpon?: boolean;
+        flag?: string[];
         status?: string;
         department?: string;
         date_from?: string;
@@ -245,7 +244,12 @@ export const serviceOrdersService = {
     }) => {
         const searchParams = new URLSearchParams();
         Object.entries(params).forEach(([k, v]) => {
-            if (v !== undefined && v !== null) searchParams.append(k, String(v));
+            if (v === undefined || v === null) return;
+            if (Array.isArray(v)) {
+                v.forEach((item) => searchParams.append(k, String(item)));
+            } else {
+                searchParams.append(k, String(v));
+            }
         });
         const response = await apiClient.get<BackendPaginatedResponse>(`/service-orders?${searchParams.toString()}`);
         const raw = response.data;

@@ -37,8 +37,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download, ChevronDown } from 'lucide-react';
 import apiClient from '@/services/api/client';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+    DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { uploadService } from '@/services/api/upload.service';
 import {
@@ -48,6 +54,54 @@ import {
     CompactPhotoUploader,
     type FilmEntry,
 } from '@/components/features/service-orders/QuickCreateModal';
+
+// ─── Flag Filter Dropdown (Cortesia / Galpão / Retorno) ───────────────────────
+
+interface FlagFilters { courtesy: boolean; galpon: boolean; retorno: boolean }
+
+function FlagFilterDropdown({ value, onChange }: { value: FlagFilters; onChange: (v: FlagFilters) => void }) {
+    const [open, setOpen] = useState(false);
+
+    const active = [
+        value.courtesy && 'Cortesia',
+        value.galpon   && 'Galpão',
+        value.retorno  && 'Retorno',
+    ].filter(Boolean) as string[];
+
+    const label = active.length === 0 ? 'Todos' : active.join(', ');
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    className="flex h-9 w-52 items-center justify-between gap-2 rounded-lg border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 text-sm text-[#111111] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#2A2A2A] focus:outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] transition-colors"
+                >
+                    <span className="truncate">{label}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 opacity-50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44 p-1 border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#1A1A1A]">
+                {([
+                    { key: 'courtesy', label: 'Cortesia' },
+                    { key: 'galpon',   label: 'Galpão'   },
+                    { key: 'retorno',  label: 'Retorno'  },
+                ] as { key: keyof FlagFilters; label: string }[]).map(opt => (
+                    <DropdownMenuCheckboxItem
+                        key={opt.key}
+                        checked={value[opt.key]}
+                        onSelect={(e) => { e.preventDefault(); onChange({ ...value, [opt.key]: !value[opt.key] }); }}
+                        className="text-sm text-[#111111] dark:text-white focus:bg-[#F5F5F5] dark:focus:bg-[#2A2A2A] [&>span]:border-2 [&>span]:border-[#F5A800] [&>span]:rounded-sm"
+                    >
+                        {opt.label}
+                    </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const DEPT_COLORS: Record<string, string> = {
     film:     'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700/50',
@@ -509,7 +563,7 @@ export function ConferencePage() {
     const [department, setDepartment] = useState<string>('');
     const [search, setSearch] = useState('');
     const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
-    const [flagFilter, setFlagFilter] = useState<'all' | 'courtesy' | 'galpon'>('all');
+    const [flagFilters, setFlagFilters] = useState({ courtesy: false, galpon: false, retorno: false });
     const [isExporting, setIsExporting] = useState(false);
 
     // Visibilidade de colunas condicionais por departamento
@@ -530,7 +584,7 @@ export function ConferencePage() {
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilter];
+    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilters];
 
     const { data, isLoading } = useQuery({
         queryKey,
@@ -538,8 +592,11 @@ export function ConferencePage() {
             store_id: storeId ?? undefined,
             is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
             status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
-            is_courtesy: flagFilter === 'courtesy' ? true : undefined,
-            is_galpon: flagFilter === 'galpon' ? true : undefined,
+            flag: [
+                flagFilters.courtesy ? 'courtesy' : null,
+                flagFilters.galpon ? 'galpon' : null,
+                flagFilters.retorno ? 'retorno' : null,
+            ].filter(Boolean) as string[],
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             department: department || undefined,
@@ -606,8 +663,11 @@ export function ConferencePage() {
                     date_to: dateTo || undefined,
                     department: department || undefined,
                     is_verified: verifiedFilter === 'verified' ? true : verifiedFilter === 'pending' ? false : undefined,
-                    is_courtesy: flagFilter === 'courtesy' ? true : undefined,
-                    is_galpon: flagFilter === 'galpon' ? true : undefined,
+                    flag: [
+                        flagFilters.courtesy ? 'courtesy' : null,
+                        flagFilters.galpon ? 'galpon' : null,
+                        flagFilters.retorno ? 'retorno' : null,
+                    ].filter(Boolean),
                     plate: search || undefined,
                 },
                 responseType: 'blob',
@@ -635,7 +695,7 @@ export function ConferencePage() {
     };
 
     return (
-        <div className="p-6 flex flex-col gap-6 h-full">
+        <div className="p-6 flex flex-col gap-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -724,17 +784,8 @@ export function ConferencePage() {
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia/Galpão</Label>
-                    <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as 'all' | 'courtesy' | 'galpon')}>
-                        <SelectTrigger className="w-44 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
-                            <SelectValue placeholder="Todos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos</SelectItem>
-                            <SelectItem value="courtesy">Somente Cortesia</SelectItem>
-                            <SelectItem value="galpon">Somente Galpão</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia/Galpão/Retorno</Label>
+                    <FlagFilterDropdown value={flagFilters} onChange={setFlagFilters} />
                 </div>
             </div>
 
@@ -744,9 +795,8 @@ export function ConferencePage() {
             </div>
 
             {/* Table */}
-            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden flex-1 min-h-0">
-              <div className="overflow-auto h-full">
-                <Table>
+            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden h-[calc(100vh-400px)] min-h-[300px]">
+                <Table wrapperClassName="h-full overflow-auto">
                     <TableHeader className="sticky top-0 z-10 bg-gray-100 dark:bg-zinc-800/60">
                         <TableRow className="border-b border-[#E8E8E8] dark:border-[#333333] hover:bg-transparent">
                             <TableHead className="sticky left-0 z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Ações</TableHead>
@@ -995,7 +1045,6 @@ export function ConferencePage() {
                         )}
                     </TableBody>
                 </Table>
-              </div>
             </div>
 
             <EditDialog

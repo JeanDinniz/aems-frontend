@@ -18,6 +18,8 @@ export interface CourtesyReturnValue {
 export interface CourtesyReturnSelectProps {
     value: CourtesyReturnValue;
     onChange: (value: CourtesyReturnValue) => void;
+    isSet?: boolean;
+    error?: string;
 }
 
 // ─── Option config ────────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ function applyClick(key: OptionKey, current: CourtesyReturnValue): CourtesyRetur
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CourtesyReturnSelect({ value, onChange }: CourtesyReturnSelectProps) {
+export function CourtesyReturnSelect({ value, onChange, isSet = false, error }: CourtesyReturnSelectProps) {
     const [open, setOpen] = useState(false);
     const [shaking, setShaking] = useState(false);
     const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,9 +146,12 @@ export function CourtesyReturnSelect({ value, onChange }: CourtesyReturnSelectPr
                 <button
                     type="button"
                     className={cn(
-                        'flex h-9 w-36 items-center justify-between gap-2 rounded-md border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#1A1A1A] px-3 text-sm text-[#111111] dark:text-white cursor-pointer',
+                        'flex h-9 w-36 items-center justify-between gap-2 rounded-md border bg-white dark:bg-[#1A1A1A] px-3 text-sm cursor-pointer',
                         'hover:bg-[#F5F5F5] dark:hover:bg-[#222222] transition-colors',
                         'focus:outline-none focus:border-[#F5A800]',
+                        error && !isSet
+                            ? 'border-destructive'
+                            : 'border-[#D1D1D1] dark:border-[#333333]',
                         shaking && 'courtesy-return-shake',
                     )}
                     aria-haspopup="listbox"
@@ -154,9 +159,11 @@ export function CourtesyReturnSelect({ value, onChange }: CourtesyReturnSelectPr
                 >
                     <span className={cn(
                         'truncate',
-                        (value.is_courtesy || value.is_return) && 'font-medium',
+                        !isSet && 'text-muted-foreground',
+                        isSet && (value.is_courtesy || value.is_return) && 'font-medium text-[#111111] dark:text-white',
+                        isSet && !value.is_courtesy && !value.is_return && 'text-[#111111] dark:text-white',
                     )}>
-                        {getTriggerLabel(value)}
+                        {isSet ? getTriggerLabel(value) : 'Selecionar...'}
                     </span>
                     <ChevronDown className={cn(
                         'h-4 w-4 shrink-0 opacity-50 transition-transform duration-200',
@@ -170,7 +177,7 @@ export function CourtesyReturnSelect({ value, onChange }: CourtesyReturnSelectPr
                 className="w-36 p-1 border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#1A1A1A]"
             >
                 {OPTIONS.map((option) => {
-                    const active = isActive(option.key, value);
+                    const active = isSet && isActive(option.key, value);
                     const wouldBlock = !active && option.key !== 'none' && activeCount(value) >= 2;
 
                     return (
