@@ -175,7 +175,7 @@ export function FechamentoPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 p-4 bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl">
+            <div className="flex flex-wrap items-end gap-3 p-4 bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl">
                 {availableStores.length > 1 && (
                     <div className="space-y-1">
                         <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-400">Loja</Label>

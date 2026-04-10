@@ -216,20 +216,26 @@ export default function ServiceOrdersPage() {
                                     </TableCell>
                                     {/* Status */}
                                     <TableCell className="px-4 py-3">
-                                        <select
+                                        <Select
                                             value={os.status}
-                                            onChange={(e) =>
-                                                updateStatus.mutate({ id: os.id, status: e.target.value })
+                                            onValueChange={(value) =>
+                                                updateStatus.mutate({ id: os.id, status: value })
                                             }
-                                            className={[
-                                                'h-8 rounded-md border bg-transparent px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#F5A800] cursor-pointer',
-                                                STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
-                                            ].join(' ')}
                                         >
-                                            <option value="waiting">Aguardando</option>
-                                            <option value="doing">Desenvolvendo</option>
-                                            <option value="ready">Finalizado</option>
-                                        </select>
+                                            <SelectTrigger
+                                                className={[
+                                                    'h-8 w-36 rounded-md border bg-white dark:bg-[#252525] px-2 text-xs font-semibold focus:ring-1 focus:ring-[#F5A800] focus:border-[#F5A800] cursor-pointer',
+                                                    STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
+                                                ].join(' ')}
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white rounded-lg shadow-lg">
+                                                <SelectItem value="waiting" className="text-xs font-semibold text-[#666666] dark:text-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800">Aguardando</SelectItem>
+                                                <SelectItem value="doing" className="text-xs font-semibold text-[#F5A800] focus:bg-zinc-100 dark:focus:bg-zinc-800">Desenvolvendo</SelectItem>
+                                                <SelectItem value="ready" className="text-xs font-semibold text-[#22c55e] focus:bg-zinc-100 dark:focus:bg-zinc-800">Finalizado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono text-xs">{os.external_os_number || '—'}</TableCell>
                                     <TableCell className="px-4 py-3">

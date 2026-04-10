@@ -503,7 +503,7 @@ export function ConferencePage() {
     const [department, setDepartment] = useState<string>('');
     const [search, setSearch] = useState('');
     const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
-    const [courtesyOnly, setCourtesyOnly] = useState(false);
+    const [flagFilter, setFlagFilter] = useState<'all' | 'courtesy' | 'galpon'>('all');
 
     // Visibilidade de colunas condicionais por departamento
     const showFilmCols = !department || department === 'film' || department === 'ppf';
@@ -523,7 +523,7 @@ export function ConferencePage() {
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, courtesyOnly];
+    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilter];
 
     const { data, isLoading } = useQuery({
         queryKey,
@@ -531,7 +531,8 @@ export function ConferencePage() {
             store_id: storeId,
             is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
             status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
-            is_courtesy: courtesyOnly ? true : undefined,
+            is_courtesy: flagFilter === 'courtesy' ? true : undefined,
+            is_galpon: flagFilter === 'galpon' ? true : undefined,
             date_from: dateFrom || undefined,
             date_to: dateTo || undefined,
             department: department || undefined,
@@ -672,18 +673,17 @@ export function ConferencePage() {
                     </div>
                 </div>
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia</Label>
-                    <button
-                        type="button"
-                        onClick={() => setCourtesyOnly((v) => !v)}
-                        className={`block h-9 px-4 rounded-lg text-sm font-medium border transition-colors ${
-                            courtesyOnly
-                                ? 'bg-amber-100 text-amber-700 border-amber-400 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-600'
-                                : 'bg-white text-[#666666] border-[#D1D1D1] dark:bg-[#252525] dark:text-zinc-400 dark:border-[#333333]'
-                        }`}
-                    >
-                        Somente Cortesia
-                    </button>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia/Galpão</Label>
+                    <Select value={flagFilter} onValueChange={(v) => setFlagFilter(v as 'all' | 'courtesy' | 'galpon')}>
+                        <SelectTrigger className="w-44 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
+                            <SelectValue placeholder="Todos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="courtesy">Somente Cortesia</SelectItem>
+                            <SelectItem value="galpon">Somente Galpão</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
@@ -806,20 +806,28 @@ export function ConferencePage() {
                                     <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
                                         {order.consultant_name || '—'}
                                     </TableCell>
-                                    {/* Cortesia */}
+                                    {/* Cortesia / Galpão */}
                                     <TableCell className="px-4 py-3">
-                                        {order.is_courtesy ? (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/50">
-                                                Cortesia
-                                            </span>
-                                        ) : (
-                                            <span className="text-sm text-zinc-400">—</span>
-                                        )}
+                                        <div className="flex flex-col gap-1">
+                                            {order.is_courtesy && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/50 w-fit">
+                                                    Cortesia
+                                                </span>
+                                            )}
+                                            {order.is_galpon && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700/50 w-fit">
+                                                    Galpão
+                                                </span>
+                                            )}
+                                            {!order.is_courtesy && !order.is_galpon && (
+                                                <span className="text-sm text-zinc-400">—</span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     {/* Nº OS Conc. */}
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
                                         <div className="flex flex-col gap-0.5">
-                                            <span>{order.external_os_number || order.order_number || `#${order.id}`}</span>
+                                            <span>{order.external_os_number || (['vn', 'vu'].includes(order.department) ? '—' : (order.order_number || `#${order.id}`))}</span>
                                             {order.is_return && (
                                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 w-fit">
                                                     Retorno

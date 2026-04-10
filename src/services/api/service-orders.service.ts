@@ -234,6 +234,7 @@ export const serviceOrdersService = {
         store_id?: number;
         is_verified?: boolean;
         is_courtesy?: boolean;
+        is_galpon?: boolean;
         status?: string;
         department?: string;
         date_from?: string;
