@@ -61,10 +61,11 @@ const TONALITY_OPTIONS = [
 const PLATE_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
 const PLATE_OLD      = /^[A-Z]{3}[0-9]{4}$/;
 const CHASSI_VIN     = /^[A-HJ-NPR-Z0-9]{17}$/; // VIN padrão — sem I, O, Q
+const CHASSI_VIDRO   = /^[A-Z0-9]{8}$/;          // Nº do vidro — 8 caracteres alfanuméricos
 
 function isValidPlateOrChassi(value: string): boolean {
     const v = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return PLATE_MERCOSUL.test(v) || PLATE_OLD.test(v) || CHASSI_VIN.test(v);
+    return PLATE_MERCOSUL.test(v) || PLATE_OLD.test(v) || CHASSI_VIN.test(v) || CHASSI_VIDRO.test(v);
 }
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ const schema = z.object({
     plate: z
         .string()
         .min(1, 'Placa ou chassi obrigatório')
-        .refine((v) => isValidPlateOrChassi(v), 'Formato inválido. Use placa (ex: ABC1D23) ou chassi (17 caracteres)'),
+        .refine((v) => isValidPlateOrChassi(v), 'Formato inválido. Use placa (ex: ABC1D23) ou chassi do vidro (8 caracteres)'),
     vehicle_model: z.string().min(1, 'Modelo obrigatório'),
     vehicle_model_id: z.number().optional(),
     vehicle_color: z.string().optional(),
@@ -726,17 +727,17 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         setTimeout(() => plateInputRef.current?.focus(), 50);
     }, [reset, formStoreId, selectedStoreId, user, availableStores]);
 
-    // Partial reset: keep dept, consultant, os_number — for "Salvar e Próxima"
+    // Partial reset: keep dept and store — for "Salvar e Próxima"
     const partialReset = useCallback(
-        (savedDept: Department | undefined, savedConsultant: number | undefined, savedOsNumber: string | undefined, savedFormStoreId: number | undefined) => {
+        (savedDept: Department | undefined, savedFormStoreId: number | undefined) => {
             reset({
                 department: savedDept,
                 plate: '',
                 vehicle_model: '',
                 vehicle_model_id: undefined,
                 vehicle_color: '',
-                consultant_id: savedConsultant,
-                external_os_number: savedOsNumber,
+                consultant_id: undefined,
+                external_os_number: '',
                 selected_services: [],
                 is_return: false,
                 is_courtesy: false,
@@ -854,16 +855,14 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
     const onSaveAndNext = handleSubmit(async (rawData) => {
         const data = rawData as QuickCreateFormData;
-        const savedDept       = data.department;
-        const savedConsultant = data.consultant_id;
-        const savedOsNumber   = data.external_os_number;
-        const savedFormStore  = data.form_store_id;
+        const savedDept      = data.department;
+        const savedFormStore = data.form_store_id;
 
         try {
             const [uploadedUrls, damageUrls] = await Promise.all([uploadPhotos(), uploadDamagePhotos()]);
             await createServiceOrder.mutateAsync(buildPayload(data, uploadedUrls, damageUrls));
             toast({ title: 'OS lançada! Próxima OS...' });
-            partialReset(savedDept, savedConsultant, savedOsNumber, savedFormStore);
+            partialReset(savedDept, savedFormStore);
         } catch (err) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const detail = (err as any)?.response?.data?.detail;

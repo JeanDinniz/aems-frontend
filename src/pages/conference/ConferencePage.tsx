@@ -37,7 +37,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2 } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download } from 'lucide-react';
+import apiClient from '@/services/api/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { uploadService } from '@/services/api/upload.service';
 import {
@@ -100,10 +101,15 @@ function cleanNotes(notes: string | null | undefined): string {
 }
 
 // Lista de nomes dos serviços de uma OS
-function getServiceList(order: ServiceOrder, services?: Array<{ id: number; name: string }>): string[] {
+function getServiceList(order: ServiceOrder, services?: Array<{ id: number; name: string; code?: string | null }>): string[] {
     if (!order.items || order.items.length === 0) return [];
     if (!services || services.length === 0) return order.items.map((_, i) => `Serviço #${i + 1}`);
-    return order.items.map((item) => item.service_name ?? services.find((s) => s.id === item.service_id)?.name ?? `Serviço #${item.service_id}`);
+    return order.items.map((item) => {
+        const svc = services.find((s) => s.id === item.service_id);
+        const name = item.service_name ?? svc?.name ?? `Serviço #${item.service_id}`;
+        const code = svc?.code;
+        return code ? `${code} - ${name}` : name;
+    });
 }
 
 // ─── PhotoDialog ───────────────────────────────────────────────────────────────
@@ -167,9 +173,9 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
             setVehicleColor(order.vehicle_color ?? '');
             setConsultantId(order.consultant_id ?? undefined);
             setIsGalpon(order.is_galpon ?? false);
+            setIsCourtesy(order.is_courtesy ?? false);
+            setIsReturn(order.is_return ?? false);
             const rawNotes = order.notes ?? '';
-            setIsCourtesy(rawNotes.includes('[CORTESIA]'));
-            setIsReturn(rawNotes.includes('[RETORNO]'));
             setNotes(rawNotes.replace(/\s*\|\s*\[CORTESIA\]|\[CORTESIA\]\s*\|\s*/g, '').replace(/\s*\|\s*\[RETORNO\]|\[RETORNO\]\s*\|\s*/g, '').trim());
             setInternalNotes(order.internal_notes ?? '');
             setInvoiceNumber(order.invoice_number ?? '');
@@ -504,6 +510,7 @@ export function ConferencePage() {
     const [search, setSearch] = useState('');
     const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
     const [flagFilter, setFlagFilter] = useState<'all' | 'courtesy' | 'galpon'>('all');
+    const [isExporting, setIsExporting] = useState(false);
 
     // Visibilidade de colunas condicionais por departamento
     const showFilmCols = !department || department === 'film' || department === 'ppf';
@@ -589,27 +596,71 @@ export function ConferencePage() {
         verifyMutation.mutate(order.id);
     };
 
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const response = await apiClient.get('/service-orders/export/conferencia', {
+                params: {
+                    store_id: storeId || undefined,
+                    date_from: dateFrom || undefined,
+                    date_to: dateTo || undefined,
+                    department: department || undefined,
+                    is_verified: verifiedFilter === 'verified' ? true : verifiedFilter === 'pending' ? false : undefined,
+                    is_courtesy: flagFilter === 'courtesy' ? true : undefined,
+                    is_galpon: flagFilter === 'galpon' ? true : undefined,
+                    plate: search || undefined,
+                },
+                responseType: 'blob',
+            });
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `conferencia_${dateFrom}_${dateTo}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Erro ao exportar conferência:', err);
+            toast({ variant: 'destructive', title: 'Erro ao exportar', description: 'Não foi possível gerar o Excel.' });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const handleEdit = (order: ServiceOrder) => {
         setEditOrder(order);
         setEditOpen(true);
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 flex flex-col gap-6 h-full">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <ClipboardCheck className="h-6 w-6" style={{ color: '#F5A800' }} />
-                <div>
-                    <h1
-                        className="text-2xl font-bold text-[#111111] dark:text-white"
-                        style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
-                    >
-                        Conferência de OS
-                    </h1>
-                    <p className="text-sm text-[#666666] dark:text-zinc-400">
-                        {verifiedFilter === 'pending' ? 'OS aguardando verificação' : verifiedFilter === 'verified' ? 'OS verificadas' : verifiedFilter === 'cancelled' ? 'OS canceladas' : 'Todas as OS'}
-                    </p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <ClipboardCheck className="h-6 w-6" style={{ color: '#F5A800' }} />
+                    <div>
+                        <h1
+                            className="text-2xl font-bold text-[#111111] dark:text-white"
+                            style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
+                        >
+                            Conferência de OS
+                        </h1>
+                        <p className="text-sm text-[#666666] dark:text-zinc-400">
+                            {verifiedFilter === 'pending' ? 'OS aguardando verificação' : verifiedFilter === 'verified' ? 'OS verificadas' : verifiedFilter === 'cancelled' ? 'OS canceladas' : 'Todas as OS'}
+                        </p>
+                    </div>
                 </div>
+                <button
+                    onClick={handleExport}
+                    disabled={orders.length === 0 || isExporting}
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                >
+                    <Download className="h-4 w-4" />
+                    {isExporting ? 'Exportando...' : 'Exportar Excel'}
+                </button>
             </div>
 
             {/* Filters */}
@@ -693,10 +744,10 @@ export function ConferencePage() {
             </div>
 
             {/* Table */}
-            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden flex-1 min-h-0">
+              <div className="overflow-auto h-full">
                 <Table>
-                    <TableHeader className="bg-gray-100 dark:bg-zinc-800/60">
+                    <TableHeader className="sticky top-0 z-10 bg-gray-100 dark:bg-zinc-800/60">
                         <TableRow className="border-b border-[#E8E8E8] dark:border-[#333333] hover:bg-transparent">
                             <TableHead className="sticky left-0 z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Ações</TableHead>
                             <TableHead className="sticky left-[140px] z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Foto</TableHead>
