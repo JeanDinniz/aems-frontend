@@ -621,6 +621,8 @@ interface QuickCreateModalProps {
 
 export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const user = useAuthStore((s) => s.user);
+    const effectivePermissions = useAuthStore((s) => s.effectivePermissions);
+    const isGalponProfile = effectivePermissions?.is_galpon_profile === true;
     const { availableStores, selectedStoreId } = useStoreStore();
     const createServiceOrder = useCreateServiceOrder();
 
@@ -672,11 +674,16 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const currentStore = availableStores.find((s) => s.id === storeId);
     const storeBrandId = currentStore?.brand_id ?? undefined;
 
-    // On open: pre-fill form_store_id from global selectedStoreId
+    // On open: pre-fill form_store_id and force is_galpon for galpon-profile users
     useEffect(() => {
-        if (open && formStoreId === undefined) {
-            const defaultId = selectedStoreId ?? user?.store_id ?? availableStores[0]?.id;
-            if (defaultId) setValue('form_store_id', defaultId);
+        if (open) {
+            if (formStoreId === undefined) {
+                const defaultId = selectedStoreId ?? user?.store_id ?? availableStores[0]?.id;
+                if (defaultId) setValue('form_store_id', defaultId);
+            }
+            if (isGalponProfile) {
+                setValue('is_galpon', true);
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
@@ -719,7 +726,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             is_return: false,
             is_courtesy: false,
             courtesy_return_set: false,
-            is_galpon: false,
+            is_galpon: isGalponProfile ? true : false,
             notes: '',
             service_date: new Date().toISOString().split('T')[0],
             film_entries: [],
@@ -729,7 +736,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
         setPhotos([]);
         setDamagePhotos([]);
         setTimeout(() => plateInputRef.current?.focus(), 50);
-    }, [reset, formStoreId, selectedStoreId, user, availableStores]);
+    }, [reset, formStoreId, selectedStoreId, user, availableStores, isGalponProfile]);
 
     // Partial reset: keep dept and store — for "Salvar e Próxima"
     const partialReset = useCallback(
@@ -746,7 +753,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                 is_return: false,
                 is_courtesy: false,
                 courtesy_return_set: false,
-                is_galpon: false,
+                is_galpon: isGalponProfile ? true : false,
                 notes: '',
                 service_date: new Date().toISOString().split('T')[0],
                 film_entries: (savedDept === 'film' || savedDept === 'ppf') ? [{ service_id: 0, tonality: '', roll_code: '' }] : [],
@@ -757,7 +764,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
             setDamagePhotos([]);
             setTimeout(() => plateInputRef.current?.focus(), 50);
         },
-        [reset]
+        [reset, isGalponProfile]
     );
 
     const buildPayload = useCallback(
@@ -939,11 +946,20 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
                         {/* Galpão checkbox + Cortesia/Retorno dropdown */}
                         <div className="flex items-end gap-4 pb-0.5">
-                            <label htmlFor="is_galpon" className="flex items-center gap-2 cursor-pointer select-none">
+                            <label
+                                htmlFor="is_galpon"
+                                className={cn(
+                                    'flex items-center gap-2 select-none',
+                                    isGalponProfile ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                                )}
+                            >
                                 <Checkbox
                                     checked={isGalpon}
-                                    onCheckedChange={(v) => setValue('is_galpon', Boolean(v))}
+                                    onCheckedChange={(v) => {
+                                        if (!isGalponProfile) setValue('is_galpon', Boolean(v));
+                                    }}
                                     id="is_galpon"
+                                    disabled={isGalponProfile}
                                 />
                                 <span className="text-sm font-medium">Galpão</span>
                             </label>

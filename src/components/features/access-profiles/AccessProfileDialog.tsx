@@ -68,8 +68,7 @@ const formSchema = z.object({
     name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
     description: z.string().optional(),
     is_active: z.boolean(),
-    allows_loja: z.boolean(),
-    allows_galpon: z.boolean(),
+    is_galpon_profile: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -119,8 +118,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
         resolver: zodResolver(formSchema),
         defaultValues: {
             is_active: true,
-            allows_loja: true,
-            allows_galpon: false,
+            is_galpon_profile: false,
         },
     });
 
@@ -132,8 +130,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                     name: profile.name,
                     description: profile.description ?? '',
                     is_active: profile.is_active,
-                    allows_loja: profile.allows_loja,
-                    allows_galpon: profile.allows_galpon,
+                    is_galpon_profile: profile.is_galpon_profile,
                 });
 
                 const newPerms = defaultPermState();
@@ -151,8 +148,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                     name: '',
                     description: '',
                     is_active: true,
-                    allows_loja: true,
-                    allows_galpon: false,
+                    is_galpon_profile: false,
                 });
                 setPermState(defaultPermState());
                 setSelectedStoreIds(new Set());
@@ -195,8 +191,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
             name: data.name,
             description: data.description || undefined,
             is_active: data.is_active,
-            allows_loja: data.allows_loja,
-            allows_galpon: data.allows_galpon,
+            is_galpon_profile: data.is_galpon_profile,
             permissions: buildPermissions(),
             store_ids: Array.from(selectedStoreIds),
         };
@@ -271,23 +266,12 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
 
                                 <label className="flex items-center justify-between cursor-pointer">
                                     <div>
-                                        <p className="text-sm font-medium">Permite Loja</p>
-                                        <p className="text-xs text-muted-foreground">Acessa ordens de serviço de loja</p>
+                                        <p className="text-sm font-medium">Perfil de Galpão</p>
+                                        <p className="text-xs text-muted-foreground">Usuários deste perfil lançam OS exclusivamente no galpão</p>
                                     </div>
                                     <Switch
-                                        checked={watch('allows_loja')}
-                                        onCheckedChange={(v) => setValue('allows_loja', v)}
-                                    />
-                                </label>
-
-                                <label className="flex items-center justify-between cursor-pointer">
-                                    <div>
-                                        <p className="text-sm font-medium">Permite Galpão</p>
-                                        <p className="text-xs text-muted-foreground">Acessa ordens de serviço de galpão</p>
-                                    </div>
-                                    <Switch
-                                        checked={watch('allows_galpon')}
-                                        onCheckedChange={(v) => setValue('allows_galpon', v)}
+                                        checked={watch('is_galpon_profile')}
+                                        onCheckedChange={(v) => setValue('is_galpon_profile', v)}
                                     />
                                 </label>
                             </div>

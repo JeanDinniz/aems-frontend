@@ -108,11 +108,8 @@ export function UserProfilesSection({ userId }: UserProfilesSectionProps) {
                             )}
                         </div>
                         <div className="flex gap-1 shrink-0">
-                            {profile.allows_loja && (
-                                <Badge variant="secondary" className="text-xs">Loja</Badge>
-                            )}
-                            {profile.allows_galpon && (
-                                <Badge variant="outline" className="text-xs">Galpao</Badge>
+                            {profile.is_galpon_profile && (
+                                <Badge variant="outline" className="text-xs">Galpão</Badge>
                             )}
                         </div>
                     </label>
