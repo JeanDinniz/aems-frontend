@@ -61,11 +61,11 @@ const TONALITY_OPTIONS = [
 const PLATE_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
 const PLATE_OLD      = /^[A-Z]{3}[0-9]{4}$/;
 const CHASSI_VIN     = /^[A-HJ-NPR-Z0-9]{17}$/; // VIN padrão — sem I, O, Q
-const CHASSI_VIDRO   = /^[A-Z0-9]{8}$/;          // Nº do vidro — 8 caracteres alfanuméricos
+const CHASSI_CURTO   = /^[A-Z0-9]{4,17}$/;       // Chassi curto (BYD, vidro, etc.) — 4 a 17 chars
 
 function isValidPlateOrChassi(value: string): boolean {
     const v = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return PLATE_MERCOSUL.test(v) || PLATE_OLD.test(v) || CHASSI_VIN.test(v) || CHASSI_VIDRO.test(v);
+    return PLATE_MERCOSUL.test(v) || PLATE_OLD.test(v) || CHASSI_VIN.test(v) || CHASSI_CURTO.test(v);
 }
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ const schema = z.object({
     plate: z
         .string()
         .min(1, 'Placa ou chassi obrigatório')
-        .refine((v) => isValidPlateOrChassi(v), 'Formato inválido. Use placa (ex: ABC1D23) ou chassi do vidro (8 caracteres)'),
+        .refine((v) => isValidPlateOrChassi(v), 'Formato inválido. Use placa (ex: ABC1D23) ou chassi (4-17 caracteres alfanuméricos)'),
     vehicle_model: z.string().min(1, 'Modelo obrigatório'),
     vehicle_model_id: z.number().optional(),
     vehicle_color: z.string().optional(),
