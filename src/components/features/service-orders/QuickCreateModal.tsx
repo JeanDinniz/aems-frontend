@@ -661,6 +661,28 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [damagePhotos, setDamagePhotos] = useState<Photo[]>([]);
     const plateInputRef = useRef<HTMLInputElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const scrollToFirstError = useCallback((fieldErrors: Record<string, unknown>) => {
+        const fieldOrder = [
+            'courtesy_return_set',
+            'department',
+            'service_date',
+            'external_os_number',
+            'plate',
+            'vehicle_model',
+            'selected_services',
+            'film_entries',
+        ];
+        for (const field of fieldOrder) {
+            if (!(field in fieldErrors)) continue;
+            const el = formRef.current?.querySelector(`[data-field="${field}"]`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                break;
+            }
+        }
+    }, []);
 
     const {
         register,
@@ -895,7 +917,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         : 'Verifique os dados e tente novamente.';
             toast({ variant: 'destructive', title: 'Erro ao lançar OS', description: msg });
         }
-    });
+    }, scrollToFirstError);
 
     const onSaveAndNext = handleSubmit(async (rawData) => {
         const data = rawData as QuickCreateFormData;
@@ -919,7 +941,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         : 'Verifique os dados e tente novamente.';
             toast({ variant: 'destructive', title: 'Erro ao lançar OS', description: msg });
         }
-    });
+    }, scrollToFirstError);
 
     const isBusy = isSubmitting || createServiceOrder.isPending;
 
@@ -944,7 +966,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     </div>
                 </DialogHeader>
 
-                <form className="px-6 py-4 space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form ref={formRef} className="px-6 py-4 space-y-5" onSubmit={(e) => e.preventDefault()}>
 
                     {/* Row 1: Loja + Galpão + Retorno / Cortesia */}
                     <div className="flex flex-wrap items-end gap-3">
@@ -995,7 +1017,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                                 />
                                 <span className="text-sm font-medium">Galpão</span>
                             </label>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1" data-field="courtesy_return_set">
                                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Cortesia/Retorno <span className="text-destructive">*</span>
                                 </Label>
@@ -1017,20 +1039,22 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     </div>
 
                     {/* Departamento */}
-                    <DeptToggle
-                        value={department}
-                        onChange={(v) => {
-                            setValue('department', v, { shouldValidate: true });
-                            setValue('selected_services', []);
-                            setValue('film_entries', (v === 'film' || v === 'ppf') ? [{ service_id: 0, tonality: '', roll_code: '' }] : []);
-                            setValue('installers', []);
-                        }}
-                        error={errors.department?.message}
-                    />
+                    <div data-field="department">
+                        <DeptToggle
+                            value={department}
+                            onChange={(v) => {
+                                setValue('department', v, { shouldValidate: true });
+                                setValue('selected_services', []);
+                                setValue('film_entries', (v === 'film' || v === 'ppf') ? [{ service_id: 0, tonality: '', roll_code: '' }] : []);
+                                setValue('installers', []);
+                            }}
+                            error={errors.department?.message}
+                        />
+                    </div>
 
                     {/* Row: Data do Serviço + Nº OS Concessionária */}
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        <div className="sm:col-span-3 space-y-1.5">
+                        <div className="sm:col-span-3 space-y-1.5" data-field="service_date">
                             <Label htmlFor="service_date" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Data do Serviço <span className="text-destructive">*</span>
                             </Label>
@@ -1047,7 +1071,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                         </div>
 
                         {(department !== 'vn' && department !== 'vu') && (
-                            <div className="sm:col-span-2 space-y-1.5">
+                            <div className="sm:col-span-2 space-y-1.5" data-field="external_os_number">
                                 <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Nº OS Concessionária <span className="text-destructive">*</span>
                                 </Label>
@@ -1062,7 +1086,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
                     {/* Row: Placa / Modelo / Cor */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5" data-field="plate">
                             <Label htmlFor="plate" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Placa / Chassi <span className="text-destructive">*</span>
                             </Label>
@@ -1093,7 +1117,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             )}
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5" data-field="vehicle_model">
                             <Label htmlFor="vehicle_model" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Modelo <span className="text-destructive">*</span>
                             </Label>
@@ -1184,34 +1208,38 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                     {/* Serviços / Películas */}
                     {(department === 'film' || department === 'ppf')
                         ? (
-                            <FilmPicker
-                                storeId={storeId ?? 0}
-                                brandId={storeBrandId}
-                                department={department}
-                                selectedEntries={watch('film_entries') ?? [{ service_id: 0, tonality: '', roll_code: '' }]}
-                                onChange={(entries) => setValue('film_entries', entries)}
-                                installers={watch('installers') ?? []}
-                                onInstallersChange={(ids) => setValue('installers', ids)}
-                                error={errors.film_entries?.message}
-                                rollCodeErrors={
-                                    Array.isArray(errors.film_entries)
-                                        ? Object.fromEntries(
-                                            (errors.film_entries as Array<{ roll_code?: { message?: string } } | undefined>)
-                                                .map((e, i) => [i, e?.roll_code?.message])
-                                                .filter(([, msg]) => msg != null) as [number, string][]
-                                          )
-                                        : undefined
-                                }
-                            />
+                            <div data-field="film_entries">
+                                <FilmPicker
+                                    storeId={storeId ?? 0}
+                                    brandId={storeBrandId}
+                                    department={department}
+                                    selectedEntries={watch('film_entries') ?? [{ service_id: 0, tonality: '', roll_code: '' }]}
+                                    onChange={(entries) => setValue('film_entries', entries)}
+                                    installers={watch('installers') ?? []}
+                                    onInstallersChange={(ids) => setValue('installers', ids)}
+                                    error={errors.film_entries?.message}
+                                    rollCodeErrors={
+                                        Array.isArray(errors.film_entries)
+                                            ? Object.fromEntries(
+                                                (errors.film_entries as Array<{ roll_code?: { message?: string } } | undefined>)
+                                                    .map((e, i) => [i, e?.roll_code?.message])
+                                                    .filter(([, msg]) => msg != null) as [number, string][]
+                                              )
+                                            : undefined
+                                    }
+                                />
+                            </div>
                         )
                         : (
-                            <ServicePicker
-                                department={department}
-                                brandId={storeBrandId}
-                                selectedIds={selectedSvcs}
-                                onChange={(ids) => setValue('selected_services', ids, { shouldValidate: true })}
-                                error={errors.selected_services?.message}
-                            />
+                            <div data-field="selected_services">
+                                <ServicePicker
+                                    department={department}
+                                    brandId={storeBrandId}
+                                    selectedIds={selectedSvcs}
+                                    onChange={(ids) => setValue('selected_services', ids, { shouldValidate: true })}
+                                    error={errors.selected_services?.message}
+                                />
+                            </div>
                         )
                     }
 
