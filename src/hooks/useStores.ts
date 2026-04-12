@@ -25,7 +25,7 @@ export function useStores() {
             setAvailableStores(allStores);
         } else {
             // Para não-owners: usa store_ids do perfil de acesso efetivo
-            const permittedIds = effectivePermissions?.store_ids ?? [];
+            const permittedIds = (effectivePermissions?.store_ids ?? []).map(Number);
             const myStores = permittedIds.length > 0
                 ? allStores.filter(s => permittedIds.includes(s.id))
                 : allStores.filter(s => s.id === user.store_id); // fallback

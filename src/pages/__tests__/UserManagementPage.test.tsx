@@ -108,6 +108,7 @@ const mockUsersData = {
     deleteUser: vi.fn(),
     isDeletingUser: false,
     resetPassword: vi.fn(),
+    isResettingPassword: false,
     isCreating: false,
     isUpdating: false,
 };
@@ -260,6 +261,7 @@ describe('UserManagementPage', () => {
                 deleteUser: vi.fn(),
                 isDeletingUser: false,
                 resetPassword: vi.fn(),
+                isResettingPassword: false,
                 isCreating: false,
                 isUpdating: false,
             });
@@ -286,6 +288,7 @@ describe('UserManagementPage', () => {
                 deleteUser: vi.fn(),
                 isDeletingUser: false,
                 resetPassword: vi.fn(),
+                isResettingPassword: false,
                 isCreating: false,
                 isUpdating: false,
             });
@@ -331,6 +334,7 @@ describe('UserManagementPage', () => {
                 deleteUser: vi.fn(),
                 isDeletingUser: false,
                 resetPassword: vi.fn(),
+                isResettingPassword: false,
                 isCreating: false,
                 isUpdating: false,
             });
@@ -554,6 +558,7 @@ describe('UserManagementPage', () => {
                 deleteUser: vi.fn(),
                 isDeletingUser: false,
                 resetPassword: vi.fn(),
+                isResettingPassword: false,
                 isCreating: false,
                 isUpdating: false,
             });
