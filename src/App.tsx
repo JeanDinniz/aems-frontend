@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 import { UnauthorizedPage } from '@/components/common/UnauthorizedPage';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -74,30 +75,73 @@ const router = createBrowserRouter([
           { path: '/profile', element: <Suspense fallback={<PageFallback />}><ProfilePage /></Suspense> },
           { path: '/settings', element: <Suspense fallback={<PageFallback />}><SettingsPage /></Suspense> },
 
-          // Rotas operacionais (owner, user)
+          // Rotas operacionais e administrativas (owner + user com permissão)
           {
             element: <RoleGuard allowedRoles={['owner', 'user']} />,
             children: [
               { path: '/service-orders', element: <Suspense fallback={<PageFallback />}><ServiceOrdersPage /></Suspense> },
               { path: '/service-orders/:id', element: <Suspense fallback={<PageFallback />}><ServiceOrderDetailsPage /></Suspense> },
               { path: '/service-orders/:id/edit', element: <Suspense fallback={<PageFallback />}><EditServiceOrderPage /></Suspense> },
-              { path: '/conference', element: <Suspense fallback={<PageFallback />}><ConferencePage /></Suspense> },
-              { path: '/fechamento', element: <Suspense fallback={<PageFallback />}><FechamentoPage /></Suspense> },
-            ],
-          },
-
-          // Rotas administrativas (owner only)
-          {
-            element: <RoleGuard allowedRoles={['owner']} />,
-            children: [
-              { path: '/admin/users', element: <Suspense fallback={<PageFallback />}><UserManagementPage /></Suspense> },
-              { path: '/admin/consultants', element: <Suspense fallback={<PageFallback />}><ConsultantManagementPage /></Suspense> },
-              { path: '/admin/employees', element: <Suspense fallback={<PageFallback />}><EmployeeManagementPage /></Suspense> },
-              { path: '/admin/stores', element: <Suspense fallback={<PageFallback />}><StoreManagementPage /></Suspense> },
-              { path: '/servicos', element: <Suspense fallback={<PageFallback />}><ServicesPage /></Suspense> },
-              { path: '/admin/marcas', element: <Suspense fallback={<PageFallback />}><BrandsManagementPage /></Suspense> },
-              { path: '/admin/modelos', element: <Suspense fallback={<PageFallback />}><VehicleModelsPage /></Suspense> },
-              { path: '/admin/profiles', element: <Suspense fallback={<PageFallback />}><AccessProfilesPage /></Suspense> },
+              {
+                element: <PermissionGuard subModule="conference" />,
+                children: [
+                  { path: '/conference', element: <Suspense fallback={<PageFallback />}><ConferencePage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="fechamento" />,
+                children: [
+                  { path: '/fechamento', element: <Suspense fallback={<PageFallback />}><FechamentoPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="users" />,
+                children: [
+                  { path: '/admin/users', element: <Suspense fallback={<PageFallback />}><UserManagementPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="profiles" />,
+                children: [
+                  { path: '/admin/profiles', element: <Suspense fallback={<PageFallback />}><AccessProfilesPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="employees" />,
+                children: [
+                  { path: '/admin/employees', element: <Suspense fallback={<PageFallback />}><EmployeeManagementPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="consultants" />,
+                children: [
+                  { path: '/admin/consultants', element: <Suspense fallback={<PageFallback />}><ConsultantManagementPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="stores" />,
+                children: [
+                  { path: '/admin/stores', element: <Suspense fallback={<PageFallback />}><StoreManagementPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="services" />,
+                children: [
+                  { path: '/servicos', element: <Suspense fallback={<PageFallback />}><ServicesPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="brands" />,
+                children: [
+                  { path: '/admin/marcas', element: <Suspense fallback={<PageFallback />}><BrandsManagementPage /></Suspense> },
+                ],
+              },
+              {
+                element: <PermissionGuard subModule="models" />,
+                children: [
+                  { path: '/admin/modelos', element: <Suspense fallback={<PageFallback />}><VehicleModelsPage /></Suspense> },
+                ],
+              },
               { path: '/analytics', element: <Suspense fallback={<PageFallback />}><AnalyticsPage /></Suspense> },
             ],
           },

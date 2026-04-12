@@ -45,7 +45,6 @@ const sidebarGroups: SidebarGroup[] = [
     },
     {
         label: 'Administracao',
-        roles: ['owner'],
         items: [
             { icon: UserCog,    label: 'Usuarios',         href: '/admin/users',       subModule: 'users' },
             { icon: ShieldCheck,label: 'Perfis de Acesso', href: '/admin/profiles',    subModule: 'profiles' },

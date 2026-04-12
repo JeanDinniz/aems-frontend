@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,7 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const submittedEmailRef = useRef('');
 
     const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
@@ -28,6 +29,7 @@ export function LoginForm() {
     });
 
     const onSubmit = async (data: LoginFormData) => {
+        submittedEmailRef.current = data.email;
         setIsLoading(true);
         setError(null);
         try {
@@ -39,6 +41,8 @@ export function LoginForm() {
             // Não fazemos navigate aqui para evitar conflito
         } catch {
             setError('Falha no login. Verifique suas credenciais.');
+            form.reset({ email: submittedEmailRef.current, password: '' });
+            form.setFocus('password');
         } finally {
             setIsLoading(false);
         }

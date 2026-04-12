@@ -92,12 +92,6 @@ export function useUsers(filters?: UserFilters, page = 1) {
 
     const resetPasswordMutation = useMutation({
         mutationFn: (id: number) => usersService.resetPassword(id),
-        onSuccess: (data) => {
-            toast({
-                title: 'Senha redefinida',
-                description: `Nova senha temporária: ${data.temporary_password}`,
-            });
-        },
         onError: (error: Error) => {
             toast({
                 title: 'Não foi possível redefinir a senha',
@@ -118,7 +112,8 @@ export function useUsers(filters?: UserFilters, page = 1) {
         deactivateUser: deactivateMutation.mutate,
         deleteUser: deleteMutation.mutate,
         isDeletingUser: deleteMutation.isPending,
-        resetPassword: resetPasswordMutation.mutate,
+        resetPassword: resetPasswordMutation.mutateAsync,
+        isResettingPassword: resetPasswordMutation.isPending,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
     };

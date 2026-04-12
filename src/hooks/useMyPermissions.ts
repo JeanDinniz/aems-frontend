@@ -18,7 +18,7 @@ export function useMyPermissions() {
         queryKey: ['my-permissions', user?.id],
         queryFn: () => accessProfilesService.getMyPermissions(),
         enabled: !!user && !isOwner,
-        staleTime: Infinity, // só muda quando owner edita via AccessProfileDialog
+        staleTime: 60 * 1000, // 1 minuto — revalida ao focar a janela
     });
 
     // Sync into store whenever data changes

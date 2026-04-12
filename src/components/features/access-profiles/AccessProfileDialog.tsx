@@ -122,39 +122,41 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
         },
     });
 
-    // Populate form when editing
+    // Populate form when editing.
+    // Depends only on `open` — intentionally excludes `profile` to prevent
+    // TanStack Query background refetches from resetting state mid-edit.
     useEffect(() => {
-        if (open) {
-            if (profile) {
-                reset({
-                    name: profile.name,
-                    description: profile.description ?? '',
-                    is_active: profile.is_active,
-                    is_galpon_profile: profile.is_galpon_profile,
-                });
+        if (!open) return;
+        if (profile) {
+            reset({
+                name: profile.name,
+                description: profile.description ?? '',
+                is_active: profile.is_active,
+                is_galpon_profile: profile.is_galpon_profile,
+            });
 
-                const newPerms = defaultPermState();
-                for (const perm of profile.permissions) {
-                    newPerms[perm.sub_module] = {
-                        can_view: perm.can_view,
-                        can_edit: perm.can_edit,
-                        can_delete: perm.can_delete,
-                    };
-                }
-                setPermState(newPerms);
-                setSelectedStoreIds(new Set(profile.store_ids.map(String)));
-            } else {
-                reset({
-                    name: '',
-                    description: '',
-                    is_active: true,
-                    is_galpon_profile: false,
-                });
-                setPermState(defaultPermState());
-                setSelectedStoreIds(new Set());
+            const newPerms = defaultPermState();
+            for (const perm of profile.permissions) {
+                newPerms[perm.sub_module] = {
+                    can_view: perm.can_view,
+                    can_edit: perm.can_edit,
+                    can_delete: perm.can_delete,
+                };
             }
+            setPermState(newPerms);
+            setSelectedStoreIds(new Set(profile.store_ids.map(String)));
+        } else {
+            reset({
+                name: '',
+                description: '',
+                is_active: true,
+                is_galpon_profile: false,
+            });
+            setPermState(defaultPermState());
+            setSelectedStoreIds(new Set());
         }
-    }, [open, profile, reset]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
 
     const setPerm = (
         sub_module: SubModule,
