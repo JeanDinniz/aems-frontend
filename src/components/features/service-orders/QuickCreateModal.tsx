@@ -45,6 +45,7 @@ import {
     X,
     Check,
     ChevronsUpDown,
+    ChevronDown,
     ChevronRight,
     Search,
 } from 'lucide-react';
@@ -111,6 +112,9 @@ const schema = z.object({
                 }
                 if (!entry.tonality) {
                     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Selecione a tonalidade', path: ['film_entries', i, 'tonality'] });
+                }
+                if (data.department === 'film' && (!entry.roll_code || !entry.roll_code.trim())) {
+                    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Código do Rolo obrigatório para Película', path: ['film_entries', i, 'roll_code'] });
                 }
             });
         }
@@ -346,6 +350,7 @@ export interface FilmPickerProps {
     installers: number[];
     onInstallersChange: (ids: number[]) => void;
     error?: string;
+    rollCodeErrors?: Record<number, string>;
 }
 
 export function FilmPicker({
@@ -357,7 +362,9 @@ export function FilmPicker({
     installers,
     onInstallersChange,
     error,
+    rollCodeErrors,
 }: FilmPickerProps) {
+    const [installersOpen, setInstallersOpen] = useState(false);
     const { data: services, isLoading: servicesLoading } = useServices(department, brandId);
     const { data: employeesData, isLoading: employeesLoading } = useFilmInstallers(department);
 
@@ -462,12 +469,17 @@ export function FilmPicker({
                                 </SelectContent>
                             </Select>
 
-                            <Input
-                                value={entry.roll_code ?? ''}
-                                onChange={(e) => updateEntry(index, 'roll_code', e.target.value)}
-                                placeholder="Código do Rolo (opcional)"
-                                className="h-10"
-                            />
+                            <div className="space-y-1">
+                                <Input
+                                    value={entry.roll_code ?? ''}
+                                    onChange={(e) => updateEntry(index, 'roll_code', e.target.value)}
+                                    placeholder={department === 'film' ? 'Código do Rolo *' : 'Código do Rolo (opcional)'}
+                                    className={cn('h-10', rollCodeErrors?.[index] && 'border-destructive')}
+                                />
+                                {rollCodeErrors?.[index] && (
+                                    <p className="text-xs text-destructive">{rollCodeErrors[index]}</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -495,21 +507,41 @@ export function FilmPicker({
                 ) : employees.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Nenhum instalador disponível</p>
                 ) : (
-                    <div className="flex flex-wrap gap-x-4 gap-y-2">
-                        {employees.map((emp: { id: number; name: string }) => (
-                            <label
-                                key={emp.id}
-                                className="flex items-center gap-2 cursor-pointer select-none"
+                    <Popover open={installersOpen} onOpenChange={setInstallersOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={installersOpen}
+                                className="w-full justify-between font-normal"
                             >
-                                <Checkbox
-                                    checked={installers.includes(emp.id)}
-                                    onCheckedChange={() => toggleInstaller(emp.id)}
-                                    id={`installer-${emp.id}`}
-                                />
-                                <span className="text-sm">{emp.name}</span>
-                            </label>
-                        ))}
-                    </div>
+                                <span className="truncate">
+                                    {installers.length === 0
+                                        ? 'Selecionar instaladores...'
+                                        : `${installers.length} instalador(es) selecionado(s)`}
+                                </span>
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                            {employees.map((emp: { id: number; name: string }) => (
+                                <div
+                                    key={emp.id}
+                                    className="flex items-center gap-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent select-none"
+                                    onClick={() => toggleInstaller(emp.id)}
+                                >
+                                    <Checkbox
+                                        checked={installers.includes(emp.id)}
+                                        onCheckedChange={() => toggleInstaller(emp.id)}
+                                        id={`installer-${emp.id}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <span className="text-sm">{emp.name}</span>
+                                </div>
+                            ))}
+                        </PopoverContent>
+                    </Popover>
                 )}
             </div>
         </div>
@@ -1161,6 +1193,15 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                                 installers={watch('installers') ?? []}
                                 onInstallersChange={(ids) => setValue('installers', ids)}
                                 error={errors.film_entries?.message}
+                                rollCodeErrors={
+                                    Array.isArray(errors.film_entries)
+                                        ? Object.fromEntries(
+                                            (errors.film_entries as Array<{ roll_code?: { message?: string } } | undefined>)
+                                                .map((e, i) => [i, e?.roll_code?.message])
+                                                .filter(([, msg]) => msg != null) as [number, string][]
+                                          )
+                                        : undefined
+                                }
                             />
                         )
                         : (
