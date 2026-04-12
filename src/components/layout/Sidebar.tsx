@@ -51,7 +51,7 @@ const sidebarGroups: SidebarGroup[] = [
             { icon: HardHat,    label: 'Funcionarios',     href: '/admin/employees',   subModule: 'employees' },
             { icon: Contact,    label: 'Consultores',      href: '/admin/consultants', subModule: 'consultants' },
             { icon: Store,      label: 'Lojas',            href: '/admin/stores',      subModule: 'stores' },
-            { icon: Wrench,     label: 'Servicos',         href: '/servicos',          subModule: 'services' },
+            { icon: Wrench,     label: 'Serviços',         href: '/servicos',          subModule: 'services' },
             { icon: Tag,        label: 'Marcas',           href: '/admin/marcas',      subModule: 'brands' },
             { icon: Car,        label: 'Modelos',          href: '/admin/modelos',     subModule: 'models' },
         ],

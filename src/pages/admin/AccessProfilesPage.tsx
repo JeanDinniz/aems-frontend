@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ShieldCheck, Building2, Users } from 'lucide-react';
+import { Plus, Edit, Eye, Trash2, ShieldCheck, Building2, Users, MoreHorizontal } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AccessProfileDialog } from '@/components/features/access-profiles/AccessProfileDialog';
 import { useAccessProfiles, useUpdateAccessProfile, useDeleteAccessProfile } from '@/hooks/useAccessProfiles';
@@ -114,7 +113,7 @@ export function AccessProfilesPage() {
                                     </span>
                                 </TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
+                                <TableHead className="text-right w-16">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -190,29 +189,43 @@ export function AccessProfilesPage() {
                                             </TableCell>
 
                                             <TableCell>
-                                                <Switch
-                                                    checked={profile.is_active}
-                                                    onCheckedChange={() => handleToggleActive(profile)}
-                                                    disabled={updateMutation.isPending}
-                                                    aria-label={profile.is_active ? 'Desativar perfil' : 'Ativar perfil'}
-                                                />
+                                                {profile.is_active ? (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700/50">
+                                                        Ativo
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-200 dark:bg-zinc-800 text-[#444444] dark:text-zinc-400 border border-[#BDBDBD] dark:border-zinc-700">
+                                                        Inativo
+                                                    </span>
+                                                )}
                                             </TableCell>
 
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <span className="sr-only">Abrir menu</span>
-                                                            <Pencil className="h-4 w-4" />
+                                                        <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                            <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={() => setEditProfile(profile)}
-                                                        >
-                                                            <Pencil className="h-4 w-4 mr-2" />
+                                                        <DropdownMenuItem onClick={() => setEditProfile(profile)}>
+                                                            <Edit className="h-4 w-4 mr-2" />
                                                             Editar
                                                         </DropdownMenuItem>
+                                                        {profile.is_active ? (
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleToggleActive(profile)}
+                                                                className="ring-1 ring-[#F5A800] ring-inset rounded-sm"
+                                                            >
+                                                                <Eye className="h-4 w-4 mr-2" />
+                                                                Desativar
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem onClick={() => handleToggleActive(profile)}>
+                                                                <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                                <span className="text-green-600">Ativar</span>
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         <DropdownMenuItem
                                                             onClick={() => setDeleteProfile(profile)}
                                                             className="text-red-600 focus:text-red-600"

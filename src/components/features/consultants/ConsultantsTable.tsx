@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
     Table,
     TableBody,
@@ -44,6 +45,10 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
     const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [consultantToDelete, setConsultantToDelete] = useState<Consultant | null>(null);
+
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('consultants', 'edit');
+    const canDelete = hasPermission('consultants', 'delete');
 
     const { deleteConsultant, isDeletingConsultant, activateConsultant, deactivateConsultant } = useConsultants();
 
@@ -119,35 +124,45 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                     </TableCell>
 
                                     <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleEdit(consultant)}>
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                {consultant.is_active ? (
-                                                    <DropdownMenuItem onClick={() => deactivateConsultant(consultant.id)}>
-                                                        <span className="text-yellow-600">Desativar</span>
-                                                    </DropdownMenuItem>
-                                                ) : (
-                                                    <DropdownMenuItem onClick={() => activateConsultant(consultant.id)}>
-                                                        <span className="text-green-600">Ativar</span>
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem
-                                                    onClick={() => setConsultantToDelete(consultant)}
-                                                    className="text-red-600 focus:text-red-600"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Excluir
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {(canEdit || canDelete) && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {canEdit && (
+                                                        <DropdownMenuItem onClick={() => handleEdit(consultant)}>
+                                                            <Edit className="h-4 w-4 mr-2" />
+                                                            Editar
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {canEdit && (
+                                                        consultant.is_active ? (
+                                                            <DropdownMenuItem onClick={() => deactivateConsultant(consultant.id)} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                                <Eye className="h-4 w-4 mr-2" />
+                                                                Desativar
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem onClick={() => activateConsultant(consultant.id)}>
+                                                                <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                                <span className="text-green-600">Ativar</span>
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    )}
+                                                    {canDelete && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => setConsultantToDelete(consultant)}
+                                                            className="text-red-600 focus:text-red-600"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                            Excluir
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

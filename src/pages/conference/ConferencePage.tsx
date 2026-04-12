@@ -841,31 +841,35 @@ export function ConferencePage() {
                                     {/* Ações */}
                                     <TableCell className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-4 py-3 w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#E8E8E8] after:dark:bg-zinc-700">
                                         <div className="flex items-center justify-center gap-1">
-                                            <button
-                                                onClick={() => handleEdit(order)}
-                                                title="Editar"
-                                                className="h-8 w-8 rounded-lg text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center"
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </button>
-                                            {order.is_verified ? (
+                                            {hasDeletePermission('conference', 'edit') && (
                                                 <button
-                                                    onClick={() => unverifyMutation.mutate(order.id)}
-                                                    disabled={unverifyMutation.isPending}
-                                                    title="Desfazer verificação"
-                                                    className="h-8 w-8 rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    onClick={() => handleEdit(order)}
+                                                    title="Editar"
+                                                    className="h-8 w-8 rounded-lg text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors flex items-center justify-center"
                                                 >
-                                                    <RotateCcw className="h-4 w-4" />
+                                                    <Pencil className="h-4 w-4" />
                                                 </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleVerify(order)}
-                                                    disabled={verifyMutation.isPending}
-                                                    title="Verificar"
-                                                    className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </button>
+                                            )}
+                                            {hasDeletePermission('conference', 'edit') && (
+                                                order.is_verified ? (
+                                                    <button
+                                                        onClick={() => unverifyMutation.mutate(order.id)}
+                                                        disabled={unverifyMutation.isPending}
+                                                        title="Desfazer verificação"
+                                                        className="h-8 w-8 rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <RotateCcw className="h-4 w-4" />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleVerify(order)}
+                                                        disabled={verifyMutation.isPending}
+                                                        title="Verificar"
+                                                        className="h-8 w-8 rounded-lg text-green-500 hover:text-green-400 hover:bg-green-900/20 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <CheckCircle className="h-4 w-4" />
+                                                    </button>
+                                                )
                                             )}
                                             {hasDeletePermission('conference', 'delete') && (
                                                 <button

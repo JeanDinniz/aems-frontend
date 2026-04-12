@@ -1,10 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Pencil, Loader2, PackageSearch } from 'lucide-react';
+import { Plus, Loader2, PackageSearch, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Select,
     SelectContent,
@@ -361,11 +367,11 @@ export default function ServicesPage() {
                         style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
                     >
                         <PackageSearch className="h-6 w-6" style={{ color: '#F5A800' }} />
-                        Servicos
+                        Serviços
                     </h1>
                     <p className="text-[#666666] dark:text-zinc-400 text-sm">
-                        Catalogo de servicos por concessionaria.
-                        {allServices?.length ? ` ${allServices.length} servicos cadastrados.` : ''}
+                        Catálogo de serviços por concessionária.
+                        {allServices?.length ? ` ${allServices.length} serviços cadastrados.` : ''}
                     </p>
                 </div>
                 <Button
@@ -381,59 +387,65 @@ export default function ServicesPage() {
                     style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Novo Servico
+                    Novo Serviço
                 </Button>
             </div>
 
             {/* Filtros */}
             {brands.length > 0 && (
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <Select
-                            value={resolvedBrandId !== null ? String(resolvedBrandId) : 'all'}
-                            onValueChange={(v) => setActiveBrandId(v === 'all' ? null : Number(v))}
-                        >
-                            <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                <SelectValue placeholder="Marca" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                    Todos
-                                </SelectItem>
-                                {brands.map((brand) => (
-                                    <SelectItem
-                                        key={brand.id}
-                                        value={String(brand.id)}
-                                        className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
-                                    >
-                                        {brand.name}{(brandCounts[brand.id] ?? 0) > 0 ? ` (${brandCounts[brand.id]})` : ''}
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Marca</span>
+                            <Select
+                                value={resolvedBrandId !== null ? String(resolvedBrandId) : 'all'}
+                                onValueChange={(v) => setActiveBrandId(v === 'all' ? null : Number(v))}
+                            >
+                                <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                    <SelectValue placeholder="Marca" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                    <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                        Todos
                                     </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                    {brands.map((brand) => (
+                                        <SelectItem
+                                            key={brand.id}
+                                            value={String(brand.id)}
+                                            className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
+                                        >
+                                            {brand.name}{(brandCounts[brand.id] ?? 0) > 0 ? ` (${brandCounts[brand.id]})` : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                        <Select
-                            value={activeDept}
-                            onValueChange={setActiveDept}
-                        >
-                            <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                                <SelectValue placeholder="Departamento" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                                <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
-                                    Todos
-                                </SelectItem>
-                                {DEPARTMENTS.map((d) => (
-                                    <SelectItem
-                                        key={d.value}
-                                        value={d.value}
-                                        className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
-                                    >
-                                        {d.label}
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Departamento</span>
+                            <Select
+                                value={activeDept}
+                                onValueChange={setActiveDept}
+                            >
+                                <SelectTrigger className="w-[200px] bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                                    <SelectValue placeholder="Departamento" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                                    <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">
+                                        Todos
                                     </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                    {DEPARTMENTS.map((d) => (
+                                        <SelectItem
+                                            key={d.value}
+                                            value={d.value}
+                                            className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white"
+                                        >
+                                            {d.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     {isLoading ? (
@@ -478,25 +490,24 @@ export default function ServicesPage() {
                                         <span className="text-sm text-[#111111] dark:text-zinc-200 font-medium">
                                             {svc.base_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </span>
-                                        <div className="flex items-center gap-1 shrink-0 w-16 justify-end">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                                onClick={() => handleEdit(svc)}
-                                                aria-label="Editar servico"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                                                onClick={() => setConfirmDeleteId(svc.id)}
-                                                aria-label="Remover servico"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
+                                        <div className="flex items-center justify-end shrink-0">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(svc)}>
+                                                        <Edit className="h-4 w-4 mr-2" />
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setConfirmDeleteId(svc.id)} className="text-red-600 focus:text-red-600">
+                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                        Excluir
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </div>
                                 ))}

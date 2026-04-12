@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MoreHorizontal, Edit, Key, Eye, Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
     Table,
     TableBody,
@@ -50,6 +51,10 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('users', 'edit');
+    const canDelete = hasPermission('users', 'delete');
 
     const { deleteUser, isDeletingUser, activateUser, deactivateUser } = useUsers();
 
@@ -152,7 +157,7 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
+                                                <Button variant="ghost" size="icon" className="text-[#F5A800]">
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
@@ -161,30 +166,40 @@ export function UsersTable({ users, isLoading, page, pageSize, total, onPageChan
                                                     <Eye className="h-4 w-4 mr-2" />
                                                     Ver Detalhes
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleEdit(user)}>
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleResetPassword(user)}>
-                                                    <Key className="h-4 w-4 mr-2" />
-                                                    Resetar Senha
-                                                </DropdownMenuItem>
-                                                {user.is_active ? (
-                                                    <DropdownMenuItem onClick={() => deactivateUser(user.id)}>
-                                                        <span className="text-yellow-600">Desativar</span>
-                                                    </DropdownMenuItem>
-                                                ) : (
-                                                    <DropdownMenuItem onClick={() => activateUser(user.id)}>
-                                                        <span className="text-green-600">Ativar</span>
+                                                {canEdit && (
+                                                    <DropdownMenuItem onClick={() => handleEdit(user)}>
+                                                        <Edit className="h-4 w-4 mr-2" />
+                                                        Editar
                                                     </DropdownMenuItem>
                                                 )}
-                                                <DropdownMenuItem
-                                                    onClick={() => setUserToDelete(user)}
-                                                    className="text-red-600 focus:text-red-600"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Excluir
-                                                </DropdownMenuItem>
+                                                {canEdit && (
+                                                    <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                                                        <Key className="h-4 w-4 mr-2" />
+                                                        Resetar Senha
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {canEdit && (
+                                                    user.is_active ? (
+                                                        <DropdownMenuItem onClick={() => deactivateUser(user.id)} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                            <Eye className="h-4 w-4 mr-2" />
+                                                            Desativar
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => activateUser(user.id)}>
+                                                            <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                            <span className="text-green-600">Ativar</span>
+                                                        </DropdownMenuItem>
+                                                    )
+                                                )}
+                                                {canDelete && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => setUserToDelete(user)}
+                                                        className="text-red-600 focus:text-red-600"
+                                                    >
+                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                        Excluir
+                                                    </DropdownMenuItem>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

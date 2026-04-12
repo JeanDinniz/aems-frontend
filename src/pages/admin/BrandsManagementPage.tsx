@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, PowerOff, Power, Loader2, Tag, Trash2 } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Plus, Loader2, Tag, MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Dialog,
     DialogContent,
@@ -25,7 +30,7 @@ import {
 import brandsService from '@/services/api/brands.service';
 import type { BrandItem } from '@/services/api/brands.service';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth.store';
 
 interface CreateForm {
     name: string;
@@ -41,7 +46,8 @@ const INITIAL_CREATE_FORM: CreateForm = { name: '', code: '' };
 const INITIAL_EDIT_FORM: EditForm = { name: '', is_active: true };
 
 export function BrandsManagementPage() {
-    const { user } = useAuth();
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('brands', 'edit');
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -131,10 +137,6 @@ export function BrandsManagementPage() {
         },
     });
 
-    if (user?.role !== 'owner') {
-        return <Navigate to="/unauthorized" replace />;
-    }
-
     const handleEdit = (brand: BrandItem) => {
         setEditingBrand(brand);
         setEditForm({ name: brand.name, is_active: brand.is_active });
@@ -176,17 +178,19 @@ export function BrandsManagementPage() {
                         Marcas de veículos disponíveis para os modelos e ordens de serviço.
                     </p>
                 </div>
-                <Button
-                    onClick={() => {
-                        setCreateForm(INITIAL_CREATE_FORM);
-                        setAddDialogOpen(true);
-                    }}
-                    className="font-semibold"
-                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Marca
-                </Button>
+                {canEdit && (
+                    <Button
+                        onClick={() => {
+                            setCreateForm(INITIAL_CREATE_FORM);
+                            setAddDialogOpen(true);
+                        }}
+                        className="font-semibold"
+                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Marca
+                    </Button>
+                )}
             </div>
 
             {/* Conteúdo */}
@@ -206,7 +210,7 @@ export function BrandsManagementPage() {
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400">Nome</span>
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-24 text-center">Código</span>
                         <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-20 text-center">Status</span>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-28 text-center">Ações</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 w-12 text-center">Ações</span>
                     </div>
 
                     <div className="divide-y divide-[#E8E8E8] dark:divide-[#333333]">
@@ -235,48 +239,35 @@ export function BrandsManagementPage() {
                                     )}
                                 </div>
 
-                                <div className="w-28 flex items-center justify-center gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                        onClick={() => handleEdit(brand)}
-                                        aria-label="Editar marca"
-                                    >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                    </Button>
-
-                                    {brand.is_active ? (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                            onClick={() => setConfirmDeactivateId(brand.id)}
-                                            aria-label="Desativar marca"
-                                        >
-                                            <PowerOff className="h-3.5 w-3.5" />
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                                            onClick={() => reactivateMutation.mutate(brand.id)}
-                                            disabled={reactivateMutation.isPending}
-                                            aria-label="Reativar marca"
-                                        >
-                                            <Power className="h-3.5 w-3.5" />
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                        onClick={() => setConfirmDeleteId(brand.id)}
-                                        aria-label="Excluir marca permanentemente"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
+                                <div className="w-12 flex items-center justify-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEdit(brand)}>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Editar
+                                            </DropdownMenuItem>
+                                            {brand.is_active ? (
+                                                <DropdownMenuItem onClick={() => setConfirmDeactivateId(brand.id)} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                    <Eye className="h-4 w-4 mr-2" />
+                                                    Desativar
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem onClick={() => reactivateMutation.mutate(brand.id)}>
+                                                    <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                    <span className="text-green-600">Ativar</span>
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem onClick={() => setConfirmDeleteId(brand.id)} className="text-red-600 focus:text-red-600">
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                         ))}

@@ -14,6 +14,7 @@ export const employeesService = {
         if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
         if (filters?.search) params.append('search', filters.search);
         if (filters?.department) params.append('department', filters.department);
+        if (filters?.position) params.append('position', filters.position);
         params.append('skip', ((page - 1) * pageSize).toString());
         params.append('limit', pageSize.toString());
 
@@ -69,7 +70,7 @@ export const employeesService = {
     },
 
     async deactivate(id: number): Promise<Employee> {
-        const response = await apiClient.delete<Employee>(`/employees/${id}`);
+        const response = await apiClient.patch<Employee>(`/employees/${id}`, { is_active: false });
         return response.data;
     },
 

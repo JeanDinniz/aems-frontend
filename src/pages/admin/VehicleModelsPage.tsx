@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, PowerOff, Power, Loader2, Car, Trash2 } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Plus, Loader2, Car, MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Select,
     SelectContent,
@@ -33,7 +38,7 @@ import { vehicleModelsService } from '@/services/api/vehicle-models.service';
 import type { VehicleModelItem } from '@/services/api/vehicle-models.service';
 import brandsService from '@/services/api/brands.service';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth.store';
 
 interface ModelForm {
     name: string;
@@ -43,7 +48,8 @@ interface ModelForm {
 const INITIAL_FORM: ModelForm = { name: '', brand_id: '' };
 
 export function VehicleModelsPage() {
-    const { user } = useAuth();
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('models', 'edit');
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -160,10 +166,6 @@ export function VehicleModelsPage() {
         },
     });
 
-    if (user?.role !== 'owner') {
-        return <Navigate to="/" replace />;
-    }
-
     const handleEdit = (model: VehicleModelItem) => {
         setEditingModel(model);
         setForm({ name: model.name, brand_id: String(model.brand_id) });
@@ -207,17 +209,19 @@ export function VehicleModelsPage() {
                         Modelos disponíveis por marca para seleção nas ordens de serviço.
                     </p>
                 </div>
-                <Button
-                    onClick={() => {
-                        setForm(INITIAL_FORM);
-                        setAddDialogOpen(true);
-                    }}
-                    className="font-semibold"
-                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Modelo
-                </Button>
+                {canEdit && (
+                    <Button
+                        onClick={() => {
+                            setForm(INITIAL_FORM);
+                            setAddDialogOpen(true);
+                        }}
+                        className="font-semibold"
+                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Modelo
+                    </Button>
+                )}
             </div>
 
             {!brandsLoading && brands.length === 0 ? (
@@ -228,7 +232,9 @@ export function VehicleModelsPage() {
             ) : (
                 /* Filtro de Marca */
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Marca</span>
                         <Select
                             value={activeBrandId !== null ? String(activeBrandId) : 'all'}
                             onValueChange={(v) => setActiveBrandId(v === 'all' ? null : Number(v))}
@@ -251,6 +257,7 @@ export function VehicleModelsPage() {
                                 ))}
                             </SelectContent>
                         </Select>
+                        </div>
                     </div>
 
                     {isLoading ? (
@@ -294,47 +301,35 @@ export function VehicleModelsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-1 shrink-0 w-24 justify-end">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                                onClick={() => handleEdit(model)}
-                                                aria-label="Editar modelo"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            {model.is_active ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                                    onClick={() => setConfirmDeactivateId(model.id)}
-                                                    aria-label="Desativar modelo"
-                                                >
-                                                    <PowerOff className="h-3.5 w-3.5" />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                                                    onClick={() => reactivateMutation.mutate(model.id)}
-                                                    disabled={reactivateMutation.isPending}
-                                                    aria-label="Reativar modelo"
-                                                >
-                                                    <Power className="h-3.5 w-3.5" />
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                                onClick={() => setConfirmHardDeleteId(model.id)}
-                                                aria-label="Excluir modelo permanentemente"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
+                                        <div className="flex items-center justify-end shrink-0">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(model)}>
+                                                        <Edit className="h-4 w-4 mr-2" />
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                    {model.is_active ? (
+                                                        <DropdownMenuItem onClick={() => setConfirmDeactivateId(model.id)} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                            <Eye className="h-4 w-4 mr-2" />
+                                                            Desativar
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => reactivateMutation.mutate(model.id)}>
+                                                            <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                            <span className="text-green-600">Ativar</span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem onClick={() => setConfirmHardDeleteId(model.id)} className="text-red-600 focus:text-red-600">
+                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                        Excluir
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </div>
                                 ))}

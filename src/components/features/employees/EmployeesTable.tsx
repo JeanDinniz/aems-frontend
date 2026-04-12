@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
     Table,
     TableBody,
@@ -44,7 +45,11 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
     const [editOpen, setEditOpen] = useState(false);
     const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
-    const { deleteEmployee, isDeletingEmployee } = useEmployees();
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('employees', 'edit');
+    const canDelete = hasPermission('employees', 'delete');
+
+    const { deleteEmployee, isDeletingEmployee, activateEmployee, deactivateEmployee } = useEmployees();
 
     if (isLoading) {
         return (
@@ -98,26 +103,45 @@ export function EmployeesTable({ employees, isLoading, page, pageSize, total, on
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => { setSelected(emp); setEditOpen(true); }}>
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => setEmployeeToDelete(emp)}
-                                                    className="text-red-600 focus:text-red-600"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Excluir
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {(canEdit || canDelete) && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {canEdit && (
+                                                        <DropdownMenuItem onClick={() => { setSelected(emp); setEditOpen(true); }}>
+                                                            <Edit className="h-4 w-4 mr-2" />
+                                                            Editar
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {canEdit && (
+                                                        emp.is_active ? (
+                                                            <DropdownMenuItem onClick={() => deactivateEmployee(emp.id)} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                                <Eye className="h-4 w-4 mr-2" />
+                                                                Desativar
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem onClick={() => activateEmployee(emp.id)}>
+                                                                <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                                <span className="text-green-600">Ativar</span>
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    )}
+                                                    {canDelete && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => setEmployeeToDelete(emp)}
+                                                            className="text-red-600 focus:text-red-600"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                            Excluir
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

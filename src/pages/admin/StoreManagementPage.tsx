@@ -1,13 +1,18 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import brandsService from '@/services/api/brands.service';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Store, Building2, Edit, Plus, Trash2 } from 'lucide-react';
+import { Store, Building2, Edit, Eye, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Dialog,
     DialogContent,
@@ -43,7 +48,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth.store';
 import { storesService, type Store as StoreType, type UpdateStorePayload, type CreateStorePayload } from '@/services/api/stores.service';
 import { getApiErrorMessage } from '@/lib/api-error';
 
@@ -260,8 +265,6 @@ function CreateStoreDialog({ open, onOpenChange, nextCode }: CreateStoreDialogPr
 const editStoreSchema = z.object({
     name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
     is_active: z.boolean(),
-    city: z.string().optional(),
-    state: z.string().optional(),
     address: z.string().optional(),
     phone: z.string().optional(),
 });
@@ -284,8 +287,6 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
             ? {
                   name: store.name,
                   is_active: store.is_active,
-                  city: store.city ?? '',
-                  state: store.state ?? '',
                   address: store.address ?? '',
                   phone: store.phone ?? '',
               }
@@ -372,45 +373,6 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
                             )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="city"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[#666666] dark:text-zinc-300">Cidade</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Ex: São Paulo"
-                                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="state"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[#666666] dark:text-zinc-300">Estado</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Ex: SP"
-                                                maxLength={2}
-                                                className="bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
                         <FormField
                             control={form.control}
                             name="phone"
@@ -473,8 +435,8 @@ function EditStoreDialog({ store, open, onOpenChange }: EditStoreDialogProps) {
 }
 
 export function StoreManagementPage() {
-    const { user } = useAuth();
-    const isOwner = user?.role === 'owner';
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('stores', 'edit');
 
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -504,10 +466,24 @@ export function StoreManagementPage() {
         },
     });
 
+    const toggleStatusMutation = useMutation({
+        mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) =>
+            storesService.update(id, { is_active }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['stores'] });
+            toast({ title: 'Status da loja atualizado com sucesso.' });
+        },
+        onError: () => {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao atualizar status da loja',
+            });
+        },
+    });
+
     const { data: stores = [], isLoading } = useQuery({
         queryKey: ['stores'],
         queryFn: () => storesService.list(),
-        enabled: isOwner,
         staleTime: 1000 * 60 * 60,
     });
 
@@ -551,10 +527,6 @@ export function StoreManagementPage() {
         setStoreToDelete(store);
     }, []);
 
-    if (!isOwner) {
-        return <Navigate to="/unauthorized" replace />;
-    }
-
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -572,41 +544,49 @@ export function StoreManagementPage() {
                         <span className="font-medium text-[#333333] dark:text-zinc-300">{stores.length} lojas</span> da rede
                     </p>
                 </div>
-                <Button
-                    onClick={() => setCreateDialogOpen(true)}
-                    className="font-semibold"
-                    style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Loja
-                </Button>
+                {canEdit && (
+                    <Button
+                        onClick={() => setCreateDialogOpen(true)}
+                        className="font-semibold"
+                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Loja
+                    </Button>
+                )}
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                    <Input
-                        placeholder="Buscar por nome ou código..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
-                    />
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Buscar</span>
+                    <div className="relative flex-1 max-w-sm">
+                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                        <Input
+                            placeholder="Buscar por nome ou código..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9 bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white placeholder:text-[#999999] dark:placeholder:text-zinc-500 focus-visible:ring-[#F5A800]"
+                        />
+                    </div>
                 </div>
 
-                <Select
-                    value={statusFilter}
-                    onValueChange={(val) => setStatusFilter(val as typeof statusFilter)}
-                >
-                    <SelectTrigger className="w-[150px] bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
-                        <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos os status</SelectItem>
-                        <SelectItem value="active" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Ativo</SelectItem>
-                        <SelectItem value="inactive" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Inativo</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-[#666666] dark:text-zinc-400">Status</span>
+                    <Select
+                        value={statusFilter}
+                        onValueChange={(val) => setStatusFilter(val as typeof statusFilter)}
+                    >
+                        <SelectTrigger className="w-[150px] bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white focus:ring-[#F5A800]">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#252525] border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white">
+                            <SelectItem value="all" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Todos os status</SelectItem>
+                            <SelectItem value="active" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Ativo</SelectItem>
+                            <SelectItem value="inactive" className="focus:bg-gray-100 dark:focus:bg-zinc-700 focus:text-[#111111] dark:focus:text-white">Inativo</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {/* Results count */}
@@ -621,7 +601,8 @@ export function StoreManagementPage() {
                         <tr>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left w-24">Marca</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Nome</th>
-                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Cidade / Estado</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Telefone</th>
+                            <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Endereço</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-left">Status</th>
                             <th className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-right">Ações</th>
                         </tr>
@@ -640,7 +621,7 @@ export function StoreManagementPage() {
                         ) : filteredStores.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={5}
+                                    colSpan={6}
                                     className="text-center py-12 text-[#999999] dark:text-zinc-500"
                                 >
                                     Nenhuma loja encontrada com os filtros aplicados.
@@ -656,9 +637,10 @@ export function StoreManagementPage() {
                                     </td>
                                     <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-medium">{store.name}</td>
                                     <td className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
-                                        {store.city && store.state
-                                            ? `${store.city} / ${store.state}`
-                                            : store.city || store.state || '—'}
+                                        {store.phone || '—'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
+                                        {store.address || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         {store.is_active ? (
@@ -672,25 +654,35 @@ export function StoreManagementPage() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEditClick(store)}
-                                                aria-label={`Editar loja ${store.name}`}
-                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 rounded"
-                                            >
-                                                <Edit className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDeleteClick(store)}
-                                                aria-label={`Excluir loja ${store.name}`}
-                                                className="h-7 w-7 text-[#666666] dark:text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
+                                        <div className="flex items-center justify-end">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-[#F5A800]">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEditClick(store)}>
+                                                        <Edit className="h-4 w-4 mr-2" />
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                    {store.is_active ? (
+                                                        <DropdownMenuItem onClick={() => toggleStatusMutation.mutate({ id: store.id, is_active: false })} className="ring-1 ring-[#F5A800] ring-inset rounded-sm">
+                                                            <Eye className="h-4 w-4 mr-2" />
+                                                            Desativar
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => toggleStatusMutation.mutate({ id: store.id, is_active: true })}>
+                                                            <Eye className="h-4 w-4 mr-2 text-green-600" />
+                                                            <span className="text-green-600">Ativar</span>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem onClick={() => handleDeleteClick(store)} className="text-red-600 focus:text-red-600">
+                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                        Excluir
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </td>
                                 </tr>

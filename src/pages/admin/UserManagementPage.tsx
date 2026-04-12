@@ -4,23 +4,17 @@ import { UsersTable } from '@/components/features/users/UsersTable';
 import { UserFilters } from '@/components/features/users/UserFilters';
 import { CreateUserDialog } from '@/components/features/users/CreateUserDialog';
 import { useUsers } from '@/hooks/useUsers';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth.store';
 import type { UserFilters as Filters } from '@/types/user.types';
-import { Navigate } from 'react-router-dom';
 
 export function UserManagementPage() {
     const [filters, setFilters] = useState<Filters>({});
     const [page, setPage] = useState(1);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-    const { user } = useAuth();
-    const isOwner = user?.role === 'owner';
+    const hasPermission = useAuthStore((s) => s.hasPermission);
+    const canEdit = hasPermission('users', 'edit');
     const { users, total, isLoading } = useUsers(filters, page);
-
-    if (!isOwner) {
-        // Optional: Redirect or Show access denied message
-        return <Navigate to="/" replace />;
-    }
 
     const handleExport = () => {
         // TODO: Exportar lista de usuários para Excel
@@ -40,21 +34,25 @@ export function UserManagementPage() {
                     <p className="text-[#666666] dark:text-zinc-400 text-sm">Gerenciar usuários e owners</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent transition-colors"
-                    >
-                        <Download className="h-4 w-4" />
-                        Exportar
-                    </button>
-                    <button
-                        onClick={() => setCreateDialogOpen(true)}
-                        className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-60"
-                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
-                    >
-                        <Plus className="h-4 w-4" />
-                        Novo Usuário
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium border border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:border-[#F5A800] hover:text-[#F5A800] bg-transparent transition-colors"
+                        >
+                            <Download className="h-4 w-4" />
+                            Exportar
+                        </button>
+                    )}
+                    {canEdit && (
+                        <button
+                            onClick={() => setCreateDialogOpen(true)}
+                            className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-60"
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                        >
+                            <Plus className="h-4 w-4" />
+                            Novo Usuário
+                        </button>
+                    )}
                 </div>
             </div>
 

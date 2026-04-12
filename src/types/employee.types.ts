@@ -29,6 +29,7 @@ export interface EmployeeFilters {
     is_active?: boolean;
     search?: string;
     department?: string;
+    position?: string;
 }
 
 export interface EmployeesListResponse {
