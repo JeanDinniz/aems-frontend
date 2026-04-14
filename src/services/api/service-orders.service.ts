@@ -239,6 +239,8 @@ export const serviceOrdersService = {
         date_from?: string;
         date_to?: string;
         plate?: string;
+        worker_id?: number;
+        include_cancelled?: boolean;
         page?: number;
         limit?: number;
     }) => {

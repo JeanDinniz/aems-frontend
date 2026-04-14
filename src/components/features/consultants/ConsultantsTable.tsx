@@ -32,6 +32,43 @@ import { EditConsultantDialog } from './EditConsultantDialog';
 import { useConsultants } from '@/hooks/useConsultants';
 import type { Consultant } from '@/types/consultant.types';
 
+function PaymentInfo({ consultant }: { consultant: Consultant }) {
+    const hasPix = !!consultant.pix_key;
+    const hasBank = !!consultant.bank_account;
+
+    if (!hasPix && !hasBank) {
+        return <span className="text-sm text-[#999999] dark:text-zinc-500">-</span>;
+    }
+
+    return (
+        <div className="space-y-1">
+            {hasPix && (
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
+                        PIX
+                    </span>
+                    <span className="text-sm text-[#444444] dark:text-zinc-300 font-mono truncate max-w-[160px]" title={consultant.pix_key!}>
+                        {consultant.pix_key}
+                    </span>
+                </div>
+            )}
+            {hasBank && (
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">
+                        BANCO
+                    </span>
+                    <span className="text-sm text-[#444444] dark:text-zinc-300">
+                        {consultant.bank_name ? `${consultant.bank_name} · ` : ''}
+                        {consultant.bank_agency ? `Ag. ${consultant.bank_agency} / ` : ''}
+                        {consultant.bank_account}
+                        {consultant.bank_account_type ? ` (${consultant.bank_account_type === 'corrente' ? 'CC' : 'CP'})` : ''}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+}
+
 interface ConsultantsTableProps {
     consultants: Consultant[];
     isLoading: boolean;
@@ -79,6 +116,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                             <TableHead>Loja</TableHead>
                             <TableHead>Telefone</TableHead>
                             <TableHead>E-mail</TableHead>
+                            <TableHead>PIX / Conta Bancária</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
@@ -86,7 +124,7 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                     <TableBody>
                         {consultants.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-[#666666] dark:text-zinc-500 py-8">
+                                <TableCell colSpan={7} className="text-center text-[#666666] dark:text-zinc-500 py-8">
                                     Nenhum consultor encontrado
                                 </TableCell>
                             </TableRow>
@@ -117,6 +155,10 @@ export function ConsultantsTable({ consultants, isLoading, page, pageSize, total
                                         ) : (
                                             <span className="text-sm text-[#999999] dark:text-zinc-500">-</span>
                                         )}
+                                    </TableCell>
+
+                                    <TableCell>
+                                        <PaymentInfo consultant={consultant} />
                                     </TableCell>
 
                                     <TableCell>

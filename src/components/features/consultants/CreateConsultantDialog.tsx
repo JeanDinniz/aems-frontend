@@ -19,6 +19,13 @@ const createConsultantSchema = z.object({
     store_id: z.number({ error: 'Loja é obrigatória' }),
     phone: z.string().optional(),
     email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+    // PIX
+    pix_key: z.string().max(200).optional().or(z.literal('')),
+    // Conta bancária
+    bank_name: z.string().max(100).optional().or(z.literal('')),
+    bank_agency: z.string().max(20).optional().or(z.literal('')),
+    bank_account: z.string().max(30).optional().or(z.literal('')),
+    bank_account_type: z.enum(['corrente', 'poupanca']).optional(),
 });
 
 type CreateConsultantForm = z.infer<typeof createConsultantSchema>;
@@ -36,11 +43,14 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
         register,
         handleSubmit,
         setValue,
+        watch,
         formState: { errors },
         reset,
     } = useForm<CreateConsultantForm>({
         resolver: zodResolver(createConsultantSchema),
     });
+
+    const bankAccountType = watch('bank_account_type');
 
     const onSubmit = (data: CreateConsultantForm) => {
         const payload = {
@@ -48,6 +58,11 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
             store_id: data.store_id,
             phone: data.phone || undefined,
             email: data.email || undefined,
+            pix_key: data.pix_key || undefined,
+            bank_name: data.bank_name || undefined,
+            bank_agency: data.bank_agency || undefined,
+            bank_account: data.bank_account || undefined,
+            bank_account_type: data.bank_account_type || undefined,
         };
 
         createConsultant(payload, {
@@ -58,19 +73,15 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
         });
     };
 
-    const handleStoreChange = (value: string) => {
-        const storeId = parseInt(value);
-        setValue('store_id', storeId);
-    };
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Novo Consultor</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    {/* Dados básicos */}
                     <div className="space-y-2">
                         <label htmlFor="cc-name" className="text-sm font-medium">
                             Nome <span className="text-red-500">*</span>
@@ -89,7 +100,7 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                         <label htmlFor="cc-store" className="text-sm font-medium">
                             Loja <span className="text-red-500">*</span>
                         </label>
-                        <Select onValueChange={handleStoreChange}>
+                        <Select onValueChange={(value) => setValue('store_id', parseInt(value))}>
                             <SelectTrigger id="cc-store">
                                 <SelectValue placeholder="Selecione a loja" />
                             </SelectTrigger>
@@ -115,9 +126,6 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                                 placeholder="(00) 00000-0000"
                                 type="tel"
                             />
-                            {errors.phone && (
-                                <p className="text-sm text-red-500">{errors.phone.message}</p>
-                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -134,8 +142,74 @@ export function CreateConsultantDialog({ open, onOpenChange }: CreateConsultantD
                         </div>
                     </div>
 
+                    {/* Dados de pagamento */}
+                    <div className="border border-dashed border-[#D1D1D1] dark:border-[#333333] rounded-lg p-4 space-y-4">
+                        <p className="text-sm font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide">
+                            Dados de Pagamento <span className="font-normal normal-case">(opcional)</span>
+                        </p>
+
+                        {/* PIX */}
+                        <div className="space-y-2">
+                            <label htmlFor="cc-pix" className="text-sm font-medium">Chave PIX</label>
+                            <Input
+                                id="cc-pix"
+                                {...register('pix_key')}
+                                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                            />
+                            <p className="text-xs text-[#999999] dark:text-zinc-500">
+                                Informe qualquer tipo de chave PIX cadastrada no banco.
+                            </p>
+                        </div>
+
+                        {/* Conta Bancária */}
+                        <div className="space-y-3">
+                            <p className="text-sm font-medium">Conta Bancária</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label htmlFor="cc-bank-name" className="text-xs text-[#666666] dark:text-zinc-400">Banco</label>
+                                    <Input
+                                        id="cc-bank-name"
+                                        {...register('bank_name')}
+                                        placeholder="Ex: Itaú, Bradesco, Nubank"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs text-[#666666] dark:text-zinc-400">Tipo de Conta</label>
+                                    <Select
+                                        value={bankAccountType ?? ''}
+                                        onValueChange={(val) => setValue('bank_account_type', val as 'corrente' | 'poupanca')}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="corrente">Corrente</SelectItem>
+                                            <SelectItem value="poupanca">Poupança</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label htmlFor="cc-agency" className="text-xs text-[#666666] dark:text-zinc-400">Agência</label>
+                                    <Input
+                                        id="cc-agency"
+                                        {...register('bank_agency')}
+                                        placeholder="0001"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label htmlFor="cc-account" className="text-xs text-[#666666] dark:text-zinc-400">Conta + Dígito</label>
+                                    <Input
+                                        id="cc-account"
+                                        {...register('bank_account')}
+                                        placeholder="12345-6"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isCreating}>

@@ -4,12 +4,9 @@ import { useServiceOrder, useUpdateServiceOrder, useUpdateServiceOrderStatus, us
 import { useAuth } from '@/hooks/useAuth';
 import { WorkerAssignmentDialog } from '@/components/features/service-orders/WorkerAssignmentDialog';
 import { Button } from '@/components/ui/button';
-import { TrafficLightStatus } from '@/components/features/service-orders/TrafficLightStatus';
 import { ChevronLeft, Car, Tag, Loader2, Edit, CheckCircle2, AlertTriangle, Play, FileText, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ServiceOrderStatus, QualityChecklistItem, CreateServiceOrderData } from '@/types/service-order.types';
-import { QualityChecklistDialog } from '@/components/features/service-orders/QualityChecklistDialog';
-import { InvoiceRequiredDialog } from '@/components/features/service-orders/InvoiceRequiredDialog';
+import type { ServiceOrderStatus, CreateServiceOrderData } from '@/types/service-order.types';
 import {
     Dialog,
     DialogContent,
@@ -32,11 +29,8 @@ export default function ServiceOrderDetailsPage() {
     const cancelOrder = useCancelServiceOrder();
 
     const [showWorkerDialog, setShowWorkerDialog] = useState(false);
-    const [showQualityDialog, setShowQualityDialog] = useState(false);
-    const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
-    const [pendingQualityItems, setPendingQualityItems] = useState<QualityChecklistItem[]>([]);
 
     const canCancel = user?.role === 'owner'
         && os?.status !== 'cancelled';
@@ -73,79 +67,6 @@ export default function ServiceOrderDetailsPage() {
                     variant: "destructive",
                     title: "Erro",
                     description: "Não foi possível atribuir os funcionários."
-                });
-            }
-        });
-    };
-
-    const performStatusUpdate = (items: QualityChecklistItem[], invoiceNumber?: string) => {
-        updateStatus.mutate({
-            id: Number(id),
-            status: 'ready',
-            extras: {
-                quality_checklist: {
-                    items,
-                    all_passed: true,
-                    approved_at: new Date().toISOString()
-                },
-                ...(invoiceNumber && { invoice_number: invoiceNumber })
-            }
-        }, {
-            onSuccess: () => {
-                setShowQualityDialog(false);
-                setShowInvoiceDialog(false);
-                toast({
-                    title: "Inspeção Concluída",
-                    description: "Serviço aprovado e marcado como Pronto."
-                });
-            },
-            onError: () => {
-                toast({
-                    variant: "destructive",
-                    title: "Não foi possível aprovar",
-                    description: "Ocorreu um erro ao aprovar o serviço. Tente novamente."
-                });
-            }
-        });
-    };
-
-    const handleQualityApprove = (items: QualityChecklistItem[]) => {
-        if (os?.department === 'film' && !os.invoice_number) {
-            setPendingQualityItems(items);
-            setShowInvoiceDialog(true);
-            return;
-        }
-        performStatusUpdate(items);
-    };
-
-    const handleInvoiceConfirm = (invoiceNumber: string) => {
-        performStatusUpdate(pendingQualityItems, invoiceNumber);
-    };
-
-    const handleQualityReject = (notes: string) => {
-        updateStatus.mutate({
-            id: Number(id),
-            status: 'doing',
-            extras: {
-                quality_checklist: {
-                    items: [],
-                    all_passed: false,
-                    rejection_notes: notes
-                }
-            }
-        }, {
-            onSuccess: () => {
-                setShowQualityDialog(false);
-                toast({
-                    title: "Serviço Reprovado",
-                    description: "O serviço voltou para a fase de execução."
-                });
-            },
-            onError: () => {
-                toast({
-                    variant: "destructive",
-                    title: "Não foi possível reprovar",
-                    description: "Ocorreu um erro ao reprovar o serviço. Tente novamente."
                 });
             }
         });
@@ -190,7 +111,7 @@ export default function ServiceOrderDetailsPage() {
                         <Button onClick={() => handleStatusUpdate('doing')} variant="destructive">
                             <AlertTriangle className="mr-2 h-4 w-4" /> Reprovar
                         </Button>
-                        <Button onClick={() => setShowQualityDialog(true)} className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button onClick={() => handleStatusUpdate('ready')} className="bg-green-600 hover:bg-green-700 text-white">
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar / Pronto
                         </Button>
                     </div>
@@ -254,13 +175,6 @@ export default function ServiceOrderDetailsPage() {
                             >
                                 {STATUS_LABELS[os.status] || os.status}
                             </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <TrafficLightStatus
-                                entryTime={os.entry_time || os.created_at}
-                                department={os.department}
-                                status={os.status}
-                            />
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {os.status !== 'cancelled' && (
@@ -396,23 +310,6 @@ export default function ServiceOrderDetailsPage() {
                     )}
                 </div>
             </div>
-
-            <QualityChecklistDialog
-                open={showQualityDialog}
-                onOpenChange={setShowQualityDialog}
-                orderId={os.id}
-                department={os.department}
-                onApprove={handleQualityApprove}
-                onReject={handleQualityReject}
-                isSubmitting={updateStatus.isPending}
-            />
-
-            <InvoiceRequiredDialog
-                open={showInvoiceDialog}
-                onOpenChange={setShowInvoiceDialog}
-                onConfirm={handleInvoiceConfirm}
-                isSubmitting={updateStatus.isPending}
-            />
 
             <WorkerAssignmentDialog
                 open={showWorkerDialog}

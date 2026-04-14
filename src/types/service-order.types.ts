@@ -6,7 +6,7 @@ export type ServiceOrderStatus =
     | 'delivered'    // Entregue
     | 'cancelled';   // Cancelada
 
-export type Department = 'film' | 'ppf' | 'vn' | 'vu' | 'bodywork' | 'workshop';
+export type Department = 'film' | 'ppf' | 'vn' | 'vd' | 'vu' | 'bodywork' | 'workshop';
 
 export type SemaphoreColor = 'white' | 'yellow' | 'orange' | 'red';
 
@@ -138,4 +138,5 @@ export interface ServiceOrderFilters {
     date_from?: string;
     date_to?: string;
     department?: string;
+    worker_id?: number;
 }

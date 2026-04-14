@@ -71,7 +71,7 @@ function isValidPlateOrChassi(value: string): boolean {
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 const schema = z.object({
-    department: z.enum(['film', 'ppf', 'vn', 'vu', 'bodywork', 'workshop'] as const, {
+    department: z.enum(['film', 'ppf', 'vn', 'vd', 'vu', 'bodywork', 'workshop'] as const, {
         error: 'Selecione um departamento',
     }),
     plate: z
@@ -128,7 +128,7 @@ const schema = z.object({
         }
     }
 
-    if (data.department !== 'vn' && data.department !== 'vu' && !data.external_os_number?.trim()) {
+    if (data.department !== 'vn' && data.department !== 'vd' && data.department !== 'vu' && !data.external_os_number?.trim()) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Nº OS Concessionária obrigatório',
@@ -149,6 +149,7 @@ const DEPT_OPTIONS: DeptOption[] = [
     { value: 'film',     label: 'Película' },
     { value: 'ppf',      label: 'PPF' },
     { value: 'vn',       label: 'VN' },
+    { value: 'vd',       label: 'Venda Direta' },
     { value: 'vu',       label: 'VU' },
     { value: 'bodywork', label: 'Funilaria' },
     { value: 'workshop', label: 'Oficina' },
@@ -1070,7 +1071,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             )}
                         </div>
 
-                        {(department !== 'vn' && department !== 'vu') && (
+                        {(department !== 'vn' && department !== 'vd' && department !== 'vu') && (
                             <div className="sm:col-span-2 space-y-1.5" data-field="external_os_number">
                                 <Label htmlFor="external_os_number" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Nº OS Concessionária <span className="text-destructive">*</span>

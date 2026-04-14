@@ -33,6 +33,24 @@ const STATUS_COLORS: Record<string, string> = {
     ready:   'border-[#22c55e] text-[#22c55e]',
 };
 
+function formatDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    return d.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+function canEdit(os: ServiceOrder): boolean {
+    if (os.is_verified) return false;
+    const osDate = new Date(os.entry_time);
+    const diffMs = Date.now() - osDate.getTime();
+    return diffMs <= 7 * 24 * 60 * 60 * 1000;
+}
+
 export default function ServiceOrdersPage() {
     const [page, setPage] = useState(0);
     const pageSize = 10;
@@ -41,12 +59,9 @@ export default function ServiceOrdersPage() {
 
     const [departmentFilter, setDepartmentFilter] = useState<Department | 'all'>('all');
     const [search, setSearch] = useState('');
-    const [selectedDate, setSelectedDate] = useState<string>(
-        new Date().toISOString().split('T')[0]
-    );
-
     const today = new Date().toISOString().split('T')[0];
-    const isToday = selectedDate === today;
+    const [startDate, setStartDate] = useState<string>(today);
+    const [endDate, setEndDate] = useState<string>(today);
 
     const updateStatus = useUpdateServiceOrderStatus();
 
@@ -57,8 +72,9 @@ export default function ServiceOrdersPage() {
             store_id: selectedStoreId ?? undefined,
             search: search || undefined,
             department: departmentFilter !== 'all' ? departmentFilter : undefined,
-            date_from: selectedDate,
-            date_to: selectedDate,
+            // Quando há busca, ignora filtro de data para buscar em qualquer período
+            date_from: search ? undefined : startDate,
+            date_to: search ? undefined : endDate,
         },
         page * pageSize,
         pageSize
@@ -124,25 +140,43 @@ export default function ServiceOrdersPage() {
                             <SelectItem value="film">Película</SelectItem>
                             <SelectItem value="ppf">PPF</SelectItem>
                             <SelectItem value="vn">VN</SelectItem>
+                            <SelectItem value="vd">Venda Direta</SelectItem>
                             <SelectItem value="vu">VU</SelectItem>
                             <SelectItem value="bodywork">Funilaria</SelectItem>
                             <SelectItem value="workshop">Oficina</SelectItem>
                         </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-2">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
-                            Data
-                        </label>
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => {
-                                setSelectedDate(e.target.value);
-                                setPage(0);
-                            }}
-                            className="h-10 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
-                        />
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                                De:
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    setPage(0);
+                                }}
+                                className="h-9 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
+                            />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+                                Até:
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                min={startDate}
+                                onChange={(e) => {
+                                    setEndDate(e.target.value);
+                                    setPage(0);
+                                }}
+                                className="h-9 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,13 +193,14 @@ export default function ServiceOrdersPage() {
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Veículo</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Departamento</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Serviços</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Data da OS</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
                                 <TableRow key={i} className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                    {Array.from({ length: 7 }).map((__, j) => (
+                                    {Array.from({ length: 8 }).map((__, j) => (
                                         <TableCell key={j} className="px-4 py-3">
                                             <Skeleton className="h-5 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse" />
                                         </TableCell>
@@ -174,7 +209,7 @@ export default function ServiceOrdersPage() {
                             ))
                         ) : isError ? (
                             <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                <TableCell colSpan={7} className="px-4 py-3">
+                                <TableCell colSpan={8} className="px-4 py-3">
                                     <div className="flex items-center justify-center gap-2 py-8 text-red-400 text-sm">
                                         <AlertCircle className="w-4 h-4" />
                                         Erro ao carregar ordens de serviço. Tente recarregar a página.
@@ -183,7 +218,7 @@ export default function ServiceOrdersPage() {
                             </TableRow>
                         ) : data?.items.length === 0 ? (
                             <TableRow className="border-t border-[#E8E8E8] dark:border-[#333333]">
-                                <TableCell colSpan={7} className="p-0">
+                                <TableCell colSpan={8} className="p-0">
                                     <EmptyState
                                         icon={ClipboardList}
                                         title={search ? 'Nenhuma O.S. encontrada' : 'Nenhuma ordem de serviço'}
@@ -196,81 +231,88 @@ export default function ServiceOrdersPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            data?.items.map((os) => (
-                                <TableRow key={os.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
-                                    {/* Ações */}
-                                    <TableCell className="px-4 py-3">
-                                        <button
-                                            onClick={() => setEditingOrder(os)}
-                                            disabled={!isToday}
-                                            className={[
-                                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition-colors',
-                                                isToday
-                                                    ? 'border-[#F5A800] text-[#F5A800] hover:bg-[#F5A800]/10 cursor-pointer'
-                                                    : 'border-[#D1D1D1] text-[#BBBBBB] dark:border-[#444444] dark:text-[#555555] opacity-50 cursor-not-allowed',
-                                            ].join(' ')}
-                                        >
-                                            <Pencil className="w-3 h-3" />
-                                            Editar
-                                        </button>
-                                    </TableCell>
-                                    {/* Status */}
-                                    <TableCell className="px-4 py-3">
-                                        <Select
-                                            value={os.status}
-                                            onValueChange={(value) =>
-                                                updateStatus.mutate({ id: os.id, status: value })
-                                            }
-                                        >
-                                            <SelectTrigger
+                            data?.items.map((os) => {
+                                const editEnabled = canEdit(os);
+                                return (
+                                    <TableRow key={os.id} className="border-t border-[#E8E8E8] dark:border-[#333333] hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+                                        {/* Ações */}
+                                        <TableCell className="px-4 py-3">
+                                            <button
+                                                onClick={() => setEditingOrder(os)}
+                                                disabled={!editEnabled}
+                                                title={editEnabled ? 'Editar OS' : 'Edição disponível somente até 7 dias após a criação'}
                                                 className={[
-                                                    'h-8 w-36 rounded-md border bg-white dark:bg-[#252525] px-2 text-xs font-semibold focus:ring-1 focus:ring-[#F5A800] focus:border-[#F5A800] cursor-pointer',
-                                                    STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
+                                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition-colors',
+                                                    editEnabled
+                                                        ? 'border-[#F5A800] text-[#F5A800] hover:bg-[#F5A800]/10 cursor-pointer'
+                                                        : 'border-[#D1D1D1] text-[#BBBBBB] dark:border-[#444444] dark:text-[#555555] opacity-50 cursor-not-allowed',
                                                 ].join(' ')}
                                             >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white rounded-lg shadow-lg">
-                                                <SelectItem value="waiting" className="text-xs font-semibold text-[#666666] dark:text-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800">Aguardando</SelectItem>
-                                                <SelectItem value="doing" className="text-xs font-semibold text-[#F5A800] focus:bg-zinc-100 dark:focus:bg-zinc-800">Desenvolvendo</SelectItem>
-                                                <SelectItem value="ready" className="text-xs font-semibold text-[#22c55e] focus:bg-zinc-100 dark:focus:bg-zinc-800">Finalizado</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono text-xs">{os.external_os_number || '—'}</TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        <span className="bg-gray-100 dark:bg-zinc-800 border border-[#D1D1D1] dark:border-zinc-700 text-[#111111] dark:text-white font-mono px-2 py-0.5 rounded text-sm tracking-widest">
-                                            {os.plate}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
-                                        {os.vehicle_model}{os.vehicle_color ? ` · ${os.vehicle_color}` : ''}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        <Badge variant="outline" className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 text-xs">
-                                            {DEPARTMENTS_MAP[os.department] || os.department}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1">
-                                            {(os.items ?? [])
-                                                .filter(item => item.service_name)
-                                                .map((item, i) => (
-                                                    <span
-                                                        key={i}
-                                                        className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded"
-                                                    >
-                                                        {item.service_name}
-                                                    </span>
-                                                ))
-                                            }
-                                            {(!os.items || os.items.filter(item => item.service_name).length === 0) && (
-                                                <span className="text-muted-foreground text-xs">—</span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                                <Pencil className="w-3 h-3" />
+                                                Editar
+                                            </button>
+                                        </TableCell>
+                                        {/* Status */}
+                                        <TableCell className="px-4 py-3">
+                                            <Select
+                                                value={os.status}
+                                                onValueChange={(value) =>
+                                                    updateStatus.mutate({ id: os.id, status: value })
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    className={[
+                                                        'h-8 w-36 rounded-md border bg-white dark:bg-[#252525] px-2 text-xs font-semibold focus:ring-1 focus:ring-[#F5A800] focus:border-[#F5A800] cursor-pointer',
+                                                        STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
+                                                    ].join(' ')}
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white rounded-lg shadow-lg">
+                                                    <SelectItem value="waiting" className="text-xs font-semibold text-[#666666] dark:text-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800">Aguardando</SelectItem>
+                                                    <SelectItem value="doing" className="text-xs font-semibold text-[#F5A800] focus:bg-zinc-100 dark:focus:bg-zinc-800">Desenvolvendo</SelectItem>
+                                                    <SelectItem value="ready" className="text-xs font-semibold text-[#22c55e] focus:bg-zinc-100 dark:focus:bg-zinc-800">Finalizado</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono text-xs">{os.external_os_number || '—'}</TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            <span className="bg-gray-100 dark:bg-zinc-800 border border-[#D1D1D1] dark:border-zinc-700 text-[#111111] dark:text-white font-mono px-2 py-0.5 rounded text-sm tracking-widest">
+                                                {os.plate}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
+                                            {os.vehicle_model}{os.vehicle_color ? ` · ${os.vehicle_color}` : ''}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            <Badge variant="outline" className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 text-xs">
+                                                {DEPARTMENTS_MAP[os.department] || os.department}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(os.items ?? [])
+                                                    .filter(item => item.service_name)
+                                                    .map((item, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded"
+                                                        >
+                                                            {item.service_name}
+                                                        </span>
+                                                    ))
+                                                }
+                                                {(!os.items || os.items.filter(item => item.service_name).length === 0) && (
+                                                    <span className="text-muted-foreground text-xs">—</span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-xs text-[#666666] dark:text-zinc-400 whitespace-nowrap">
+                                            {os.entry_time ? formatDate(os.entry_time) : '—'}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>

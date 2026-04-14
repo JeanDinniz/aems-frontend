@@ -568,10 +568,9 @@ describe('ServiceOrdersPage', () => {
             expect(dashes.length).toBeGreaterThan(0);
         });
 
-        it('should render TrafficLightStatus component', () => {
+        it('should render orders in the table', () => {
             renderServiceOrdersPage();
 
-            // TrafficLightStatus should be rendered for each order
             // Verify that the table with orders is present
             expect(screen.getByText('ABC1D23')).toBeInTheDocument();
             expect(screen.getByText('XYZ9W87')).toBeInTheDocument();

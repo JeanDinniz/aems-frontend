@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useStoreStore } from '@/stores/store.store';
 import { useConsultants } from '@/hooks/useConsultants';
 import { useVehicleModels } from '@/hooks/useVehicleModels';
+import { employeesService } from '@/services/api/employees.service';
 import type { ServiceOrder, Department } from '@/types/service-order.types';
 import type { Photo } from '@/types/photo.types';
 import { DEPARTMENTS_MAP } from '@/constants/service-orders';
@@ -107,6 +108,7 @@ const DEPT_COLORS: Record<string, string> = {
     film:     'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700/50',
     ppf:      'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50',
     vn:       'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700/50',
+    vd:       'bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/40 dark:text-teal-300 dark:border-teal-700/50',
     vu:       'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700/50',
     bodywork: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700/50',
     workshop: 'bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
@@ -368,7 +370,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                                 className="h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]"
                             />
                         </div>
-                        {department !== 'vn' && department !== 'vu' && (
+                        {department !== 'vn' && department !== 'vd' && department !== 'vu' && (
                             <div className="col-span-2 space-y-1.5">
                                 <Label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-500">
                                     Nº OS Concessionária
@@ -564,6 +566,7 @@ export function ConferencePage() {
     const [search, setSearch] = useState('');
     const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
     const [flagFilters, setFlagFilters] = useState({ courtesy: false, galpon: false, retorno: false });
+    const [workerId, setWorkerId] = useState<number | undefined>(undefined);
     const [isExporting, setIsExporting] = useState(false);
 
     // Visibilidade de colunas condicionais por departamento
@@ -584,7 +587,7 @@ export function ConferencePage() {
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilters];
+    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilters, workerId];
 
     const { data, isLoading } = useQuery({
         queryKey,
@@ -592,6 +595,7 @@ export function ConferencePage() {
             store_id: storeId ?? undefined,
             is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
             status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
+            include_cancelled: verifiedFilter === 'all' ? true : undefined,
             flag: [
                 flagFilters.courtesy ? 'courtesy' : null,
                 flagFilters.galpon ? 'galpon' : null,
@@ -601,6 +605,7 @@ export function ConferencePage() {
             date_to: dateTo || undefined,
             department: department || undefined,
             plate: search || undefined,
+            worker_id: workerId,
             limit: 200,
         }),
         enabled: true,
@@ -613,10 +618,18 @@ export function ConferencePage() {
     });
     const services = servicesData ?? [];
 
+    // Lista de funcionários para filtro de instalador
+    const { data: employeesData } = useQuery({
+        queryKey: ['employees', 'conference-filter', storeId],
+        queryFn: () => employeesService.list({ store_id: storeId, is_active: true }, 1, 200),
+    });
+    const employees = employeesData?.employees ?? [];
+
     const verifyMutation = useMutation({
         mutationFn: (id: number) => serviceOrdersService.verify(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] });
+            queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['service-order'] });
             toast({ title: 'OS verificada!' });
         },
         onError: () => {
@@ -627,7 +640,8 @@ export function ConferencePage() {
     const unverifyMutation = useMutation({
         mutationFn: (id: number) => serviceOrdersService.unverify(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] });
+            queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['service-order'] });
             toast({ title: 'Verificação desfeita.' });
         },
         onError: () => {
@@ -638,7 +652,8 @@ export function ConferencePage() {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => serviceOrdersService.cancel(id, 'OS cancelada via conferência'),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] });
+            queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['service-order'] });
             toast({ title: 'OS cancelada.' });
             setDeleteTarget(null);
         },
@@ -656,20 +671,21 @@ export function ConferencePage() {
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            const response = await apiClient.get('/service-orders/export/conferencia', {
-                params: {
-                    store_id: storeId || undefined,
-                    date_from: dateFrom || undefined,
-                    date_to: dateTo || undefined,
-                    department: department || undefined,
-                    is_verified: verifiedFilter === 'verified' ? true : verifiedFilter === 'pending' ? false : undefined,
-                    flag: [
-                        flagFilters.courtesy ? 'courtesy' : null,
-                        flagFilters.galpon ? 'galpon' : null,
-                        flagFilters.retorno ? 'retorno' : null,
-                    ].filter(Boolean),
-                    plate: search || undefined,
-                },
+            const qs = new URLSearchParams();
+            if (storeId) qs.append('store_id', String(storeId));
+            if (dateFrom) qs.append('date_from', dateFrom);
+            if (dateTo) qs.append('date_to', dateTo);
+            if (department) qs.append('department', department);
+            if (verifiedFilter === 'verified') qs.append('is_verified', 'true');
+            else if (verifiedFilter === 'pending') qs.append('is_verified', 'false');
+            else if (verifiedFilter === 'cancelled') qs.append('status', 'cancelled');
+            if (flagFilters.courtesy) qs.append('flag', 'courtesy');
+            if (flagFilters.galpon) qs.append('flag', 'galpon');
+            if (flagFilters.retorno) qs.append('flag', 'retorno');
+            if (search) qs.append('plate', search);
+            if (workerId) qs.append('worker_id', String(workerId));
+
+            const response = await apiClient.get(`/service-orders/export/conferencia?${qs.toString()}`, {
                 responseType: 'blob',
             });
             const blob = new Blob([response.data], {
@@ -758,6 +774,25 @@ export function ConferencePage() {
                     </Select>
                 </div>
                 <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Instalador</Label>
+                    <Select
+                        value={workerId?.toString() ?? 'all'}
+                        onValueChange={(v) => setWorkerId(v === 'all' ? undefined : parseInt(v))}
+                    >
+                        <SelectTrigger className="w-44 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
+                            <SelectValue placeholder="Todos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            {employees.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.id.toString()}>
+                                    {emp.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Status</Label>
                     <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all' | 'cancelled')}>
                         <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
@@ -837,7 +872,14 @@ export function ConferencePage() {
                             </TableRow>
                         ) : (
                             orders.map((order) => (
-                                <TableRow key={order.id} className={`border-t border-[#E8E8E8] dark:border-[#333333] transition-colors ${order.is_verified ? 'bg-green-50 dark:bg-green-900/10 hover:bg-green-100/60 dark:hover:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40'}`}>
+                                <TableRow key={order.id} className={[
+                                    'border-t border-[#E8E8E8] dark:border-[#333333] transition-colors',
+                                    order.status === 'cancelled'
+                                        ? 'bg-red-100 dark:bg-red-900/35 hover:bg-red-200/70 dark:hover:bg-red-900/50'
+                                        : order.is_verified
+                                            ? 'bg-green-50 dark:bg-green-900/10 hover:bg-green-100/60 dark:hover:bg-green-900/20'
+                                            : 'hover:bg-gray-50 dark:hover:bg-zinc-800/40',
+                                ].join(' ')}>
                                     {/* Ações */}
                                     <TableCell className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-4 py-3 w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#E8E8E8] after:dark:bg-zinc-700">
                                         <div className="flex items-center justify-center gap-1">
@@ -933,7 +975,7 @@ export function ConferencePage() {
                                     {/* Nº OS Conc. */}
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
                                         <div className="flex flex-col gap-0.5">
-                                            <span>{order.external_os_number || (['vn', 'vu'].includes(order.department) ? '—' : (order.order_number || `#${order.id}`))}</span>
+                                            <span>{order.external_os_number || (['vn', 'vd', 'vu'].includes(order.department) ? '—' : (order.order_number || `#${order.id}`))}</span>
                                             {order.is_return && (
                                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 w-fit">
                                                     Retorno
@@ -1055,7 +1097,10 @@ export function ConferencePage() {
                 order={editOrder}
                 open={editOpen}
                 onClose={() => setEditOpen(false)}
-                onSaved={() => queryClient.invalidateQueries({ queryKey: ['service-orders', 'conference'] })}
+                onSaved={() => {
+                    queryClient.invalidateQueries({ queryKey: ['service-orders'] });
+                    queryClient.invalidateQueries({ queryKey: ['service-order'] });
+                }}
             />
 
             {photoUrl && (

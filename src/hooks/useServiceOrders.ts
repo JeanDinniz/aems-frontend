@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { serviceOrdersService } from '@/services/api/service-orders.service';
+import { useToast } from '@/hooks/use-toast';
 import type { ServiceOrderFilters, CreateServiceOrderData } from '@/types/service-order.types';
 
 export const useServiceOrders = (filters?: ServiceOrderFilters, skip = 0, limit = 20) => {
@@ -53,12 +54,20 @@ export const useCancelServiceOrder = () => {
 
 export const useUpdateServiceOrderStatus = () => {
     const queryClient = useQueryClient();
+    const { toast } = useToast();
     return useMutation({
         mutationFn: ({ id, status, extras }: { id: number; status: string; extras?: Record<string, unknown> }) =>
             serviceOrdersService.updateStatus(id, status, extras),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['service-orders'] });
             queryClient.invalidateQueries({ queryKey: ['service-order', variables.id] });
-        }
+        },
+        onError: () => {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao atualizar status',
+                description: 'Não foi possível atualizar o status da O.S. Verifique as condições necessárias.',
+            });
+        },
     });
 };

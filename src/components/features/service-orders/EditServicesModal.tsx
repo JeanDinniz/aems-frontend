@@ -8,6 +8,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { useServices } from '@/hooks/useServices';
 import { useUpdateServiceOrder } from '@/hooks/useServiceOrders';
 import type { ServiceOrder } from '@/types/service-order.types';
@@ -25,11 +26,13 @@ export function EditServicesModal({ serviceOrder, open, onClose }: EditServicesM
     const [selectedServiceIds, setSelectedServiceIds] = useState<number[]>(
         serviceOrder.items?.map((i) => i.service_id) ?? []
     );
+    const [notes, setNotes] = useState(serviceOrder.notes ?? '');
 
     // Re-sync when the serviceOrder prop changes (e.g. different OS opened)
     useEffect(() => {
         setSelectedServiceIds(serviceOrder.items?.map((i) => i.service_id) ?? []);
-    }, [serviceOrder.id, serviceOrder.items]);
+        setNotes(serviceOrder.notes ?? '');
+    }, [serviceOrder.id, serviceOrder.items, serviceOrder.notes]);
 
     const toggleService = (id: number) => {
         setSelectedServiceIds((prev) =>
@@ -43,6 +46,7 @@ export function EditServicesModal({ serviceOrder, open, onClose }: EditServicesM
                 id: serviceOrder.id,
                 data: {
                     items: selectedServiceIds.map((id) => ({ service_id: id, quantity: 1 })),
+                    notes: notes || undefined,
                 },
             },
             {
@@ -63,53 +67,72 @@ export function EditServicesModal({ serviceOrder, open, onClose }: EditServicesM
                         className="text-base font-bold text-[#111111] dark:text-white"
                         style={{ fontFamily: 'Barlow, Barlow Semi Condensed, sans-serif' }}
                     >
-                        Editar Serviços —{' '}
+                        Editar OS —{' '}
                         <span className="font-mono tracking-widest text-[#F5A800]">
                             {serviceOrder.plate}
                         </span>
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="mt-2 space-y-2 max-h-80 overflow-y-auto pr-1">
-                    {isLoadingServices ? (
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <Skeleton
-                                key={i}
-                                className="h-8 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse rounded-md"
-                            />
-                        ))
-                    ) : !services || services.length === 0 ? (
-                        <p className="text-sm text-[#666666] dark:text-zinc-400 py-4 text-center">
-                            Nenhum serviço disponível para este departamento.
+                {/* Serviços */}
+                <div className="mt-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 mb-2">
+                        Serviços
+                    </p>
+                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        {isLoadingServices ? (
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <Skeleton
+                                    key={i}
+                                    className="h-8 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse rounded-md"
+                                />
+                            ))
+                        ) : !services || services.length === 0 ? (
+                            <p className="text-sm text-[#666666] dark:text-zinc-400 py-4 text-center">
+                                Nenhum serviço disponível para este departamento.
+                            </p>
+                        ) : (
+                            services.map((service) => {
+                                const checked = selectedServiceIds.includes(service.id);
+                                return (
+                                    <label
+                                        key={service.id}
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                                    >
+                                        <Checkbox
+                                            id={`service-${service.id}`}
+                                            checked={checked}
+                                            onCheckedChange={() => toggleService(service.id)}
+                                            className="border-[#D1D1D1] dark:border-[#555555] data-[state=checked]:bg-[#F5A800] data-[state=checked]:border-[#F5A800]"
+                                        />
+                                        <span className="text-sm text-[#111111] dark:text-zinc-200 select-none">
+                                            {service.name}
+                                        </span>
+                                    </label>
+                                );
+                            })
+                        )}
+                    </div>
+                    {selectedServiceIds.length === 0 && !isLoadingServices && (
+                        <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                            Selecione ao menos um serviço.
                         </p>
-                    ) : (
-                        services.map((service) => {
-                            const checked = selectedServiceIds.includes(service.id);
-                            return (
-                                <label
-                                    key={service.id}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
-                                >
-                                    <Checkbox
-                                        id={`service-${service.id}`}
-                                        checked={checked}
-                                        onCheckedChange={() => toggleService(service.id)}
-                                        className="border-[#D1D1D1] dark:border-[#555555] data-[state=checked]:bg-[#F5A800] data-[state=checked]:border-[#F5A800]"
-                                    />
-                                    <span className="text-sm text-[#111111] dark:text-zinc-200 select-none">
-                                        {service.name}
-                                    </span>
-                                </label>
-                            );
-                        })
                     )}
                 </div>
 
-                {selectedServiceIds.length === 0 && !isLoadingServices && (
-                    <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                        Selecione ao menos um serviço.
-                    </p>
-                )}
+                {/* Observações */}
+                <div className="mt-3">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[#666666] dark:text-zinc-400 mb-1.5 block">
+                        Observações
+                    </label>
+                    <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Observações sobre a O.S. (opcional)"
+                        rows={3}
+                        className="resize-none text-sm text-[#111111] dark:text-zinc-200 border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
+                    />
+                </div>
 
                 <div className="flex justify-end gap-2 mt-4">
                     <Button

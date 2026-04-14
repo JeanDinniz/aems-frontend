@@ -40,7 +40,7 @@ const editServiceOrderSchema = z.object({
     plate: z.string().regex(/^[A-Z]{3}\d[A-Z\d]\d{2}$/, 'Placa inválida (Mercosul ou Antiga)'),
 
     // Service — always required
-    department: z.enum(['film', 'ppf', 'vn', 'vu', 'bodywork', 'workshop']),
+    department: z.enum(['film', 'ppf', 'vn', 'vd', 'vu', 'bodywork', 'workshop']),
     service_description: z.string().optional(),
 
     // Internal identifiers — always present but not exposed as form fields

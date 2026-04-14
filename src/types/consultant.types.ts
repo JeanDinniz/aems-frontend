@@ -10,6 +10,12 @@ export interface Consultant {
     is_active: boolean;
     created_at: string;
     updated_at?: string;
+    // Dados de pagamento
+    pix_key?: string | null;
+    bank_name?: string | null;
+    bank_agency?: string | null;
+    bank_account?: string | null;
+    bank_account_type?: 'corrente' | 'poupanca' | null;
 }
 
 export interface CreateConsultantPayload {
@@ -18,6 +24,11 @@ export interface CreateConsultantPayload {
     dealership_id?: number;
     phone?: string;
     email?: string;
+    pix_key?: string;
+    bank_name?: string;
+    bank_agency?: string;
+    bank_account?: string;
+    bank_account_type?: 'corrente' | 'poupanca';
 }
 
 export interface UpdateConsultantPayload {
@@ -26,6 +37,11 @@ export interface UpdateConsultantPayload {
     phone?: string;
     email?: string;
     is_active?: boolean;
+    pix_key?: string | null;
+    bank_name?: string | null;
+    bank_agency?: string | null;
+    bank_account?: string | null;
+    bank_account_type?: 'corrente' | 'poupanca' | null;
 }
 
 export interface ConsultantFilters {
