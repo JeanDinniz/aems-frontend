@@ -29,6 +29,7 @@ export interface AccessProfile {
     description: string | null
     is_active: boolean
     is_galpon_profile: boolean
+    hide_galpon_option: boolean
     permissions: ModulePermission[]
     store_ids: string[]
     user_ids: string[]
@@ -41,6 +42,7 @@ export interface AccessProfileCreate {
     description?: string
     is_active?: boolean
     is_galpon_profile?: boolean
+    hide_galpon_option?: boolean
     permissions: Omit<ModulePermission, 'id' | 'profile_id'>[]
     store_ids?: string[]
     user_ids?: string[]
@@ -62,4 +64,5 @@ export interface EffectivePermissions {
     }[]
     store_ids: string[]
     is_galpon_profile: boolean
+    hide_galpon_option: boolean
 }

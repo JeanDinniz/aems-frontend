@@ -656,6 +656,7 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
     const user = useAuthStore((s) => s.user);
     const effectivePermissions = useAuthStore((s) => s.effectivePermissions);
     const isGalponProfile = effectivePermissions?.is_galpon_profile === true;
+    const hideGalponOption = !isGalponProfile && effectivePermissions?.hide_galpon_option === true;
     const { availableStores, selectedStoreId } = useStoreStore();
     const createServiceOrder = useCreateServiceOrder();
 
@@ -1001,23 +1002,25 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
                         {/* Galpão checkbox + Cortesia/Retorno dropdown */}
                         <div className="flex items-end gap-4 pb-0.5">
-                            <label
-                                htmlFor="is_galpon"
-                                className={cn(
-                                    'flex items-center gap-2 select-none',
-                                    isGalponProfile ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-                                )}
-                            >
-                                <Checkbox
-                                    checked={isGalpon}
-                                    onCheckedChange={(v) => {
-                                        if (!isGalponProfile) setValue('is_galpon', Boolean(v));
-                                    }}
-                                    id="is_galpon"
-                                    disabled={isGalponProfile}
-                                />
-                                <span className="text-sm font-medium">Galpão</span>
-                            </label>
+                            {!hideGalponOption && (
+                                <label
+                                    htmlFor="is_galpon"
+                                    className={cn(
+                                        'flex items-center gap-2 select-none',
+                                        isGalponProfile ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                                    )}
+                                >
+                                    <Checkbox
+                                        checked={isGalpon}
+                                        onCheckedChange={(v) => {
+                                            if (!isGalponProfile) setValue('is_galpon', Boolean(v));
+                                        }}
+                                        id="is_galpon"
+                                        disabled={isGalponProfile}
+                                    />
+                                    <span className="text-sm font-medium">Galpão</span>
+                                </label>
+                            )}
                             <div className="flex flex-col gap-1" data-field="courtesy_return_set">
                                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Cortesia/Retorno <span className="text-destructive">*</span>

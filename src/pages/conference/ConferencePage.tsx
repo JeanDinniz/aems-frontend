@@ -38,7 +38,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download, ChevronDown } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download, ChevronDown, Car, Clock } from 'lucide-react';
 import apiClient from '@/services/api/client';
 import {
     DropdownMenu,
@@ -207,6 +207,22 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
     const [notes, setNotes] = useState('');
     const [internalNotes, setInternalNotes] = useState('');
     const [saving, setSaving] = useState(false);
+    const [vehicleHistoryOpen, setVehicleHistoryOpen] = useState(false);
+    const [osHistoryOpen, setOsHistoryOpen] = useState(false);
+
+    const { data: vehicleHistory, isLoading: vehicleHistoryLoading } = useQuery({
+        queryKey: ['vehicle-history', order?.plate],
+        queryFn: () => serviceOrdersService.getVehicleHistory(order!.plate),
+        enabled: vehicleHistoryOpen && !!order?.plate,
+        staleTime: 30_000,
+    });
+
+    const { data: osHistory, isLoading: osHistoryLoading } = useQuery({
+        queryKey: ['os-history', order?.id],
+        queryFn: () => serviceOrdersService.getOSHistory(order!.id),
+        enabled: osHistoryOpen && !!order?.id,
+        staleTime: 30_000,
+    });
 
     const storeId = order?.location_id;
     const { availableStores } = useStoreStore();
@@ -530,20 +546,196 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                     </div>
                 </div>
 
-                <div className="px-6 pb-6 pt-4 border-t border-[#E8E8E8] dark:border-[#333333] flex justify-end gap-2">
-                    <Button variant="outline" onClick={onClose} className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700/50 hover:text-[#111111] dark:hover:text-white bg-transparent">
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSave}
-                        disabled={saving}
-                        style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
-                        className="font-semibold hover:opacity-90"
-                    >
-                        {saving ? 'Salvando...' : 'Salvar'}
-                    </Button>
+                <div className="px-6 pb-6 pt-4 border-t border-[#E8E8E8] dark:border-[#333333] flex items-center justify-between">
+                    {/* Histórico */}
+                    <div className="flex gap-1.5">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setVehicleHistoryOpen(true); setOsHistoryOpen(false); }}
+                            className="text-xs text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 gap-1.5"
+                        >
+                            <Car className="h-3.5 w-3.5" />
+                            Histórico Veículo
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setOsHistoryOpen(true); setVehicleHistoryOpen(false); }}
+                            className="text-xs text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-700/50 gap-1.5"
+                        >
+                            <Clock className="h-3.5 w-3.5" />
+                            Histórico OS
+                        </Button>
+                    </div>
+                    {/* Ações */}
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={onClose} className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700/50 hover:text-[#111111] dark:hover:text-white bg-transparent">
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={saving}
+                            style={{ backgroundColor: '#F5A800', color: '#1A1A1A' }}
+                            className="font-semibold hover:opacity-90"
+                        >
+                            {saving ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
+
+            {/* ── Painel: Histórico do Veículo ─────────────────────────────────── */}
+            {vehicleHistoryOpen && (
+                <div
+                    className="fixed inset-0 z-[55] bg-black/20"
+                    onClick={() => setVehicleHistoryOpen(false)}
+                />
+            )}
+            <div
+                className={`fixed inset-y-0 right-0 z-[60] w-96 flex flex-col bg-white dark:bg-[#1E1E1E] border-l border-[#D1D1D1] dark:border-[#333333] shadow-2xl transition-transform duration-300 ease-in-out ${
+                    vehicleHistoryOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E8E8] dark:border-[#333333]">
+                    <div>
+                        <p className="font-bold text-sm text-[#111111] dark:text-white">Histórico do Veículo</p>
+                        <p className="text-xs text-[#666666] dark:text-zinc-400 mt-0.5">{order?.plate}</p>
+                    </div>
+                    <button
+                        onClick={() => setVehicleHistoryOpen(false)}
+                        className="text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white p-1 rounded"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {vehicleHistoryLoading ? (
+                        <div className="space-y-3">
+                            {[1,2,3].map(i => <div key={i} className="h-24 rounded-xl bg-[#F5F5F5] dark:bg-[#252525] animate-pulse" />)}
+                        </div>
+                    ) : !vehicleHistory?.items.length ? (
+                        <p className="text-sm text-center text-[#666666] dark:text-zinc-500 mt-8">Nenhuma OS anterior para esta placa.</p>
+                    ) : (
+                        vehicleHistory.items.map(item => (
+                            <div key={item.id} className="rounded-xl border border-[#E8E8E8] dark:border-[#333333] bg-[#FAFAFA] dark:bg-[#252525] p-4 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                    <span className="text-sm font-semibold text-[#111111] dark:text-white">{item.order_number}</span>
+                                    <span className="text-xs text-[#666666] dark:text-zinc-500 shrink-0">
+                                        {item.service_date
+                                            ? formatDate(item.service_date)
+                                            : new Date(item.entry_time).toLocaleDateString('pt-BR')}
+                                    </span>
+                                </div>
+                                {item.store_name && (
+                                    <p className="text-xs text-[#666666] dark:text-zinc-400">{item.store_name}</p>
+                                )}
+                                <DeptBadge dept={item.department} />
+                                {item.service_names.length > 0 && (
+                                    <ul className="mt-1 space-y-0.5">
+                                        {item.service_names.map((name, idx) => (
+                                            <li key={idx} className="text-xs text-[#666666] dark:text-zinc-400">• {name}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* ── Painel: Histórico da OS ───────────────────────────────────────── */}
+            {osHistoryOpen && (
+                <div
+                    className="fixed inset-0 z-[55] bg-black/20"
+                    onClick={() => setOsHistoryOpen(false)}
+                />
+            )}
+            <div
+                className={`fixed inset-y-0 right-0 z-[60] w-96 flex flex-col bg-white dark:bg-[#1E1E1E] border-l border-[#D1D1D1] dark:border-[#333333] shadow-2xl transition-transform duration-300 ease-in-out ${
+                    osHistoryOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+            >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E8E8] dark:border-[#333333]">
+                    <div>
+                        <p className="font-bold text-sm text-[#111111] dark:text-white">Histórico da OS</p>
+                        <p className="text-xs text-[#666666] dark:text-zinc-400 mt-0.5">{order?.order_number}</p>
+                    </div>
+                    <button
+                        onClick={() => setOsHistoryOpen(false)}
+                        className="text-[#666666] dark:text-zinc-400 hover:text-[#111111] dark:hover:text-white p-1 rounded"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                    {osHistoryLoading ? (
+                        <div className="space-y-4">
+                            {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-[#F5F5F5] dark:bg-[#252525] animate-pulse" />)}
+                        </div>
+                    ) : !osHistory?.items.length ? (
+                        <p className="text-sm text-center text-[#666666] dark:text-zinc-500 mt-8">Nenhum histórico encontrado.</p>
+                    ) : (
+                        <div className="relative">
+                            {/* Linha vertical da timeline */}
+                            <div className="absolute left-[7px] top-2 bottom-2 w-px bg-[#E8E8E8] dark:bg-[#333333]" />
+                            <div className="space-y-4">
+                                {osHistory.items.map((item, idx) => {
+                                    const STATUS_LABELS: Record<string, string> = {
+                                        waiting: 'Aguardando',
+                                        in_progress: 'Fazendo',
+                                        quality_check: 'Inspeção',
+                                        completed: 'Pronto',
+                                        delivered: 'Entregue',
+                                        cancelled: 'Cancelado',
+                                    };
+                                    const STATUS_COLORS: Record<string, string> = {
+                                        waiting: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+                                        in_progress: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                                        quality_check: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+                                        completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+                                        delivered: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                        cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                                    };
+                                    const toColor = STATUS_COLORS[item.to_status] ?? 'bg-zinc-100 text-zinc-600';
+                                    const changedAt = new Date(item.changed_at);
+                                    const dateStr = changedAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                                    const timeStr = changedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                                    return (
+                                        <div key={item.id} className="flex gap-4 pl-5 relative">
+                                            {/* Ponto na linha */}
+                                            <div className={`absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-[#1E1E1E] ${idx === osHistory.items.length - 1 ? 'bg-[#F5A800]' : 'bg-[#D1D1D1] dark:bg-[#444]'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                                    {item.from_status && (
+                                                        <>
+                                                            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[item.from_status] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                                                                {STATUS_LABELS[item.from_status] ?? item.from_status}
+                                                            </span>
+                                                            <span className="text-[#999999] dark:text-zinc-500 text-xs">→</span>
+                                                        </>
+                                                    )}
+                                                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${toColor}`}>
+                                                        {STATUS_LABELS[item.to_status] ?? item.to_status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-[#666666] dark:text-zinc-400">
+                                                    {item.changed_by_name ?? 'Sistema'} · {dateStr} {timeStr}
+                                                </p>
+                                                {item.notes && (
+                                                    <p className="text-xs text-[#999999] dark:text-zinc-500 mt-0.5 italic">"{item.notes}"</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </Dialog>
     );
 }

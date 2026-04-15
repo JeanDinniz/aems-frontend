@@ -69,6 +69,7 @@ const formSchema = z.object({
     description: z.string().optional(),
     is_active: z.boolean(),
     is_galpon_profile: z.boolean(),
+    hide_galpon_option: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -119,6 +120,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
         defaultValues: {
             is_active: true,
             is_galpon_profile: false,
+            hide_galpon_option: false,
         },
     });
 
@@ -133,6 +135,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                 description: profile.description ?? '',
                 is_active: profile.is_active,
                 is_galpon_profile: profile.is_galpon_profile,
+                hide_galpon_option: profile.hide_galpon_option ?? false,
             });
 
             const newPerms = defaultPermState();
@@ -151,6 +154,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                 description: '',
                 is_active: true,
                 is_galpon_profile: false,
+                hide_galpon_option: false,
             });
             setPermState(defaultPermState());
             setSelectedStoreIds(new Set());
@@ -194,6 +198,7 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
             description: data.description || undefined,
             is_active: data.is_active,
             is_galpon_profile: data.is_galpon_profile,
+            hide_galpon_option: data.is_galpon_profile ? false : data.hide_galpon_option,
             permissions: buildPermissions(),
             store_ids: Array.from(selectedStoreIds),
         };
@@ -273,7 +278,22 @@ export function AccessProfileDialog({ open, onOpenChange, profile }: AccessProfi
                                     </div>
                                     <Switch
                                         checked={watch('is_galpon_profile')}
-                                        onCheckedChange={(v) => setValue('is_galpon_profile', v)}
+                                        onCheckedChange={(v) => {
+                                            setValue('is_galpon_profile', v);
+                                            if (v) setValue('hide_galpon_option', false);
+                                        }}
+                                    />
+                                </label>
+
+                                <label className={watch('is_galpon_profile') ? 'flex items-center justify-between opacity-40 cursor-not-allowed' : 'flex items-center justify-between cursor-pointer'}>
+                                    <div>
+                                        <p className="text-sm font-medium">Ocultar opção Galpão</p>
+                                        <p className="text-xs text-muted-foreground">Usuários deste perfil não verão o checkbox Galpão ao lançar OS</p>
+                                    </div>
+                                    <Switch
+                                        checked={watch('hide_galpon_option')}
+                                        disabled={watch('is_galpon_profile')}
+                                        onCheckedChange={(v) => setValue('hide_galpon_option', v)}
                                     />
                                 </label>
                             </div>

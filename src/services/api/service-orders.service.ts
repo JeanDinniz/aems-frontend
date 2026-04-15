@@ -230,6 +230,39 @@ export const serviceOrdersService = {
         return mapServiceOrder(response.data);
     },
 
+    async getOSHistory(serviceOrderId: number): Promise<{
+        items: Array<{
+            id: number;
+            from_status: string | null;
+            to_status: string;
+            changed_by_name: string | null;
+            changed_at: string;
+            notes: string | null;
+        }>;
+    }> {
+        const response = await apiClient.get(`/service-orders/${serviceOrderId}/history`);
+        return response.data;
+    },
+
+    async getVehicleHistory(plate: string): Promise<{
+        plate: string;
+        items: Array<{
+            id: number;
+            order_number: string;
+            service_date: string | null;
+            entry_time: string;
+            department: string;
+            status: string;
+            store_name: string | null;
+            service_names: string[];
+        }>;
+    }> {
+        const response = await apiClient.get('/service-orders/vehicle-history', {
+            params: { plate }
+        });
+        return response.data;
+    },
+
     getFiltered: async (params: {
         store_id?: number;
         is_verified?: boolean;
