@@ -282,23 +282,13 @@ export function FechamentoPage() {
         }
     };
 
-    const TEMPLATE_SUPPORTED_DEPTS = new Set(['workshop_courtesy', 'workshop_lavagem', 'bodywork', 'vn', 'vd', 'vu']);
-
     const handleExportCard = async (group: DeptGroup) => {
         setExportingCardKey(group.deptKey);
         try {
-            let response;
-            if (TEMPLATE_SUPPORTED_DEPTS.has(group.deptKey)) {
-                response = await apiClient.get('/service-orders/export/fechamento-secao', {
-                    params: { store_id: storeId || undefined, date_from: dateFrom, date_to: dateTo, dept_key: group.deptKey },
-                    responseType: 'blob',
-                });
-            } else {
-                response = await apiClient.get('/service-orders/export/fechamento', {
-                    params: group.exportParams,
-                    responseType: 'blob',
-                });
-            }
+            const response = await apiClient.get('/service-orders/export/fechamento', {
+                params: group.exportParams,
+                responseType: 'blob',
+            });
             downloadBlob(
                 response.data,
                 `fechamento_${group.label.replace(/\s/g, '_')}_${storeName.replace(/\s/g, '_')}_${dateFrom}_${dateTo}.xlsx`,
