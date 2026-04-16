@@ -70,11 +70,12 @@ type DeptGroup = {
 };
 
 // Ordem de exibição dos departamentos
-const DEPT_ORDER = ['film', 'ppf', 'vn', 'vd', 'vu', 'bodywork', 'workshop_lavagem', 'workshop_courtesy'];
+const DEPT_ORDER = ['film', 'ppf', 'vn', 'vd', 'vu', 'bodywork', 'workshop_lavagem', 'workshop_courtesy', 'retorno'];
 
 const VIRTUAL_LABELS: Record<string, string> = {
     workshop_courtesy: 'Oficina Cortesia',
     workshop_lavagem: 'Oficina Lavagem Simples',
+    retorno: 'Retorno',
 };
 
 // ─── component ───────────────────────────────────────────────────────────────
@@ -125,7 +126,10 @@ export function FechamentoPage() {
             const dept = order.department as string;
             let key: string;
 
-            if (dept === 'workshop') {
+            // Retorno tem prioridade: vai para card próprio independente do departamento
+            if (order.is_return) {
+                key = 'retorno';
+            } else if (dept === 'workshop') {
                 if (order.is_courtesy) {
                     key = 'workshop_courtesy';
                 } else if (hasLavagemSimples(order)) {
@@ -187,16 +191,19 @@ export function FechamentoPage() {
                 date_from: dateFrom || undefined,
                 date_to: dateTo || undefined,
             };
-            if (key === 'workshop_courtesy') {
-                exportParams = { ...exportParams, department: 'workshop', is_courtesy: true };
+            if (key === 'retorno') {
+                exportParams = { ...exportParams, is_return: true };
+            } else if (key === 'workshop_courtesy') {
+                exportParams = { ...exportParams, department: 'workshop', is_courtesy: true, is_return: false };
             } else if (key === 'workshop_lavagem') {
                 exportParams = {
                     ...exportParams,
                     department: 'workshop',
                     service_name_contains: 'Lavagem Simples',
+                    is_return: false,
                 };
             } else {
-                exportParams = { ...exportParams, department: key };
+                exportParams = { ...exportParams, department: key, is_return: false };
             }
 
             result.push({ deptKey: key, label, services, count, total, exportParams });
@@ -205,9 +212,11 @@ export function FechamentoPage() {
         return result;
     }, [orders, storeId, dateFrom, dateTo]);
 
-    const grandTotal = groupedDetailed.reduce((s, g) => s + g.total, 0);
+    // grandTotal e grandCount excluem OS de retorno (têm card e total próprios)
+    const grandTotal = groupedDetailed.filter((g) => g.deptKey !== 'retorno').reduce((s, g) => s + g.total, 0);
     const grandCount = useMemo(() => {
         const allIds = new Set(orders.filter((o) => {
+            if (o.is_return) return false;
             const dept = o.department as string;
             if (dept !== 'workshop') return true;
             if (o.is_courtesy) return true;
@@ -256,7 +265,7 @@ export function FechamentoPage() {
         setIsExporting(true);
         try {
             const response = await apiClient.get('/service-orders/export/fechamento', {
-                params: { store_id: storeId || undefined, date_from: dateFrom || undefined, date_to: dateTo || undefined },
+                params: { store_id: storeId || undefined, date_from: dateFrom || undefined, date_to: dateTo || undefined, is_return: false },
                 responseType: 'blob',
             });
             downloadBlob(response.data, `fechamento_${storeName.replace(/\s/g, '_')}_${dateFrom}_${dateTo}.xlsx`);
