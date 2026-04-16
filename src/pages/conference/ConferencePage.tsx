@@ -1292,6 +1292,8 @@ export function ConferencePage() {
                 onSaved={() => {
                     queryClient.invalidateQueries({ queryKey: ['service-orders'] });
                     queryClient.invalidateQueries({ queryKey: ['service-order'] });
+                    queryClient.invalidateQueries({ queryKey: ['vehicle-history'] });
+                    queryClient.invalidateQueries({ queryKey: ['os-history'] });
                 }}
             />
 
