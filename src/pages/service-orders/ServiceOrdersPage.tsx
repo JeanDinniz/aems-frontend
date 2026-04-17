@@ -31,6 +31,7 @@ const STATUS_COLORS: Record<string, string> = {
     waiting: 'border-[#D1D1D1] text-[#666666]',
     doing:   'border-[#F5A800] text-[#F5A800]',
     ready:   'border-[#22c55e] text-[#22c55e]',
+    wrong:   'border-red-500 text-red-500',
 };
 
 function formatDate(dateStr: string): string {
@@ -272,6 +273,7 @@ export default function ServiceOrdersPage() {
                                                     <SelectItem value="waiting" className="text-xs font-semibold text-[#666666] dark:text-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800">Aguardando</SelectItem>
                                                     <SelectItem value="doing" className="text-xs font-semibold text-[#F5A800] focus:bg-zinc-100 dark:focus:bg-zinc-800">Desenvolvendo</SelectItem>
                                                     <SelectItem value="ready" className="text-xs font-semibold text-[#22c55e] focus:bg-zinc-100 dark:focus:bg-zinc-800">Finalizado</SelectItem>
+                                                    <SelectItem value="wrong" className="text-xs font-semibold text-red-500 focus:bg-zinc-100 dark:focus:bg-zinc-800">Lançado Errado</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </TableCell>

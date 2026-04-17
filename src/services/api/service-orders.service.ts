@@ -265,6 +265,7 @@ export const serviceOrdersService = {
 
     getFiltered: async (params: {
         store_id?: number;
+        store_ids?: number[];
         is_verified?: boolean;
         flag?: string[];
         status?: string;

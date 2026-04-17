@@ -27,4 +27,5 @@ export const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
     ready:      'Pronto',
     delivered:  'Entregue',
     cancelled:  'Cancelada',
+    wrong:      'Lançado Errado',
 };

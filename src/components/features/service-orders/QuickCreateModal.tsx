@@ -970,10 +970,10 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
 
                 <form ref={formRef} className="px-6 py-4 space-y-5" onSubmit={(e) => e.preventDefault()}>
 
-                    {/* Row 1: Loja + Galpão + Retorno / Cortesia */}
-                    <div className="flex flex-wrap items-end gap-3">
+                    {/* Row 1: Loja | Cortesia/Retorno + Galpão */}
+                    <div className="space-y-3">
                         {/* Loja */}
-                        <div className="flex-1 min-w-[160px] space-y-1.5">
+                        <div className="space-y-1.5">
                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Loja
                             </Label>
@@ -1000,31 +1000,12 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                             )}
                         </div>
 
-                        {/* Galpão checkbox + Cortesia/Retorno dropdown */}
-                        <div className="flex items-end gap-4 pb-0.5">
-                            {!hideGalponOption && (
-                                <label
-                                    htmlFor="is_galpon"
-                                    className={cn(
-                                        'flex items-center gap-2 select-none',
-                                        isGalponProfile ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-                                    )}
-                                >
-                                    <Checkbox
-                                        checked={isGalpon}
-                                        onCheckedChange={(v) => {
-                                            if (!isGalponProfile) setValue('is_galpon', Boolean(v));
-                                        }}
-                                        id="is_galpon"
-                                        disabled={isGalponProfile}
-                                    />
-                                    <span className="text-sm font-medium">Galpão</span>
-                                </label>
-                            )}
-                            <div className="flex flex-col gap-1" data-field="courtesy_return_set">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Cortesia/Retorno <span className="text-destructive">*</span>
-                                </Label>
+                        {/* Cortesia/Retorno + Galpão */}
+                        <div className="space-y-1.5" data-field="courtesy_return_set">
+                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Cortesia/Retorno <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="flex items-center gap-3">
                                 <CourtesyReturnSelect
                                     value={{ is_courtesy: isCourtesy, is_return: isReturn }}
                                     isSet={courtesyReturnSet}
@@ -1035,10 +1016,33 @@ export function QuickCreateModal({ open, onClose }: QuickCreateModalProps) {
                                         setValue('courtesy_return_set', true, { shouldValidate: true });
                                     }}
                                 />
-                                {errors.courtesy_return_set && (
-                                    <p className="text-xs text-destructive">{errors.courtesy_return_set.message}</p>
+                                {!hideGalponOption && (
+                                    <label
+                                        htmlFor="is_galpon"
+                                        className={cn(
+                                            'flex h-9 items-center gap-2 rounded-md border px-4 select-none text-sm font-medium',
+                                            'bg-white dark:bg-[#1A1A1A] border-[#D1D1D1] dark:border-[#333333]',
+                                            'hover:bg-[#F5F5F5] dark:hover:bg-[#222222] transition-colors',
+                                            isGalpon && 'border-[#F5A800] text-[#F5A800]',
+                                            isGalponProfile ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                                        )}
+                                    >
+                                        <Checkbox
+                                            checked={isGalpon}
+                                            onCheckedChange={(v) => {
+                                                if (!isGalponProfile) setValue('is_galpon', Boolean(v));
+                                            }}
+                                            id="is_galpon"
+                                            disabled={isGalponProfile}
+                                            className="border-[#F5A800] data-[state=checked]:bg-[#F5A800] data-[state=checked]:border-[#F5A800]"
+                                        />
+                                        Galpão
+                                    </label>
                                 )}
                             </div>
+                            {errors.courtesy_return_set && (
+                                <p className="text-xs text-destructive">{errors.courtesy_return_set.message}</p>
+                            )}
                         </div>
                     </div>
 

@@ -38,7 +38,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download, ChevronDown, Car, Clock } from 'lucide-react';
+import { CheckCircle, Pencil, Search, ClipboardCheck, ImageOff, X, RotateCcw, Trash2, Download, ChevronDown, Car, Clock, AlertCircle } from 'lucide-react';
 import apiClient from '@/services/api/client';
 import {
     DropdownMenu,
@@ -95,6 +95,63 @@ function FlagFilterDropdown({ value, onChange }: { value: FlagFilters; onChange:
                         className="text-sm text-[#111111] dark:text-white focus:bg-[#F5F5F5] dark:focus:bg-[#2A2A2A] [&>span]:border-2 [&>span]:border-[#F5A800] [&>span]:rounded-sm"
                     >
                         {opt.label}
+                    </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+// ─── Store Multi-Select Dropdown ─────────────────────────────────────────────
+
+function StoreMultiSelect({
+    stores,
+    value,
+    onChange,
+}: {
+    stores: Array<{ id: number; name: string }>;
+    value: number[];
+    onChange: (v: number[]) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    const label =
+        value.length === 0
+            ? 'Todas'
+            : value.length === 1
+                ? (stores.find((s) => s.id === value[0])?.name ?? 'Todas')
+                : `${value.length} lojas`;
+
+    const toggle = (id: number) =>
+        onChange(value.includes(id) ? value.filter((s) => s !== id) : [...value, id]);
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    className="flex h-9 w-48 items-center justify-between gap-2 rounded-lg border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 text-sm text-[#111111] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#2A2A2A] focus:outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] transition-colors"
+                >
+                    <span className="truncate">{label}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 opacity-50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 p-1 border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#1A1A1A]">
+                <DropdownMenuCheckboxItem
+                    checked={value.length === 0}
+                    onSelect={(e) => { e.preventDefault(); onChange([]); }}
+                    className="text-sm text-[#111111] dark:text-white focus:bg-[#F5F5F5] dark:focus:bg-[#2A2A2A] [&>span]:border-2 [&>span]:border-[#F5A800] [&>span]:rounded-sm"
+                >
+                    Todas
+                </DropdownMenuCheckboxItem>
+                {stores.map((store) => (
+                    <DropdownMenuCheckboxItem
+                        key={store.id}
+                        checked={value.includes(store.id)}
+                        onSelect={(e) => { e.preventDefault(); toggle(store.id); }}
+                        className="text-sm text-[#111111] dark:text-white focus:bg-[#F5F5F5] dark:focus:bg-[#2A2A2A] [&>span]:border-2 [&>span]:border-[#F5A800] [&>span]:rounded-sm"
+                    >
+                        {store.name}
                     </DropdownMenuCheckboxItem>
                 ))}
             </DropdownMenuContent>
@@ -207,7 +264,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
     const [notes, setNotes] = useState('');
     const [internalNotes, setInternalNotes] = useState('');
     const [saving, setSaving] = useState(false);
-    const [vehicleHistoryOpen, setVehicleHistoryOpen] = useState(false);
+    const [vehicleHistoryOpen, setVehicleHistoryOpen] = useState(true);
     const [osHistoryOpen, setOsHistoryOpen] = useState(false);
 
     const { data: vehicleHistory, isLoading: vehicleHistoryLoading } = useQuery({
@@ -267,6 +324,8 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                 setFilmEntries([]);
             }
             setInstallers((order.workers ?? []).map(w => w.employee_id).filter(Boolean));
+            setVehicleHistoryOpen(true);
+            setOsHistoryOpen(false);
         }
     }, [order?.id]);
 
@@ -588,12 +647,6 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
             </DialogContent>
 
             {/* ── Painel: Histórico do Veículo ─────────────────────────────────── */}
-            {vehicleHistoryOpen && (
-                <div
-                    className="fixed inset-0 z-[55] bg-black/20"
-                    onClick={() => setVehicleHistoryOpen(false)}
-                />
-            )}
             <div
                 className={`fixed inset-y-0 right-0 z-[60] w-96 flex flex-col bg-white dark:bg-[#1E1E1E] border-l border-[#D1D1D1] dark:border-[#333333] shadow-2xl transition-transform duration-300 ease-in-out ${
                     vehicleHistoryOpen ? 'translate-x-0' : 'translate-x-full'
@@ -690,6 +743,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                                         completed: 'Pronto',
                                         delivered: 'Entregue',
                                         cancelled: 'Cancelado',
+                                        wrong: 'Lançado Errado',
                                     };
                                     const STATUS_COLORS: Record<string, string> = {
                                         waiting: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
@@ -698,6 +752,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
                                         completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
                                         delivered: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
                                         cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                                        wrong: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
                                     };
                                     const toColor = STATUS_COLORS[item.to_status] ?? 'bg-zinc-100 text-zinc-600';
                                     const changedAt = new Date(item.changed_at);
@@ -744,7 +799,7 @@ function EditDialog({ order, open, onClose, onSaved }: EditDialogProps) {
 export function ConferencePage() {
     const user = useAuthStore((s) => s.user);
     const hasDeletePermission = useAuthStore((s) => s.hasPermission);
-    const { selectedStoreId } = useStoreStore();
+    const { selectedStoreId, availableStores } = useStoreStore();
     const queryClient = useQueryClient();
 
     // Filters state
@@ -759,12 +814,13 @@ export function ConferencePage() {
     const [verifiedFilter, setVerifiedFilter] = useState<'pending' | 'verified' | 'all' | 'cancelled'>('pending');
     const [flagFilters, setFlagFilters] = useState({ courtesy: false, galpon: false, retorno: false });
     const [workerId, setWorkerId] = useState<number | undefined>(undefined);
+    const [selectedStoreIds, setSelectedStoreIds] = useState<number[]>([]);
     const [isExporting, setIsExporting] = useState(false);
 
     // Visibilidade de colunas condicionais por departamento
     const showFilmCols = !department || department === 'film' || department === 'ppf';
     const showTonality = !department || department === 'film';
-    const totalCols = 13 + (showFilmCols ? 2 : 0) + (showTonality ? 2 : 0);
+    const totalCols = 14 + (showFilmCols ? 2 : 0) + (showTonality ? 2 : 0);
 
     // Edit state
     const [editOrder, setEditOrder] = useState<ServiceOrder | null>(null);
@@ -779,12 +835,12 @@ export function ConferencePage() {
 
     const storeId = selectedStoreId ?? user?.store_id ?? undefined;
 
-    const queryKey = ['service-orders', 'conference', storeId, dateFrom, dateTo, department, search, verifiedFilter, flagFilters, workerId];
+    const queryKey = ['service-orders', 'conference', selectedStoreIds, dateFrom, dateTo, department, search, verifiedFilter, flagFilters, workerId];
 
     const { data, isLoading } = useQuery({
         queryKey,
         queryFn: () => serviceOrdersService.getFiltered({
-            store_id: storeId ?? undefined,
+            store_ids: selectedStoreIds.length > 0 ? selectedStoreIds : undefined,
             is_verified: verifiedFilter === 'all' || verifiedFilter === 'cancelled' ? undefined : verifiedFilter === 'verified',
             status: verifiedFilter === 'cancelled' ? 'cancelled' : undefined,
             include_cancelled: verifiedFilter === 'all' ? true : undefined,
@@ -933,24 +989,31 @@ export function ConferencePage() {
 
             {/* Filters */}
             <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-4 flex flex-wrap gap-3 items-start">
+                {/* 1. Busca */}
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data início</Label>
-                    <Input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
-                    />
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Busca (placa/OS)</Label>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#999999] dark:text-zinc-500" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Placa ou Nº OS..."
+                            className="pl-8 w-48 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data fim</Label>
-                    <Input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
-                    />
-                </div>
+                {/* 2. Loja (multi-select) */}
+                {availableStores.length > 1 && (
+                    <div className="space-y-1">
+                        <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Loja</Label>
+                        <StoreMultiSelect
+                            stores={availableStores}
+                            value={selectedStoreIds}
+                            onChange={setSelectedStoreIds}
+                        />
+                    </div>
+                )}
+                {/* 3. Departamento */}
                 <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Departamento</Label>
                     <Select value={department || 'all'} onValueChange={(v) => setDepartment(v === 'all' ? '' : v)}>
@@ -965,6 +1028,22 @@ export function ConferencePage() {
                         </SelectContent>
                     </Select>
                 </div>
+                {/* 4. Status */}
+                <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Status</Label>
+                    <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all' | 'cancelled')}>
+                        <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="pending">Aguardando</SelectItem>
+                            <SelectItem value="verified">Verificadas</SelectItem>
+                            <SelectItem value="all">Todas</SelectItem>
+                            <SelectItem value="cancelled">Canceladas</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {/* 5. Instalador */}
                 <div className="space-y-1">
                     <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Instalador</Label>
                     <Select
@@ -984,35 +1063,29 @@ export function ConferencePage() {
                         </SelectContent>
                     </Select>
                 </div>
+                {/* 6. Cortesia/Retorno */}
                 <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Status</Label>
-                    <Select value={verifiedFilter} onValueChange={(v) => setVerifiedFilter(v as 'pending' | 'verified' | 'all' | 'cancelled')}>
-                        <SelectTrigger className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="pending">Aguardando</SelectItem>
-                            <SelectItem value="verified">Verificadas</SelectItem>
-                            <SelectItem value="all">Todas</SelectItem>
-                            <SelectItem value="cancelled">Canceladas</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Busca (placa/OS)</Label>
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[#999999] dark:text-zinc-500" />
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Placa ou Nº OS..."
-                            className="pl-8 w-48 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] placeholder:text-[#999999] dark:placeholder:text-zinc-600"
-                        />
-                    </div>
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia/Galpão/Retorno</Label>
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Cortesia/Retorno</Label>
                     <FlagFilterDropdown value={flagFilters} onChange={setFlagFilters} />
+                </div>
+                {/* 7. Datas */}
+                <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data início</Label>
+                    <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
+                    />
+                </div>
+                <div className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wide text-[#666666] dark:text-zinc-500 font-semibold">Data fim</Label>
+                    <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="w-40 h-9 rounded-lg text-sm text-[#111111] dark:text-white border border-[#D1D1D1] dark:border-[#333333] bg-white dark:bg-[#252525] px-3 outline-none focus:ring-2 focus:ring-[#F5A800] focus:border-[#F5A800] dark:[color-scheme:dark]"
+                    />
                 </div>
             </div>
 
@@ -1029,9 +1102,10 @@ export function ConferencePage() {
                             <TableHead className="sticky left-0 z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 text-center w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Ações</TableHead>
                             <TableHead className="sticky left-[140px] z-20 bg-gray-100 dark:bg-zinc-800 text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#D1D1D1] after:dark:bg-zinc-700">Foto</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Data Serv.</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Loja</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Depto</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Consultor</TableHead>
-                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Cortesia/Galpão</TableHead>
+                            <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Cortesia/Retorno</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Nº OS Conc.</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Placa</TableHead>
                             <TableHead className="text-xs font-semibold text-[#666666] dark:text-zinc-400 uppercase tracking-wide px-4 py-3">Modelo</TableHead>
@@ -1075,6 +1149,11 @@ export function ConferencePage() {
                                     {/* Ações */}
                                     <TableCell className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-4 py-3 w-[140px] min-w-[140px] after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-[#E8E8E8] after:dark:bg-zinc-700">
                                         <div className="flex items-center justify-center gap-1">
+                                            {order.status === 'wrong' && (
+                                                <span title="OS lançada errado" className="h-8 w-8 flex items-center justify-center text-red-500">
+                                                    <AlertCircle className="h-5 w-5" />
+                                                </span>
+                                            )}
                                             {hasDeletePermission('conference', 'edit') && (
                                                 <button
                                                     onClick={() => handleEdit(order)}
@@ -1138,6 +1217,17 @@ export function ConferencePage() {
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200">
                                         {formatDate(order.service_date)}
                                     </TableCell>
+                                    {/* Loja */}
+                                    <TableCell className="px-4 py-3">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm text-[#111111] dark:text-zinc-200 whitespace-nowrap">{order.location_name || '—'}</span>
+                                            {order.is_galpon && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700/50 w-fit">
+                                                    Galpão
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     {/* Depto */}
                                     <TableCell className="px-4 py-3">
                                         <DeptBadge dept={order.department} />
@@ -1146,7 +1236,7 @@ export function ConferencePage() {
                                     <TableCell className="px-4 py-3 text-sm text-[#666666] dark:text-zinc-400">
                                         {order.consultant_name || '—'}
                                     </TableCell>
-                                    {/* Cortesia / Galpão */}
+                                    {/* Cortesia / Retorno */}
                                     <TableCell className="px-4 py-3">
                                         <div className="flex flex-col gap-1">
                                             {order.is_courtesy && (
@@ -1154,26 +1244,19 @@ export function ConferencePage() {
                                                     Cortesia
                                                 </span>
                                             )}
-                                            {order.is_galpon && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700/50 w-fit">
-                                                    Galpão
+                                            {order.is_return && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 w-fit">
+                                                    Retorno
                                                 </span>
                                             )}
-                                            {!order.is_courtesy && !order.is_galpon && (
+                                            {!order.is_courtesy && !order.is_return && (
                                                 <span className="text-sm text-zinc-400">—</span>
                                             )}
                                         </div>
                                     </TableCell>
                                     {/* Nº OS Conc. */}
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono">
-                                        <div className="flex flex-col gap-0.5">
-                                            <span>{order.external_os_number || (['vn', 'vd', 'vu'].includes(order.department) ? '—' : (order.order_number || `#${order.id}`))}</span>
-                                            {order.is_return && (
-                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 w-fit">
-                                                    Retorno
-                                                </span>
-                                            )}
-                                        </div>
+                                        {order.external_os_number || (['vn', 'vd', 'vu'].includes(order.department) ? '—' : (order.order_number || `#${order.id}`))}
                                     </TableCell>
                                     {/* Placa */}
                                     <TableCell className="px-4 py-3 text-sm text-[#111111] dark:text-zinc-200 font-mono font-medium">

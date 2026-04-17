@@ -4,7 +4,8 @@ export type ServiceOrderStatus =
     | 'inspection'   // Inspeção
     | 'ready'        // Pronto
     | 'delivered'    // Entregue
-    | 'cancelled';   // Cancelada
+    | 'cancelled'    // Cancelada
+    | 'wrong';       // Lançado Errado
 
 export type Department = 'film' | 'ppf' | 'vn' | 'vd' | 'vu' | 'bodywork' | 'workshop';
 
