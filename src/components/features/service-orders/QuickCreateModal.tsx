@@ -58,6 +58,13 @@ const TONALITY_OPTIONS = [
     { value: 'G75', label: 'G75 (Transparente)' },
 ];
 
+const PPF_BRAND_OPTIONS = [
+    { value: 'Scudo',    label: 'Scudo'    },
+    { value: 'NarPPF',  label: 'NarPPF'   },
+    { value: 'Antshock', label: 'Antshock' },
+    { value: 'Newsheld', label: 'Newsheld' },
+];
+
 // ─── Plate / Chassi validation ────────────────────────────────────────────────
 const PLATE_MERCOSUL = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
 const PLATE_OLD      = /^[A-Z]{3}[0-9]{4}$/;
@@ -459,10 +466,10 @@ export function FilmPicker({
                                 onValueChange={(v) => updateEntry(index, 'tonality', v)}
                             >
                                 <SelectTrigger className="h-10">
-                                    <SelectValue placeholder="Tonalidade" />
+                                    <SelectValue placeholder={department === 'ppf' ? 'Marca PPF' : 'Tonalidade'} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {TONALITY_OPTIONS.map((opt) => (
+                                    {(department === 'ppf' ? PPF_BRAND_OPTIONS : TONALITY_OPTIONS).map((opt) => (
                                         <SelectItem key={opt.value} value={opt.value}>
                                             {opt.label}
                                         </SelectItem>
@@ -502,8 +509,8 @@ export function FilmPicker({
                 </Label>
                 {employeesLoading ? (
                     <div className="space-y-2">
-                        <Skeleton className="h-5 w-48" />
-                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-9 w-full" />
+                        <Skeleton className="h-9 w-full" />
                     </div>
                 ) : employees.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Nenhum instalador disponível</p>
@@ -526,21 +533,27 @@ export function FilmPicker({
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
-                            {employees.map((emp: { id: number; name: string }) => (
-                                <div
-                                    key={emp.id}
-                                    className="flex items-center gap-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent select-none"
-                                    onClick={() => toggleInstaller(emp.id)}
-                                >
-                                    <Checkbox
-                                        checked={installers.includes(emp.id)}
-                                        onCheckedChange={() => toggleInstaller(emp.id)}
-                                        id={`installer-${emp.id}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                    <span className="text-sm">{emp.name}</span>
-                                </div>
-                            ))}
+                            <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                {employees.map((emp: { id: number; name: string }) => {
+                                    const isSelected = installers.includes(emp.id);
+                                    return (
+                                        <button
+                                            key={emp.id}
+                                            type="button"
+                                            onClick={() => toggleInstaller(emp.id)}
+                                            className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent select-none text-left transition-colors"
+                                        >
+                                            <div className={cn(
+                                                'w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0',
+                                                isSelected ? 'border-[#F5A800] bg-[#F5A800]' : 'border-[#D1D1D1] dark:border-[#555555]'
+                                            )}>
+                                                {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                            </div>
+                                            <span className="text-sm">{emp.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </PopoverContent>
                     </Popover>
                 )}
