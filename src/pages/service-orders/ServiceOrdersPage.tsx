@@ -89,9 +89,9 @@ export default function ServiceOrdersPage() {
     return (
         <div className="space-y-5 page-enter">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#F5A800]/15 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#F5A800]/15 flex items-center justify-center shrink-0">
                         <ClipboardList className="w-5 h-5" style={{ color: '#F5A800' }} />
                     </div>
                     <div>
@@ -106,18 +106,26 @@ export default function ServiceOrdersPage() {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => setQuickCreateOpen(true)}
-                        className="font-semibold gap-2 bg-transparent"
-                        style={{ borderColor: '#F5A800', color: '#F5A800' }}
-                    >
-                        <Zap className="h-4 w-4" />
-                        Lançar OS
-                    </Button>
-                </div>
+                {/* Botão visível apenas em desktop */}
+                <Button
+                    onClick={() => setQuickCreateOpen(true)}
+                    className="hidden sm:inline-flex font-semibold gap-2 shrink-0"
+                    style={{ backgroundColor: '#F5A800', color: '#fff' }}
+                >
+                    <Zap className="h-4 w-4" />
+                    Lançar OS
+                </Button>
             </div>
+
+            {/* Botão Lançar OS — mobile full-width */}
+            <Button
+                onClick={() => setQuickCreateOpen(true)}
+                className="sm:hidden w-full h-11 text-base font-bold gap-2 rounded-xl"
+                style={{ backgroundColor: '#F5A800', color: '#fff' }}
+            >
+                <Zap className="h-5 w-5" />
+                Lançar OS
+            </Button>
 
             {/* Filters */}
             <div className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -148,8 +156,8 @@ export default function ServiceOrdersPage() {
                         </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5">
+                    <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
                                 De:
                             </label>
@@ -160,10 +168,10 @@ export default function ServiceOrdersPage() {
                                     setStartDate(e.target.value);
                                     setPage(0);
                                 }}
-                                className="h-9 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
+                                className="h-9 w-full rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
                             />
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
                                 Até:
                             </label>
@@ -175,15 +183,127 @@ export default function ServiceOrdersPage() {
                                     setEndDate(e.target.value);
                                     setPage(0);
                                 }}
-                                className="h-9 rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
+                                className="h-9 w-full rounded-md border border-[#D1D1D1] bg-white dark:bg-[#1A1A1A] dark:border-[#333333] px-3 text-sm text-[#111111] dark:text-white focus:outline-none focus:border-[#F5A800]"
                             />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden shadow-sm">
+            {/* Cards — mobile only */}
+            <div className="flex flex-col gap-3 sm:hidden">
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border border-[#E8E8E8] dark:border-[#333333] bg-white dark:bg-[#252525] p-4 space-y-2">
+                            {Array.from({ length: 5 }).map((__, j) => (
+                                <Skeleton key={j} className="h-4 w-full bg-gray-200 dark:bg-zinc-800 animate-pulse" />
+                            ))}
+                        </div>
+                    ))
+                ) : isError ? (
+                    <div className="flex items-center justify-center gap-2 py-8 text-red-400 text-sm">
+                        <AlertCircle className="w-4 h-4" />
+                        Erro ao carregar ordens de serviço.
+                    </div>
+                ) : data?.items.length === 0 ? (
+                    <div className="rounded-xl border border-[#E8E8E8] dark:border-[#333333] bg-white dark:bg-[#252525]">
+                        <EmptyState
+                            icon={ClipboardList}
+                            title={search ? 'Nenhuma O.S. encontrada' : 'Nenhuma ordem de serviço'}
+                            description={search
+                                ? `Nenhum resultado para "${search}".`
+                                : 'Comece criando uma nova ordem de serviço.'}
+                            actionLabel={!search ? 'Lançar OS' : undefined}
+                            onAction={!search ? () => setQuickCreateOpen(true) : undefined}
+                        />
+                    </div>
+                ) : (
+                    data?.items.map((os) => {
+                        const editEnabled = canEdit(os);
+                        return (
+                            <div key={os.id} className="rounded-xl border border-[#E8E8E8] dark:border-[#333333] bg-white dark:bg-[#252525] overflow-hidden shadow-sm">
+                                {/* Info rows */}
+                                <div className="p-4 space-y-2">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#999999] dark:text-zinc-500 uppercase tracking-wide font-semibold">Data da OS</span>
+                                        <span className="text-[#111111] dark:text-zinc-200">{os.entry_time ? formatDate(os.entry_time) : '—'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#999999] dark:text-zinc-500 uppercase tracking-wide font-semibold">Nº OS Conc.</span>
+                                        <span className="text-[#111111] dark:text-zinc-200 font-mono">{os.external_os_number || '—'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#999999] dark:text-zinc-500 uppercase tracking-wide font-semibold">Departamento</span>
+                                        <Badge variant="outline" className="border-[#D1D1D1] dark:border-[#333333] text-[#666666] dark:text-zinc-400 text-xs">
+                                            {DEPARTMENTS_MAP[os.department] || os.department}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#999999] dark:text-zinc-500 uppercase tracking-wide font-semibold">Placa</span>
+                                        <span className="bg-gray-100 dark:bg-zinc-800 border border-[#D1D1D1] dark:border-zinc-700 text-[#111111] dark:text-white font-mono px-2 py-0.5 rounded text-xs tracking-widest">
+                                            {os.plate}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#999999] dark:text-zinc-500 uppercase tracking-wide font-semibold">Veículo</span>
+                                        <span className="text-[#111111] dark:text-zinc-200 text-right max-w-[55%] truncate">
+                                            {os.vehicle_model}{os.vehicle_color ? ` · ${os.vehicle_color}` : ''}
+                                        </span>
+                                    </div>
+                                    {/* Serviços */}
+                                    {(os.items ?? []).filter(i => i.service_name).length > 0 && (
+                                        <div className="flex flex-wrap gap-1 pt-1">
+                                            {(os.items ?? []).filter(i => i.service_name).map((item, i) => (
+                                                <span key={i} className="inline-block text-xs bg-muted px-1.5 py-0.5 rounded">
+                                                    {item.service_name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Footer: Editar + Status */}
+                                <div className="flex items-center gap-2 px-4 py-3 border-t border-[#E8E8E8] dark:border-[#333333] bg-gray-50 dark:bg-zinc-800/30">
+                                    <button
+                                        onClick={() => setEditingOrder(os)}
+                                        disabled={!editEnabled}
+                                        className={[
+                                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-colors',
+                                            editEnabled
+                                                ? 'border-[#F5A800] text-[#F5A800] hover:bg-[#F5A800]/10 cursor-pointer'
+                                                : 'border-[#D1D1D1] text-[#BBBBBB] dark:border-[#444444] dark:text-[#555555] opacity-50 cursor-not-allowed',
+                                        ].join(' ')}
+                                    >
+                                        <Pencil className="w-3 h-3" />
+                                        Editar
+                                    </button>
+                                    <Select
+                                        value={os.status}
+                                        onValueChange={(value) => updateStatus.mutate({ id: os.id, status: value })}
+                                    >
+                                        <SelectTrigger
+                                            className={[
+                                                'h-8 flex-1 rounded-md border bg-white dark:bg-[#252525] px-2 text-xs font-semibold focus:ring-1 focus:ring-[#F5A800] focus:border-[#F5A800] cursor-pointer',
+                                                STATUS_COLORS[os.status] ?? 'border-[#D1D1D1] text-[#666666]',
+                                            ].join(' ')}
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white dark:bg-[#252525] border border-[#D1D1D1] dark:border-[#333333] text-[#111111] dark:text-white rounded-lg shadow-lg">
+                                            <SelectItem value="waiting" className="text-xs font-semibold text-[#666666] dark:text-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800">Aguardando</SelectItem>
+                                            <SelectItem value="doing" className="text-xs font-semibold text-[#F5A800] focus:bg-zinc-100 dark:focus:bg-zinc-800">Desenvolvendo</SelectItem>
+                                            <SelectItem value="ready" className="text-xs font-semibold text-[#22c55e] focus:bg-zinc-100 dark:focus:bg-zinc-800">Finalizado</SelectItem>
+                                            <SelectItem value="wrong" className="text-xs font-semibold text-red-500 focus:bg-zinc-100 dark:focus:bg-zinc-800">Lançado Errado</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* Table — desktop only */}
+            <div className="hidden sm:block border border-[#D1D1D1] dark:border-[#333333] rounded-xl overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-gray-100 dark:bg-zinc-800/60 hover:bg-gray-100 dark:hover:bg-zinc-800/60 border-0">
